@@ -1,0 +1,18 @@
+@abstract class_name BaseCard
+extends Resource
+
+
+enum CardType { ATTACK, DEFENSE, SKILL, POWER}
+var card_name: String
+var cost: int
+var type: CardType
+var image: Texture2D
+var description: String
+var tiles: Array[BaseTile]
+
+
+@abstract func execute(ctx: ActionContext)->void
+
+
+func get_description() -> String:
+	return description
