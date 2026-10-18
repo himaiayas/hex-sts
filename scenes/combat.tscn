@@ -1,0 +1,176 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://dqjpwrdt3pnve" path="res://scripts/combat/combat_scene.gd" id="1_combat"]
+[ext_resource type="Script" uid="uid://c4g55kseks0cn" path="res://scripts/combat/ui/health_grid_view.gd" id="2_grid"]
+
+[node name="Combat" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_combat")
+
+[node name="Background" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.105882, 0.113725, 0.141176, 1)
+
+[node name="Margin" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="Layout" type="VBoxContainer" parent="Margin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+
+[node name="TopBar" type="HBoxContainer" parent="Margin/Layout"]
+layout_mode = 2
+
+[node name="StatusLabel" type="Label" parent="Margin/Layout/TopBar"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Turn 1    Energy 3/3"
+
+[node name="HintLabel" type="Label" parent="Margin/Layout/TopBar"]
+unique_name_in_owner = true
+modulate = Color(0.8, 0.8, 0.8, 1)
+layout_mode = 2
+size_flags_horizontal = 3
+text = "Click a card to select it."
+horizontal_alignment = 2
+
+[node name="Arena" type="HBoxContainer" parent="Margin/Layout"]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+theme_override_constants/separation = 160
+alignment = 1
+
+[node name="PlayerGrid" type="Control" parent="Margin/Layout/Arena"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 200)
+layout_mode = 2
+mouse_filter = 2
+script = ExtResource("2_grid")
+
+[node name="Enemies" type="HBoxContainer" parent="Margin/Layout/Arena"]
+unique_name_in_owner = true
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 40
+
+[node name="Hand" type="HBoxContainer" parent="Margin/Layout"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 190)
+layout_mode = 2
+mouse_filter = 2
+alignment = 1
+
+[node name="BottomBar" type="HBoxContainer" parent="Margin/Layout"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="DeckButton" type="Button" parent="Margin/Layout/BottomBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(130, 36)
+layout_mode = 2
+text = "Deck (0)"
+
+[node name="DrawPileButton" type="Button" parent="Margin/Layout/BottomBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(130, 36)
+layout_mode = 2
+text = "Draw pile (0)"
+
+[node name="Spacer" type="Control" parent="Margin/Layout/BottomBar"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="DiscardButton" type="Button" parent="Margin/Layout/BottomBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(130, 36)
+layout_mode = 2
+text = "Discard (0)"
+
+[node name="EndTurnButton" type="Button" parent="Margin/Layout/BottomBar"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(130, 36)
+layout_mode = 2
+text = "End Turn"
+
+[node name="PileViewer" type="ColorRect" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.75)
+
+[node name="Center" type="CenterContainer" parent="PileViewer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="PileViewer/Center"]
+layout_mode = 2
+
+[node name="Box" type="VBoxContainer" parent="PileViewer/Center/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="PileTitle" type="Label" parent="PileViewer/Center/Panel/Box"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Pile (0)"
+horizontal_alignment = 1
+
+[node name="Scroll" type="ScrollContainer" parent="PileViewer/Center/Panel/Box"]
+custom_minimum_size = Vector2(740, 396)
+layout_mode = 2
+
+[node name="PileGrid" type="GridContainer" parent="PileViewer/Center/Panel/Box/Scroll"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
+columns = 5
+
+[node name="CloseButton" type="Button" parent="PileViewer/Center/Panel/Box"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(130, 36)
+layout_mode = 2
+text = "Close"
+
+[connection signal="pressed" from="Margin/Layout/BottomBar/DeckButton" to="." method="_on_deck_pressed"]
+[connection signal="pressed" from="Margin/Layout/BottomBar/DrawPileButton" to="." method="_on_draw_pile_pressed"]
+[connection signal="pressed" from="Margin/Layout/BottomBar/DiscardButton" to="." method="_on_discard_pressed"]
+[connection signal="pressed" from="Margin/Layout/BottomBar/EndTurnButton" to="." method="_on_end_turn_pressed"]
+[connection signal="gui_input" from="PileViewer" to="." method="_on_pile_viewer_input"]
+[connection signal="pressed" from="PileViewer/Center/Panel/Box/CloseButton" to="." method="_on_close_pile_pressed"]

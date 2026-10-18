@@ -1,13 +1,13 @@
 class_name DamageTile
 extends BaseActionTile
 
-var amount: int
 
-func _init(_coords: Vector2i, _amount := 0)->void:
+func _init(_coords: Vector2i)->void:
 	super(_coords)
-	amount = _amount
 
 func inflict(cell: Vector2i, ctx: ActionContext)->void:
-	var unit := ctx.combat.unit_at(cell)
-	if unit:
-		unit.take_damage(amount)
+	if ctx.target.has_health_tile(cell):
+		ctx.target.damage_health_tile(cell)
+
+func get_color()->Color:
+	return Color("#ff7a7a")

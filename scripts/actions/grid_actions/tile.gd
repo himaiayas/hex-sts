@@ -8,3 +8,6 @@ func _init(_coords:Vector2i)->void:
 
 @abstract
 func inflict(cell: Vector2i, ctx: ActionContext)->void
+
+@abstract
+func get_color()->Color

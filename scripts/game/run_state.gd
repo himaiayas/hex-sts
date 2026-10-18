@@ -12,20 +12,20 @@ var deck: Array[BaseCard] = []
 var combat: CombatState = null
 
 
-# func start_new_run() -> void:
-# 	health = []
-# 	gold = 0
-# 	deck = []
-# 	for i in 5:
-# 		deck.append(Strike.new())
+func start_new_run() -> void:
+	health = CombatUnit.make_hex_health(2)
+	gold = 0
+	deck = []
+	for i in 8:
+		deck.append(Strike.new())
 
 
-# func start_combat() -> CombatState:
-# 	combat = CombatState.new(self)
-# 	return combat
+func start_combat() -> CombatState:
+	combat = CombatState.new(self)
+	return combat
 
 
-# func end_combat() -> void:
-# 	if combat:
-# 		combat.finish(self)
-# 	combat = null
+func end_combat() -> void:
+	if combat:
+		combat.finish(self)
+	combat = null

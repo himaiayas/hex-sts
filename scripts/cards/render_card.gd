@@ -17,7 +17,7 @@ func _ready() -> void:
 	card.position = get_viewport().get_visible_rect().size / 2 - Vector2(70, 95)
 
 
-func create_card(data: BaseCard) -> Node2D:
+static func create_card(data: BaseCard) -> Node2D:
 	var card: Node2D = CARD_SCENE.instantiate()
 	card.get_node("%CostLabel").text = str(data.cost)
 	card.get_node("%NameLabel").text = data.card_name

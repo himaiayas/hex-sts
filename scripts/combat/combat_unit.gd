@@ -15,6 +15,30 @@ func _init(_name: String, _health: Array[Array], _is_player := false) -> void:
 	is_player = _is_player
 
 
+## Test helper: hexagon of radius r in a (2r+1)x(2r+1) matrix, null outside the hexagon.
+static func make_hex_health(radius: int) -> Array[Array]:
+	var matrix: Array[Array] = []
+	for i in 2 * radius + 1:
+		var row := []
+		for j in 2 * radius + 1:
+			var q := i - radius
+			var r := j - radius
+			if absi(q) <= radius and absi(r) <= radius and absi(q + r) <= radius:
+				var tile := HealthTile.new()
+				tile.hp = 1
+				row.append(tile)
+			else:
+				row.append(null)
+		matrix.append(row)
+	return matrix
+
+
+func has_health_tile(coords: Vector2i) -> bool:
+	if coords.x < 0 or coords.x >= health.size():
+		return false
+	if coords.y < 0 or coords.y >= health[coords.x].size():
+		return false
+	return health[coords.x][coords.y] != null
 
 
 func damage_health_tile(coords:Vector2i)->void:

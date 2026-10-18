@@ -4,6 +4,7 @@ extends RefCounted
 
 # Temporary state for combat encounter
 const HAND_LIMIT := 10
+const DRAW_PER_TURN := 5
 
 var player: CombatUnit
 var enemies: Array[CombatUnit] = []
@@ -43,9 +44,36 @@ func discard_hand() -> void:
 	hand.clear()
 
 
+func start_turn() -> void:
+	turn += 1
+	energy = max_energy
+	draw(DRAW_PER_TURN)
+
+
+func end_turn() -> void:
+	discard_hand()
+	# Enemy turn goes here.
+	start_turn()
+
+
+func can_play(card: BaseCard) -> bool:
+	return card in hand and card.cost <= energy
+
+
+## Pays the cost, runs the card on target's health grid at cell, then discards it.
+func play_card(card: BaseCard, target: CombatUnit, cell: Vector2i) -> bool:
+	if not can_play(card):
+		return false
+	energy -= card.cost
+	hand.erase(card)
+	card.execute(ActionContext.new(self, player, target, cell, card))
+	discard_pile.append(card)
+	return true
+
+
 # func is_over() -> bool:
 # 	return player.is_dead() or enemies.all(func(e: CombatUnit) -> bool: return e.is_dead())
 
 
 func finish(run: Node) -> void:
-	run.hp = player.hp
+	run.health = player.health
