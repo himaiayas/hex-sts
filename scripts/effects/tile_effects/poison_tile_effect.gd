@@ -1,5 +1,5 @@
-class_name PoisonTileStatus
-extends BaseTileStatus
+class_name PoisonTileEffect
+extends BaseTileEffect
 
 func _init() -> void:
     super("Poison", "Inflicts poison on the target.")   

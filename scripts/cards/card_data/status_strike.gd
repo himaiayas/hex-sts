@@ -9,7 +9,7 @@ func _init() -> void:
 	description = "fdksmfdf."
 	tiles = [
 		DamageTile.new(Vector2i(0,0)),
-		StatusTile.new(Vector2i(1,2), PoisonTileStatus.new())
+		ApplyEffectTile.new(Vector2i(1,2), PoisonTileEffect.new())
 	]
 
 func execute(ctx: ActionContext)->void:

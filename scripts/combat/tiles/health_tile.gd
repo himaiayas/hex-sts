@@ -7,7 +7,7 @@ enum HealthTileEnum {
     SHIELDED = 2,
 }
 
-var status_effects: Array[BaseTileStatus]
+var status_effects: Array[BaseTileEffect]
 var hp: int #-1 = empty, 0 = damaged, 1=undamaged, 2=shield
 
 func _init() -> void:

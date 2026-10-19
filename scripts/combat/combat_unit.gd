@@ -4,7 +4,7 @@ extends RefCounted
 
 var display_name: String
 var health: Dictionary[Vector2i, HealthTile]  #Matrix with element as HealthTile
-var statuses: Array[BaseStatus] = []
+var statuses: Array[BaseEffect] = []
 var is_player := false
 
 
@@ -32,7 +32,7 @@ func damage_health_tile(coords:Vector2i)->void:
 	if tile and tile.hp>0:
 		tile.hp = tile.hp-1
 	
-func apply_status_health_tile(coords:Vector2i, status:BaseTileStatus)->void:
+func apply_effect_health_tile(coords:Vector2i, status:BaseTileEffect)->void:
 	var tile: HealthTile = health[coords]
 	if tile:
 		tile.status_effects.append(status) #require rework
