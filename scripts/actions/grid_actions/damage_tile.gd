@@ -2,11 +2,11 @@ class_name DamageTile
 extends BaseActionTile
 
 
-func _init(_coords: Vector2i)->void:
-	super(_coords)
+func _init(_coord: Vector2i)->void:
+	super(_coord)
 
 func inflict(cell: Vector2i, ctx: ActionContext)->void:
-	if ctx.target.has_health_tile(cell):
+	if ctx.target.health.has(cell):
 		ctx.target.damage_health_tile(cell)
 
 func get_color()->Color:

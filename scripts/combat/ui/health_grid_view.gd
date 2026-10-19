@@ -16,6 +16,7 @@ const COLOR_DAMAGED := Color("#454545")
 const COLOR_PREVIEW := Color("#ff7a7a")
 const COLOR_EDGE := Color("#151515")
 const COLOR_TEXT := Color("#e8e0c8")
+const COLOR_SHIELDED := Color("#a0e5f6")
 
 var unit: CombatUnit
 var clickable := false
@@ -38,7 +39,7 @@ func setup(_unit: CombatUnit, _clickable: bool) -> void:
 func refresh() -> void:
 	var min_p := Vector2(INF, INF)
 	var max_p := Vector2(-INF, -INF)
-	for cell in _cells():
+	for cell in unit.health.keys():
 		var p := _axial_to_pixel(cell)
 		min_p = min_p.min(p)
 		max_p = max_p.max(p)
@@ -51,23 +52,14 @@ func refresh() -> void:
 	queue_redraw()
 
 
-func _cells() -> Array[Vector2i]:
-	var result: Array[Vector2i] = []
-	if unit == null:
-		return result
-	for i in unit.health.size():
-		for j in unit.health[i].size():
-			var tile: HealthTile = unit.health[i][j]
-			if tile and tile.hp >= 0:
-				result.append(Vector2i(i, j))
-	return result
+
 
 
 func _draw() -> void:
 	if unit == null:
 		return
-	var cells := _cells()
 	var alive := 0
+	var coords := unit.health.keys()
 	#var action_tile_dict := {} # Dict Vector2i->BaseActionTile
 	# if _hover != NO_CELL and unit.has_health_tile(_hover):
 	# 	# if action_tiles.is_empty():
@@ -75,26 +67,36 @@ func _draw() -> void:
 	# 	for t in action_tiles:
 	# 		action_tile_dict[_hover + t.coords] = true
 
-	for cell in cells:
-		var tile: HealthTile = unit.health[cell.x][cell.y]
-		if tile.hp > 0:
+	
+
+	for coord in unit.health.keys():
+		var tile: HealthTile = unit.health[coord]
+		var color = COLOR_ALIVE
+		if tile.hp >= HealthTile.HealthTileEnum.SHIELDED:
 			alive += 1
-		var color := COLOR_ALIVE if tile.hp > 0 else COLOR_DAMAGED
+			color = COLOR_SHIELDED
+			
+		elif tile.hp == HealthTile.HealthTileEnum.UNDAMAGED:
+			alive += 1
+			if tile.status_effects.size() > 0:
+				color = tile.status_effects[0].get_color()
+		else:
+			color = COLOR_DAMAGED
 		# if action_tile_dict.has(cell):
 		# 	color = color.lerp(COLOR_PREVIEW, 0.65)
-		var corners := _corners(_origin + _axial_to_pixel(cell))
+		var corners := _corners(_origin + _axial_to_pixel(coord))
 		draw_colored_polygon(corners, color)
 		corners.append(corners[0])
 		draw_polyline(corners, COLOR_EDGE, 2.0)
 
 	for t in action_tiles:
 		var cell := _hover + t.coords
-		if unit.has_health_tile(cell):
+		if unit.health.has(cell):
 			var corners := _corners(_origin + _axial_to_pixel(cell))
 			draw_colored_polygon(corners, Color(t.get_color(),0.65))
 
 	var font := ThemeDB.fallback_font
-	var title := "%s  %d/%d" % [unit.display_name, alive, cells.size()]
+	var title := "%s  %d/%d" % [unit.display_name, alive, coords.size()]
 	draw_string(font, Vector2(0, 16), title, HORIZONTAL_ALIGNMENT_CENTER, size.x, 16, COLOR_TEXT)
 
 
@@ -108,7 +110,7 @@ func _gui_input(event: InputEvent) -> void:
 			queue_redraw()
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var cell := _pixel_to_axial(event.position - _origin)
-		if unit.has_health_tile(cell):
+		if unit.health.has(cell):
 			accept_event()
 			cell_clicked.emit(unit, cell)
 

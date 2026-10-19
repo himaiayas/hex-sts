@@ -4,7 +4,7 @@ extends Node
 
 
 
-var health:Array[Array] #Matrix with element as HealthTile
+var health:Dictionary[Vector2i, HealthTile] = {}
 var gold := 0
 var deck: Array[BaseCard] = []
 
@@ -13,11 +13,22 @@ var combat: CombatState = null
 
 
 func start_new_run() -> void:
-	health = CombatUnit.make_hex_health(2)
+	health = CombatUnit.make_hex_health([
+		Vector2i(0, 0), 
+		Vector2i(1, 0), 
+		Vector2i(0, 1), 
+		Vector2i(-1, 1), 
+		Vector2i(-1, 0), 
+		Vector2i(0, -1), 
+		Vector2i(1, -1),
+		
+	])
 	gold = 0
 	deck = []
-	for i in 8:
+	for i in 4:
 		deck.append(Strike.new())
+		deck.append(StatusStrike.new())
+		deck.append(ShieldEnemy.new())
 
 
 func start_combat() -> CombatState:

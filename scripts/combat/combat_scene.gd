@@ -30,7 +30,26 @@ func _ready() -> void:
 	if RunState.deck.is_empty():
 		RunState.start_new_run()
 	combat = RunState.start_combat()
-	combat.enemies.append(CombatUnit.new("Slime", CombatUnit.make_hex_health(2)))
+	var coords: Array[Vector2i] = [
+		Vector2i(0, 0), 
+		Vector2i(1, 0), 
+		Vector2i(0, 1), 
+		Vector2i(-1, 1), 
+		Vector2i(-1, 0), 
+		Vector2i(0, -1), 
+		Vector2i(1, -1),
+		Vector2i(2,0),
+		Vector2i(1,1),
+		Vector2i(0,2),
+		Vector2i(-1,2),
+		Vector2i(-2,1),
+		Vector2i(-2,0),
+		Vector2i(-1,-1),
+		Vector2i(0,-2),
+		Vector2i(1,-2),
+		Vector2i(2,-1),
+	]
+	combat.enemies.append(CombatUnit.new("Slime", CombatUnit.make_hex_health(coords)))
 
 	_player_view.setup(combat.player, false)
 	for enemy in combat.enemies:
@@ -166,4 +185,3 @@ func _show_pile(title: String, cards: Array[BaseCard], hide_order := false) -> v
 		empty.text = "Empty"
 		_pile_grid.add_child(empty)
 	_pile_viewer.show()
-

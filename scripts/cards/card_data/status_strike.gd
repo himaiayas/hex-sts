@@ -1,0 +1,16 @@
+class_name StatusStrike
+extends BaseCard
+
+
+func _init() -> void:
+	card_name = "StatusStrike"
+	cost = 3
+	type = CardType.ATTACK
+	description = "fdksmfdf."
+	tiles = [
+		DamageTile.new(Vector2i(0,0)),
+		StatusTile.new(Vector2i(1,2), PoisonTileStatus.new())
+	]
+
+func execute(ctx: ActionContext)->void:
+	GridAction.new(BaseAction.TargetType.ENEMY, tiles).execute(ctx)
