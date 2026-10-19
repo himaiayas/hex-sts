@@ -1,4 +1,5 @@
-@abstract class_name BaseStatus
+@abstract class_name BaseEffect
+
 extends Resource
 
 
