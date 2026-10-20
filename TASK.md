@@ -114,3 +114,16 @@
 
 - **Requirement/Prereq:** everything
 - **Brief Description:** Serialize run state.
+
+## Spotted Problems by Claude
+
+- **Hover sentinel collides with a real cell:** `HealthGridView.NO_CELL = Vector2i(0,0)` is also the centre hex, so after the mouse leaves a grid the selected card's preview keeps showing on the centre.
+- **Shield stacks forever:** `CombatUnit.shield_health_tile` does `hp + 1` with no cap (2 → 3 → 4...). The view treats `>= SHIELDED` as shielded, so it's hidden.
+- **Target type ignored (see #4):** `ShieldEnemy` shields the *enemy* grid, and only enemy grids are clickable.
+- **Shared effect instance:** each card creates one `PoisonTileEffect` and every tile it hits gets that same object. `card.duplicate()` is shallow, so all copies of the card share it too. Per-tile stacks/duration will break; create or duplicate the effect in `apply_effect_health_tile`.
+- **Orphan `.uid` files** left from the status→effect rename: `scripts/effects/base_status.gd.uid`, `scripts/effects/tile_effects/base_tile_status.gd.uid`, `scripts/effects/tile_effects/poison_tile_status.gd.uid`.
+- ~~**Mixed indentation:**~~ Fixed in `be87566`: all `.gd` files now use tabs (Godot's default, applied on save), and `.editorconfig` enforces it.
+- **Stale comments:** `HealthTile.hp` still says `-1 = empty`; `make_hex_health` says "hexagon of radius r in a (2r+1)x(2r+1) matrix" but takes a coord list and returns a Dictionary.
+- **Main scene is a dead end:** `mainmenu.tscn` is the main scene, but its button has no script. Combat has to be run directly (F6 on `combat.tscn`).
+- **Content placeholders:** `StatusStrike` costs 3 (all your energy), card descriptions are `"fdksmfdf."`, and `scripts/main.gd` is the empty template.
+- **TASK.md drift:** #1 is effectively done (health is now `Dictionary[Vector2i, HealthTile]`, so negative coords work); #2 is mostly done (enum exists); #6 mentions `StatusTile`/`BaseTileStatus`, which are now `ApplyEffectTile`/`BaseTileEffect`.
