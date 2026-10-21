@@ -48,11 +48,18 @@ func start_turn() -> void:
 	turn += 1
 	energy = max_energy
 	draw(DRAW_PER_TURN)
+	for e in enemies:
+		var enemy := e as BaseEnemy
+		if enemy:
+			enemy.plan(player)
 
 
 func end_turn() -> void:
 	discard_hand()
-	# Enemy turn goes here.
+	for e in enemies:
+		var enemy := e as BaseEnemy
+		if enemy:
+			enemy.take_turn(self)
 	start_turn()
 
 

@@ -11,6 +11,7 @@ var combat: CombatState
 var selected: BaseCard = null
 
 var _enemy_views: Array[HealthGridView] = []
+var _intent_labels: Array[Label] = []
 
 @onready var _status_label: Label = %StatusLabel
 @onready var _hint_label: Label = %HintLabel
@@ -30,34 +31,21 @@ func _ready() -> void:
 	if RunState.deck.is_empty():
 		RunState.start_new_run()
 	combat = RunState.start_combat()
-	var coords: Array[Vector2i] = [
-		Vector2i(0, 0), 
-		Vector2i(1, 0), 
-		Vector2i(0, 1), 
-		Vector2i(-1, 1), 
-		Vector2i(-1, 0), 
-		Vector2i(0, -1), 
-		Vector2i(1, -1),
-		Vector2i(2,0),
-		Vector2i(1,1),
-		Vector2i(0,2),
-		Vector2i(-1,2),
-		Vector2i(-2,1),
-		Vector2i(-2,0),
-		Vector2i(-1,-1),
-		Vector2i(0,-2),
-		Vector2i(1,-2),
-		Vector2i(2,-1),
-	]
-	combat.enemies.append(CombatUnit.new("Slime", CombatUnit.make_hex_health(coords)))
+	combat.enemies.append(Slime.new())
 
 	_player_view.setup(combat.player, false)
 	for enemy in combat.enemies:
 		var view := HealthGridView.new()
 		view.setup(enemy, true)
 		view.cell_clicked.connect(_on_enemy_cell_clicked)
-		_enemies_box.add_child(view)
+		var intent_label := Label.new()
+		intent_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		var box := VBoxContainer.new()
+		box.add_child(view)
+		box.add_child(intent_label)
+		_enemies_box.add_child(box)
 		_enemy_views.append(view)
+		_intent_labels.append(intent_label)
 
 	combat.start_turn()
 	_refresh()
@@ -155,6 +143,15 @@ func _refresh() -> void:
 	for view in _enemy_views:
 		view.action_tiles = pattern
 		view.refresh()
+
+	var intents: Array = []
+	for i in combat.enemies.size():
+		var enemy := combat.enemies[i] as BaseEnemy
+		var action := enemy.intent_action as GridAction if enemy else null
+		_intent_labels[i].text = "Intent: %s" % action.display_name if action else ""
+		if action:
+			intents.append({cell = enemy.intent_cell + action.anchor, tiles = action.tiles})
+	_player_view.intents = intents
 	_player_view.refresh()
 
 

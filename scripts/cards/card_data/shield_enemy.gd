@@ -8,7 +8,7 @@ func _init() -> void:
 	type = CardType.DEFENSE
 	description = "fdksmfdf."
 	tiles = [
-        ShieldTile.new(Vector2i(0,0)),
+		ShieldTile.new(Vector2i(0,0)),
 	]
 
 func execute(ctx: ActionContext)->void:
