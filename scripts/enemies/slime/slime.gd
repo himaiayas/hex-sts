@@ -23,6 +23,8 @@ func _init() -> void:
 		Vector2i(2, -1),
 	]
 	super("Slime", CombatUnit.make_hex_health(coords))
-	var tackle: Array[BaseActionTile] = [DamageTile.new(Vector2i(0, 0)), DamageTile.new(Vector2i(-1, 0))]
-	var lunge: Array[BaseActionTile] = [DamageTile.new(Vector2i(0, 0)), DamageTile.new(Vector2i(1, -1))]
-	actions = [make_move("Tackle", tackle), make_move("Lunge", lunge)]
+	actions = [
+		SlimeAttack1.new(0.5),
+		SlimeHarden.new(0.25),
+		SlimeGuardedBash.new(0.25),
+	]

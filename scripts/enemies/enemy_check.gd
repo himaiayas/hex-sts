@@ -13,17 +13,41 @@ func _initialize() -> void:
 	var slime := Slime.new()
 	combat.enemies.append(slime)
 
-	var names: Array[String] = []
-	for i in 3:
+	var seen := {}
+	for i in 60:
 		_heal(combat.player)
-		slime.plan(combat.player)
-		names.append(slime.intent_action.display_name)
-		var score := slime._score_cell(slime.intent_action as GridAction, slime.intent_cell, combat.player)
-		_check(score == 4, "turn %d: planned score %d, expected 4" % [i, score])
+		_heal(slime)
+		slime.plan(combat)
+		var action := slime.intent_action
+		seen[action.action_name] = true
+
+		# What the intent shows, per grid.
+		var expect_damaged := {}
+		var expect_shielded := {}
+		for part in action.parts:
+			var target: CombatUnit = combat.player if part.side == EnemyActionPart.Side.PLAYER else slime
+			for t in part.tiles:
+				var cell := part.cell + t.coords
+				if not target.health.has(cell):
+					continue
+				if t is DamageTile:
+					expect_damaged[cell] = true
+				elif t is ShieldTile:
+					expect_shielded[cell] = true
+
 		slime.take_turn(combat)
-		var damaged := _damaged(combat.player)
-		_check(damaged == 2, "turn %d: %d cells damaged, expected 2" % [i, damaged])
-	_check(",".join(names) == "Tackle,Lunge,Tackle", "loop order %s" % [names])
+
+		# What actually happened must match the intent exactly.
+		var damaged := _cells_with(combat.player, HealthTile.HealthTileEnum.DAMAGED)
+		var shielded := _cells_with(slime, HealthTile.HealthTileEnum.SHIELDED)
+		_check(damaged == expect_damaged.keys().size() and _all_in(combat.player, expect_damaged, HealthTile.HealthTileEnum.DAMAGED),
+			"turn %d (%s): player damage doesn't match intent" % [i, action.action_name])
+		_check(shielded == expect_shielded.keys().size() and _all_in(slime, expect_shielded, HealthTile.HealthTileEnum.SHIELDED),
+			"turn %d (%s): self shield doesn't match intent" % [i, action.action_name])
+		_check(slime.intent_action == null, "turn %d: intent not cleared after take_turn" % i)
+
+	for name in ["Slime Attack 1", "Harden", "Guarded Bash"]:
+		_check(seen.has(name), "action %s never chosen in 60 plans" % name)
 
 	run.free()
 	print("enemy_check: %s" % ("OK" if _failures == 0 else "%d failure(s)" % _failures))
@@ -41,5 +65,12 @@ func _heal(unit: CombatUnit) -> void:
 		tile.hp = HealthTile.HealthTileEnum.UNDAMAGED
 
 
-func _damaged(unit: CombatUnit) -> int:
-	return unit.health.values().filter(func(t: HealthTile) -> bool: return t.hp == HealthTile.HealthTileEnum.DAMAGED).size()
+func _cells_with(unit: CombatUnit, hp: int) -> int:
+	return unit.health.values().filter(func(t: HealthTile) -> bool: return t.hp == hp).size()
+
+
+func _all_in(unit: CombatUnit, cells: Dictionary, hp: int) -> bool:
+	for cell in cells:
+		if unit.health[cell].hp != hp:
+			return false
+	return true

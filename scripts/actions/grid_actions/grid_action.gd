@@ -9,6 +9,6 @@ func _init(_target: TargetType, _tiles:Array[BaseActionTile], _anchor: Vector2i=
 	tiles = _tiles
 	anchor = _anchor
 
-func execute(ctx: ActionContext)->void:
+func execute(combat: CombatState, unit: CombatUnit, cell: Vector2i)->void:
 	for t in tiles:
-		t.inflict(ctx.target_cell + t.coords + anchor, ctx)
+		t.inflict(combat, unit, cell + t.coords + anchor)

@@ -23,8 +23,10 @@ static func make_hex_health(coords: Array[Vector2i]) -> Dictionary[Vector2i, Hea
 
 func shield_health_tile(coords:Vector2i)->void:
 	var tile: HealthTile = health[coords]
+
 	if tile and tile.hp>HealthTile.HealthTileEnum.DAMAGED:
-		tile.hp = tile.hp+1
+		tile.hp = HealthTile.HealthTileEnum.SHIELDED
+	
 
 func damage_health_tile(coords:Vector2i)->void:
 	# condition check for has health or not, idk we should do on this or on Combat State.

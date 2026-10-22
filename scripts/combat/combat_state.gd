@@ -51,7 +51,7 @@ func start_turn() -> void:
 	for e in enemies:
 		var enemy := e as BaseEnemy
 		if enemy:
-			enemy.plan(player)
+			enemy.plan(self)
 
 
 func end_turn() -> void:
@@ -73,7 +73,7 @@ func play_card(card: BaseCard, target: CombatUnit, cell: Vector2i) -> bool:
 		return false
 	energy -= card.cost
 	hand.erase(card)
-	card.execute(ActionContext.new(self, player, target, cell, card))
+	card.execute(self, target, cell)
 	discard_pile.append(card)
 	return true
 
