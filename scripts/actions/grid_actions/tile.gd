@@ -7,7 +7,7 @@ func _init(_coords:Vector2i)->void:
 	self.coords=_coords
 
 @abstract
-func inflict(cell: Vector2i, ctx: ActionContext)->void
+func inflict(combat: CombatState, unit: CombatUnit, cell: Vector2i)->void
 
 @abstract
 func get_color()->Color

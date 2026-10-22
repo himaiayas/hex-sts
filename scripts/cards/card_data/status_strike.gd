@@ -12,5 +12,5 @@ func _init() -> void:
 		ApplyEffectTile.new(Vector2i(1,2), PoisonTileEffect.new())
 	]
 
-func execute(ctx: ActionContext)->void:
-	GridAction.new(BaseAction.TargetType.ENEMY, tiles).execute(ctx)
+func execute(combat: CombatState, unit: CombatUnit, cell: Vector2i)->void:
+	GridAction.new(BaseAction.TargetType.ENEMY, tiles).execute(combat, unit, cell)

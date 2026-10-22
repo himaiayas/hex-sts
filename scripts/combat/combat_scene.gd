@@ -151,14 +151,23 @@ func _refresh() -> void:
 		view.refresh()
 	_player_view.action_tiles = pattern if on_player else none
 
-	var intents: Array = []
+	# Intents blink on the grid each part targets: attacks on the player, shields on the enemy itself.
+	var player_intents: Array = []
 	for i in combat.enemies.size():
 		var enemy := combat.enemies[i] as BaseEnemy
-		var action := enemy.intent_action as GridAction if enemy else null
-		_intent_labels[i].text = "Intent: %s" % action.display_name if action else ""
+		var action: BaseEnemyAction = enemy.intent_action if enemy else null
+		var self_intents: Array = []
+		_intent_labels[i].text = "Intent: %s" % action.action_name if action else ""
 		if action:
-			intents.append({cell = enemy.intent_cell + action.anchor, tiles = action.tiles})
-	_player_view.intents = intents
+			for part in action.parts:
+				var intent := {cell = part.cell, tiles = part.tiles}
+				if part.side == EnemyActionPart.Side.PLAYER:
+					player_intents.append(intent)
+				else:
+					self_intents.append(intent)
+		_enemy_views[i].intents = self_intents
+		_enemy_views[i].refresh()
+	_player_view.intents = player_intents
 	_player_view.refresh()
 
 

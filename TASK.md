@@ -1,6 +1,6 @@
 # Remaining Tasks
 
-## Combat - Mai is currently working on this
+## Combat
 
 ### 1. Settle the health matrix indexing
 
@@ -57,7 +57,7 @@
 ### 11. Enemy turn and AI
 
 - **Requirement/Prereq:** 10
-- **Brief Description:** Run enemy actions in `CombatState.end_turn()` 3ith (`ActionContext` with `caster = enemy`).
+- **Brief Description:** Run enemy actions in `CombatState.end_turn()` with the same action/tile classes (`execute(combat, unit, cell)`).
 
 ### 12. Enemy intents
 

@@ -12,5 +12,5 @@ func _init() -> void:
 		ShieldTile.new(Vector2i(0,0)),
 	]
 
-func execute(ctx: ActionContext)->void:
-	GridAction.new(BaseAction.TargetType.PLAYER, tiles).execute(ctx)
+func execute(combat: CombatState, unit: CombatUnit, cell: Vector2i)->void:
+	GridAction.new(BaseAction.TargetType.PLAYER, tiles).execute(combat, unit, cell)

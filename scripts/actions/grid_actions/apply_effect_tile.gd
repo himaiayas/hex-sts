@@ -7,9 +7,9 @@ func _init(_coords: Vector2i, _effect: BaseTileEffect)->void:
 	super(_coords)
 	effect = _effect
 
-func inflict(cell: Vector2i, ctx: ActionContext)->void:
-	if ctx.target.health.has(cell):
-		ctx.target.apply_effect_health_tile(cell, effect)
+func inflict(_combat: CombatState, unit: CombatUnit, cell: Vector2i)->void:
+	if unit.health.has(cell):
+		unit.apply_effect_health_tile(cell, effect)
 
 func get_color()->Color:
 	return effect.get_color()

@@ -12,7 +12,8 @@ var description: String
 var tiles: Array[BaseActionTile]
 
 
-@abstract func execute(ctx: ActionContext)->void
+## unit = the unit whose grid was clicked, cell = the clicked cell on that grid.
+@abstract func execute(combat: CombatState, unit: CombatUnit, cell: Vector2i)->void
 
 
 func get_description() -> String:
