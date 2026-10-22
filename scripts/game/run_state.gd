@@ -28,7 +28,7 @@ func start_new_run() -> void:
 	for i in 4:
 		deck.append(Strike.new())
 		deck.append(StatusStrike.new())
-		deck.append(ShieldEnemy.new())
+		deck.append(ShieldPlayer.new())
 
 
 func start_combat() -> CombatState:

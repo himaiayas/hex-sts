@@ -33,11 +33,12 @@ func _ready() -> void:
 	combat = RunState.start_combat()
 	combat.enemies.append(Slime.new())
 
-	_player_view.setup(combat.player, false)
+	_player_view.setup(combat.player, true)
+	_player_view.cell_clicked.connect(_on_cell_clicked)
 	for enemy in combat.enemies:
 		var view := HealthGridView.new()
 		view.setup(enemy, true)
-		view.cell_clicked.connect(_on_enemy_cell_clicked)
+		view.cell_clicked.connect(_on_cell_clicked)
 		var intent_label := Label.new()
 		intent_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		var box := VBoxContainer.new()
@@ -67,9 +68,12 @@ func _on_card_input(event: InputEvent, card: BaseCard) -> void:
 	_refresh()
 
 
-func _on_enemy_cell_clicked(unit: CombatUnit, cell: Vector2i) -> void:
+func _on_cell_clicked(unit: CombatUnit, cell: Vector2i) -> void:
 	if selected == null:
 		_hint_label.text = "Select a card first."
+		return
+	if (unit == combat.player) != _targets_player(selected):
+		_hint_label.text = "This card targets %s." % ("your grid" if _targets_player(selected) else "an enemy")
 		return
 	combat.play_card(selected, unit, cell)
 	selected = null
@@ -121,7 +125,7 @@ func _refresh() -> void:
 	_draw_button.text = "Draw pile (%d)" % combat.draw_pile.size()
 	_discard_button.text = "Discard (%d)" % combat.discard_pile.size()
 	if selected:
-		_hint_label.text = "Click a cell on the enemy. Right-click to cancel."
+		_hint_label.text = "Click a cell on %s. Right-click to cancel." % ("your grid" if _targets_player(selected) else "the enemy")
 	else:
 		_hint_label.text = "Click a card to select it."
 
@@ -140,9 +144,12 @@ func _refresh() -> void:
 	var pattern: Array[BaseActionTile] = []
 	if selected:
 		pattern = selected.tiles
+	var none: Array[BaseActionTile] = []
+	var on_player := selected != null and _targets_player(selected)
 	for view in _enemy_views:
-		view.action_tiles = pattern
+		view.action_tiles = none if on_player else pattern
 		view.refresh()
+	_player_view.action_tiles = pattern if on_player else none
 
 	var intents: Array = []
 	for i in combat.enemies.size():
@@ -153,6 +160,10 @@ func _refresh() -> void:
 			intents.append({cell = enemy.intent_cell + action.anchor, tiles = action.tiles})
 	_player_view.intents = intents
 	_player_view.refresh()
+
+
+func _targets_player(card: BaseCard) -> bool:
+	return card.target == BaseAction.TargetType.PLAYER
 
 
 ## A card wrapped in a Control so containers can lay it out (Card.tscn's root is a Node2D).
