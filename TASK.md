@@ -2,15 +2,27 @@
 
 ## Combat
 
-### 1. Settle the health matrix indexing
+### 0. Settle the health matrix indexing
 
 - **Requirement/Prereq:** None
 - **Brief Description:** `CombatUnit` indexes `health[coords.x][coords.y]`, which only works with non-negative indices. Decide the convention: either matrix index = axial coords (as now), or store an offset (e.g. `+radius`) so negative axial coords work. `HealthGridView` and `has_health_tile()` must follow the same rule.
 
-### 2. HealthTile states
+### 1. Card Fan
 
-- **Requirement/Prereq:** 1
-- **Brief Description:** `HealthTile.hp` is commented as `-1 = empty, 0 = damaged, 1 = shielded`, but there's no "healthy" state, and the test helper `make_hex_health()` uses `hp = 1`. Define the states (maybe an enum), what a hit does to each, and their colours in `HealthGridView`.
+- **Requirement/Prereq:** -
+- **Brief Description:** Cards in hand should be fan as an arc of a circle. When hover a card, it should enlarges and shows the whole detail of card.
+
+### 2. Card Rendering
+
+- **Requirement/Prereq:** -
+- **Brief Description:**
+  - `BaseCard` contain property `tiles` which is used in `GridAction`. Chnage it to Array of Array of Tile, so that we can afford multiple `GridAction` in one card
+  - description property in BaseCard should have a format to render hex (e.g. "{render:0}\nDraw 1\nGain 1 {keyword:Strength}) means
+    - Line 1: Render tiles[0].
+    - Line 2: Print "Draw 1".
+    - Line 3: Print "Gain 1 Strength", but Strength is a keyword, it should be bold and show tooltips.
+      You can think of any format.
+  - If the rendered hexes are too large, reduce the size.
 
 ### 3. Combat end
 
