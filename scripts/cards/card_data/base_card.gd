@@ -9,7 +9,7 @@ var type: CardType
 var target := BaseAction.TargetType.ENEMY  # ENEMY (default) or PLAYER
 var image: Texture2D
 var description: String
-var tiles: Array[BaseActionTile]
+var tiles: Array[BaseActionTile] # change to Array of Array of BaseActionTile. So that we can afford multiple Grid Actions 
 
 
 ## unit = the unit whose grid was clicked, cell = the clicked cell on that grid.
