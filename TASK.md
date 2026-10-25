@@ -6,6 +6,7 @@
 
 - **Requirement/Prereq:** None
 - **Brief Description:** `CombatUnit` indexes `health[coords.x][coords.y]`, which only works with non-negative indices. Decide the convention: either matrix index = axial coords (as now), or store an offset (e.g. `+radius`) so negative axial coords work. `HealthGridView` and `has_health_tile()` must follow the same rule.
+- [x] Done ✅: Health is now a `Dictionary[Vector2i, HealthTile]` keyed by axial coords, so negative coords work without an offset. `has_health_tile()` is gone; everything checks `unit.health.has(cell)`.
 
 ### 1. Card Fan
 
