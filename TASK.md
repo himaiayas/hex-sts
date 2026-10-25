@@ -20,8 +20,8 @@
   - `BaseCard` contain property `tiles` which is used in `GridAction`. Chnage it to Array of Array of Tile, so that we can afford multiple `GridAction` in one card
   - description property in BaseCard should have a format to render hex (e.g. "{render:0}\nDraw 1\nGain 1 {keyword:Strength}) means
     - Line 1: Render tiles[0].
-    - Line 2: Print "Draw 1".
-    - Line 3: Print "Gain 1 Strength", but Strength is a keyword, it should be bold and show tooltips.
+	- Line 2: Print "Draw 1".
+	- Line 3: Print "Gain 1 Strength", but Strength is a keyword, it should be bold and show tooltips.
       You can think of any format.
   - If the rendered hexes are too large, reduce the size.
 
@@ -140,4 +140,4 @@
 - **Stale comments:** `HealthTile.hp` still says `-1 = empty`; `make_hex_health` says "hexagon of radius r in a (2r+1)x(2r+1) matrix" but takes a coord list and returns a Dictionary.
 - **Main scene is a dead end:** `mainmenu.tscn` is the main scene, but its button has no script. Combat has to be run directly (F6 on `combat.tscn`).
 - **Content placeholders:** `StatusStrike` costs 3 (all your energy), card descriptions are `"fdksmfdf."`, and `scripts/main.gd` is the empty template.
-- **TASK.md drift:** #1 is effectively done (health is now `Dictionary[Vector2i, HealthTile]`, so negative coords work); #2 is mostly done (enum exists); #6 mentions `StatusTile`/`BaseTileStatus`, which are now `ApplyEffectTile`/`BaseTileEffect`.
+- **TASK.md drift:** #6 mentions `StatusTile`/`BaseTileStatus`, which are now `ApplyEffectTile`/`BaseTileEffect`.
