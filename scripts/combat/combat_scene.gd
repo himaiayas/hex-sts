@@ -5,7 +5,6 @@ extends Control
 
 const RenderCard := preload("res://scripts/cards/render_card.gd")
 const CARD_SIZE := Vector2(140, 190)
-const SELECT_RAISE := 24.0
 
 var combat: CombatState
 var selected: BaseCard = null
@@ -17,7 +16,7 @@ var _intent_labels: Array[Label] = []
 @onready var _hint_label: Label = %HintLabel
 @onready var _player_view: HealthGridView = %PlayerGrid
 @onready var _enemies_box: HBoxContainer = %Enemies
-@onready var _hand_box: HBoxContainer = %Hand
+@onready var _hand: HandView = %Hand
 @onready var _deck_button: Button = %DeckButton
 @onready var _draw_button: Button = %DrawPileButton
 @onready var _discard_button: Button = %DiscardButton
@@ -33,6 +32,7 @@ func _ready() -> void:
 	combat = RunState.start_combat()
 	combat.enemies.append(Slime.new())
 
+	_hand.card_clicked.connect(_on_card_clicked)
 	_player_view.setup(combat.player, true)
 	_player_view.cell_clicked.connect(_on_cell_clicked)
 	for enemy in combat.enemies:
@@ -54,10 +54,7 @@ func _ready() -> void:
 
 # --- Input -------------------------------------------------------------------
 
-func _on_card_input(event: InputEvent, card: BaseCard) -> void:
-	if not (event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT):
-		return
-	accept_event()
+func _on_card_clicked(card: BaseCard) -> void:
 	if selected == card:
 		selected = null
 	elif combat.can_play(card):
@@ -129,17 +126,7 @@ func _refresh() -> void:
 	else:
 		_hint_label.text = "Click a card to select it."
 
-	for child in _hand_box.get_children():
-		child.queue_free()
-	for card in combat.hand:
-		var slot := _card_slot(card)
-		var panel: Control = slot.get_child(0).get_node("Panel")
-		panel.gui_input.connect(_on_card_input.bind(card))
-		if card == selected:
-			slot.get_child(0).position.y = -SELECT_RAISE
-		elif not combat.can_play(card):
-			slot.modulate = Color(0.55, 0.55, 0.55)
-		_hand_box.add_child(slot)
+	_hand.set_hand(combat.hand, selected, combat.can_play)
 
 	var pattern: Array[BaseActionTile] = []
 	if selected:

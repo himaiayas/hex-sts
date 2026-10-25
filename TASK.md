@@ -12,6 +12,7 @@
 
 - **Requirement/Prereq:** -
 - **Brief Description:** Cards in hand should be fan as an arc of a circle. When hover a card, it should enlarges and shows the whole detail of card.
+- [x] Done ✅: `HandView` (`scripts/combat/ui/hand_view.gd`) lays cards on an arc, and spacing shrinks for big hands. Hover straightens, enlarges and lifts the card and pushes its neighbours aside. The selected card gets a blue border and bobs gently. Cards ease into place instead of snapping. The targeting arrow and draw/discard animations are not done yet.
 
 ### 2. Card Rendering
 
@@ -95,6 +96,7 @@
 
 - **Requirement/Prereq:** None
 - **Brief Description:** Hand as fan shape. Hover to upsize.
+- [x] Done ✅: Same as #1.
 
 ### 16. Hover Health Grid
 
