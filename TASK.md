@@ -18,13 +18,13 @@
 
 - **Requirement/Prereq:** -
 - **Brief Description:**
-  - `BaseCard` contain property `tiles` which is used in `GridAction`. Chnage it to Array of Array of Tile, so that we can afford multiple `GridAction` in one card
-  - description property in BaseCard should have a format to render hex (e.g. "{render:0}\nDraw 1\nGain 1 {keyword:Strength}) means
-    - Line 1: Render tiles[0].
+  - A card has one tile pattern (`tiles: Array[BaseActionTile]`) but can run several actions, e.g. "deal [3 tiles] and draw 2". Extra actions go in the card's `execute`.
+  - description property in BaseCard should have a format to render hex (e.g. "{render}\nDraw 1\nGain 1 {keyword:Strength}") means
+	- Line 1: Render the card's tiles.
 	- Line 2: Print "Draw 1".
 	- Line 3: Print "Gain 1 Strength", but Strength is a keyword, it should be bold and show tooltips.
-      You can think of any format.
   - If the rendered hexes are too large, reduce the size.
+- [x] Done ✅: A line that is exactly `{render}` draws the pattern with `PatternView`: hexes shrink to fit a 124×28 box, and the (0,0) hex, where the cursor goes, is outlined. Other lines are rich text, and `{keyword:X}` shows as bold gold. Keyword definitions come from the matching `BaseEffect` (`Keywords.describe`), so a new effect needs no registration. They show as panels beside the hovered or selected card after 0.5s. The text area fits about 2 lines under one pattern before the card grows past 190px.
 
 ### 3. Combat end
 
@@ -60,6 +60,8 @@
 
 - **Requirement/Prereq:** 6
 - **Brief Description:** Apply status effect & draw & gain energy & etc
+  - Conditional actions: e.g. "deal [3 tiles]. If this damaged fewer than 2 enemy tiles, gain a random shield tile". `GridAction.execute` needs to report what it hit, and the condition lives in the card's `execute`.
+  - Random tile actions: e.g. "shield a random tile on your grid". The target cell is picked at play time, so it can't be drawn with `{render}`.
 
 ## Enemies
 
@@ -89,6 +91,7 @@
 
 - **Requirement/Prereq:** None
 - **Brief Description:** (`get_description()`) should contain description format that allow rendering symbol or tile patterns in the card.
+- [x] Done ✅: Same as #2.
 
 ## UI
 

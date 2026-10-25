@@ -4,6 +4,7 @@ extends Control
 ## Lays the hand out as a fan on an arc, like Slay the Spire.
 ## Hovering a card straightens and enlarges it and pushes its neighbours aside.
 ## The selected card gets a blue border and bobs up and down.
+## Keyword panels show beside the hovered (or else selected) card after a short delay.
 
 signal card_clicked(card: BaseCard)
 
@@ -18,15 +19,29 @@ const HOVER_PUSH := 50.0
 const BOB_HEIGHT := 4.0
 const BOB_PERIOD := 1.2  # seconds per bob
 const SPEED := 14.0  # how fast cards ease toward their target
+const KEYWORD_DELAY := 0.5  # seconds before keyword panels show
+const KEYWORD_WIDTH := 180.0
+const KEYWORD_GAP := 8.0
 
 const COLOR_BORDER := Color(0.85098, 0.764706, 0.54902)
 const COLOR_SELECTED := Color("#4fa8ff")
 const COLOR_UNPLAYABLE := Color(0.55, 0.55, 0.55)
+const COLOR_KEYWORD_BG := Color(0.08, 0.08, 0.1, 0.92)
 
 var _cards: Array[BaseCard] = []
 var _holders: Dictionary[BaseCard, Node2D] = {}  # pivot at the card's bottom centre
 var _selected: BaseCard = null
 var _hovered := -1
+
+var _keyword_box := VBoxContainer.new()
+var _keyword_card: BaseCard = null  # card the panels are counting down for or showing
+var _keyword_timer := 0.0
+
+
+func _ready() -> void:
+	_keyword_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_keyword_box.hide()
+	add_child(_keyword_box)
 
 
 ## Keeps existing card nodes so they animate to their new spot instead of being rebuilt.
@@ -70,6 +85,8 @@ func _process(delta: float) -> void:
 		holder.position = holder.position.lerp(target.origin, weight)
 		holder.rotation = lerp_angle(holder.rotation, target.get_rotation(), weight)
 		holder.scale = holder.scale.lerp(target.get_scale(), weight)
+
+	_update_keywords(delta)
 
 
 ## Uses _input because an enlarged card sticks out above this control.
@@ -143,6 +160,7 @@ func _update_order() -> void:
 		move_child(_holders[_selected], -1)
 	if _hovered != -1:
 		move_child(_holders[_cards[_hovered]], -1)
+	move_child(_keyword_box, -1)
 
 
 func _set_border(card: BaseCard, selected: bool) -> void:
@@ -150,3 +168,59 @@ func _set_border(card: BaseCard, selected: bool) -> void:
 	var style: StyleBoxFlat = panel.get_theme_stylebox("panel")
 	style.border_color = COLOR_SELECTED if selected else COLOR_BORDER
 	style.set_border_width_all(5 if selected else 3)
+
+
+func _update_keywords(delta: float) -> void:
+	var card: BaseCard = _cards[_hovered] if _hovered != -1 else _selected
+	if card != _keyword_card:
+		_keyword_card = card
+		_keyword_timer = KEYWORD_DELAY
+		_keyword_box.hide()
+	elif card:
+		_keyword_timer -= delta
+		if _keyword_timer <= 0.0 and _keyword_timer > -INF:
+			_keyword_timer = -INF  # build the panels once per card
+			_show_keywords(card)
+
+	if _keyword_box.visible:
+		# Follow the card as it animates; flip to the left side near the right edge.
+		var holder := _holders[_keyword_card]
+		var half_width := CARD_SIZE.x * holder.scale.x / 2
+		var x := holder.position.x + half_width + KEYWORD_GAP
+		if x + KEYWORD_WIDTH > size.x:
+			x = holder.position.x - half_width - KEYWORD_GAP - KEYWORD_WIDTH
+		_keyword_box.position = Vector2(x, holder.position.y - CARD_SIZE.y * holder.scale.y)
+
+
+func _show_keywords(card: BaseCard) -> void:
+	for child in _keyword_box.get_children():
+		_keyword_box.remove_child(child)
+		child.queue_free()
+	for keyword in RenderCard.keywords_in(card.get_description()):
+		var text := Keywords.describe(keyword)
+		if text.is_empty():
+			continue
+		var style := StyleBoxFlat.new()
+		style.bg_color = COLOR_KEYWORD_BG
+		style.border_color = COLOR_BORDER
+		style.set_border_width_all(1)
+		style.set_corner_radius_all(6)
+		style.set_content_margin_all(8)
+		var panel := PanelContainer.new()
+		panel.add_theme_stylebox_override("panel", style)
+		panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var rows := VBoxContainer.new()
+		var title := Label.new()
+		title.text = keyword
+		title.add_theme_color_override("font_color", RenderCard.COLOR_KEYWORD)
+		var body := Label.new()
+		body.text = text
+		body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		body.custom_minimum_size.x = KEYWORD_WIDTH - 16
+		body.add_theme_font_size_override("font_size", 13)
+		rows.add_child(title)
+		rows.add_child(body)
+		panel.add_child(rows)
+		_keyword_box.add_child(panel)
+	_keyword_box.reset_size()
+	_keyword_box.visible = _keyword_box.get_child_count() > 0

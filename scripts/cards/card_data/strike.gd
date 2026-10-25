@@ -6,7 +6,7 @@ func _init() -> void:
 	card_name = "Strike"
 	cost = 1
 	type = CardType.ATTACK
-	description = "Deal 6 damage."
+	description = "{render}\nDeal damage."
 	tiles = [
 		DamageTile.new(Vector2i(0,0)),
 		DamageTile.new(Vector2i(0,1))

@@ -7,7 +7,7 @@ func _init() -> void:
 	cost = 1
 	type = CardType.DEFENSE
 	target = BaseAction.TargetType.PLAYER
-	description = "Shield a tile on your grid."
+	description = "{render}\nShield a tile on your grid."
 	tiles = [
 		ShieldTile.new(Vector2i(0,0)),
 	]

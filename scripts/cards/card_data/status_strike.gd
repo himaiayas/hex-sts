@@ -6,7 +6,7 @@ func _init() -> void:
 	card_name = "StatusStrike"
 	cost = 3
 	type = CardType.ATTACK
-	description = "fdksmfdf."
+	description = "{render}\nDeal damage and apply {keyword:Poison}."
 	tiles = [
 		DamageTile.new(Vector2i(0,0)),
 		ApplyEffectTile.new(Vector2i(1,2), PoisonTileEffect.new())

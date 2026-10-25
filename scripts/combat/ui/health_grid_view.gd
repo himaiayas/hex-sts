@@ -44,7 +44,7 @@ func refresh() -> void:
 	var min_p := Vector2(INF, INF)
 	var max_p := Vector2(-INF, -INF)
 	for cell in unit.health.keys():
-		var p := _axial_to_pixel(cell)
+		var p := axial_to_pixel(cell)
 		min_p = min_p.min(p)
 		max_p = max_p.max(p)
 	if min_p.x == INF:
@@ -90,7 +90,7 @@ func _draw() -> void:
 			color = COLOR_DAMAGED
 		# if action_tile_dict.has(cell):
 		# 	color = color.lerp(COLOR_PREVIEW, 0.65)
-		var corners := _corners(_origin + _axial_to_pixel(coord))
+		var corners := hex_corners(_origin + axial_to_pixel(coord), HEX_SIZE - 1.5)
 		draw_colored_polygon(corners, color)
 		corners.append(corners[0])
 		draw_polyline(corners, COLOR_EDGE, 2.0)
@@ -101,12 +101,12 @@ func _draw() -> void:
 		for t: BaseActionTile in intent.tiles:
 			var cell: Vector2i = intent.cell + t.coords
 			if unit.health.has(cell):
-				draw_colored_polygon(_corners(_origin + _axial_to_pixel(cell)), Color(t.get_color(), pulse))
+				draw_colored_polygon(hex_corners(_origin + axial_to_pixel(cell), HEX_SIZE - 1.5), Color(t.get_color(), pulse))
 
 	for t in action_tiles:
 		var cell := _hover + t.coords
 		if unit.health.has(cell):
-			var corners := _corners(_origin + _axial_to_pixel(cell))
+			var corners := hex_corners(_origin + axial_to_pixel(cell), HEX_SIZE - 1.5)
 			draw_colored_polygon(corners, Color(t.get_color(),0.65))
 
 	var font := ThemeDB.fallback_font
@@ -129,8 +129,8 @@ func _gui_input(event: InputEvent) -> void:
 			cell_clicked.emit(unit, cell)
 
 
-func _axial_to_pixel(c: Vector2i) -> Vector2:
-	return Vector2(HEX_SIZE * SQRT3 * (c.x + c.y / 2.0), HEX_SIZE * 1.5 * c.y)
+static func axial_to_pixel(c: Vector2i, hex_size := HEX_SIZE) -> Vector2:
+	return Vector2(hex_size * SQRT3 * (c.x + c.y / 2.0), hex_size * 1.5 * c.y)
 
 
 func _pixel_to_axial(p: Vector2) -> Vector2i:
@@ -150,9 +150,9 @@ func _pixel_to_axial(p: Vector2) -> Vector2i:
 	return Vector2i(int(q), int(r))
 
 
-func _corners(center: Vector2) -> PackedVector2Array:
+static func hex_corners(center: Vector2, radius: float) -> PackedVector2Array:
 	var points := PackedVector2Array()
 	for k in 6:
 		var angle := deg_to_rad(60.0 * k - 30.0)
-		points.append(center + Vector2(cos(angle), sin(angle)) * (HEX_SIZE - 1.5))
+		points.append(center + Vector2(cos(angle), sin(angle)) * radius)
 	return points
