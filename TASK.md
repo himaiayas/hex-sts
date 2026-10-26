@@ -20,9 +20,9 @@
 - **Brief Description:**
   - A card has one tile pattern (`tiles: Array[BaseActionTile]`) but can run several actions, e.g. "deal [3 tiles] and draw 2". Extra actions go in the card's `execute`.
   - description property in BaseCard should have a format to render hex (e.g. "{render}\nDraw 1\nGain 1 {keyword:Strength}") means
-	- Line 1: Render the card's tiles.
-	- Line 2: Print "Draw 1".
-	- Line 3: Print "Gain 1 Strength", but Strength is a keyword, it should be bold and show tooltips.
+  - Line 1: Render the card's tiles.
+  - Line 2: Print "Draw 1".
+  - Line 3: Print "Gain 1 Strength", but Strength is a keyword, it should be bold and show tooltips.
   - If the rendered hexes are too large, reduce the size.
 - [x] Done ✅: A line that is exactly `{render}` draws the pattern with `PatternView`: hexes shrink to fit a 124×28 box, and the (0,0) hex, where the cursor goes, is outlined. Other lines are rich text, and `{keyword:X}` shows as bold gold. Keyword definitions come from the matching `BaseEffect` (`Keywords.describe`), so a new effect needs no registration. They show as panels beside the hovered or selected card after 0.5s. The text area fits about 2 lines under one pattern before the card grows past 190px.
 
@@ -31,10 +31,12 @@
 - **Requirement/Prereq:** -
 - **Brief Description:** Implement `CombatUnit.is_dead()`, call `RunState.end_combat()`. Connect with post-combat reward.
 
-### 4. Card target type
+### 4. Rotating Pattern
 
-- **Requirement/Prereq:** -
-- **Brief Description:** `BaseAction.TargetType` (PLAYER/ENEMY) isn't used. Some cards can target player themself (e.g.Shield)
+- **Brief Description**
+  - Only when selecting a card, the grid pattern is rotateable. Add Input Listener when player click [E] or scroll mouse down for clockwise rotate. click [q] or scroll mouse up for anti-clockwise rotate. Each click rotates by 60 degree.
+  - Axial coords shall be changed from (q,r) to (-r, q+r) for clockwise, and to (q+r, -q) for anticlockwise. For Dictionary, you have to create new Dict.
+  - Do not change the axial coords of the tiles in card itself. Only change temporary dict.
 
 ### 5. Tile pattern rotation
 
