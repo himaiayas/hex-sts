@@ -76,7 +76,7 @@ func _on_cell_clicked(unit: CombatUnit, cell: Vector2i) -> void:
 		return
 	_units.append(unit)
 	_cells.append(cell)
-	if _cells.size() < selected.grid_actions.size():
+	if _cells.size() < selected.grid_actions.size(): #store intents in _cells, when all grid has been chosen, this condition reeturn false
 		_refresh()
 		return
 	combat.play_card(selected, _units, _cells)
