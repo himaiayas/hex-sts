@@ -1,0 +1,218 @@
+[gd_scene format=3 uid="uid://0fs64vber0hi"]
+
+[ext_resource type="Script" uid="uid://ddymykvgy3fil" path="res://scripts/map/map_scene.gd" id="1_map"]
+[ext_resource type="Script" uid="uid://d2mguidiwck0p" path="res://scripts/map/map_view.gd" id="2_view"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_topbar"]
+bg_color = Color(0.0627451, 0.0705882, 0.0980392, 1)
+border_width_bottom = 2
+border_color = Color(0.117647, 0.133333, 0.172549, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+content_margin_left = 48.0
+content_margin_top = 40.0
+content_margin_right = 48.0
+content_margin_bottom = 40.0
+bg_color = Color(0.0784314, 0.0901961, 0.121569, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.231373, 0.254902, 0.321569, 1)
+
+[node name="Map" type="Control" unique_id=86638114]
+layout_mode = 3
+anchors_preset = 0
+offset_right = 1920.0
+offset_bottom = 1080.0
+script = ExtResource("1_map")
+
+[node name="Background" type="ColorRect" parent="." unique_id=1871058837]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0.027451, 0.0313726, 0.0431373, 1)
+
+[node name="MapView" type="Control" parent="." unique_id=478538721]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = 72.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("2_view")
+
+[node name="TopBar" type="Panel" parent="." unique_id=1009282773]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 72.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_topbar")
+
+[node name="StepsLabel" type="Label" parent="." unique_id=1106001309]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 40.0
+offset_top = -88.0
+offset_right = 440.0
+offset_bottom = -40.0
+grow_vertical = 0
+theme_override_font_sizes/font_size = 32
+text = "Steps  50 / 50"
+vertical_alignment = 1
+
+[node name="HintLabel" type="Label" parent="." unique_id=908778644]
+unique_name_in_owner = true
+modulate = Color(1, 0.419608, 0.419608, 1)
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -640.0
+offset_top = -88.0
+offset_right = -40.0
+offset_bottom = -40.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_font_sizes/font_size = 26
+horizontal_alignment = 2
+vertical_alignment = 1
+
+[node name="DraftPanel" type="ColorRect" parent="." unique_id=1152464192]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.75)
+
+[node name="Center" type="CenterContainer" parent="DraftPanel" unique_id=958329296]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Box" type="VBoxContainer" parent="DraftPanel/Center" unique_id=278388865]
+layout_mode = 2
+theme_override_constants/separation = 32
+
+[node name="DraftTitle" type="Label" parent="DraftPanel/Center/Box" unique_id=897231749]
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+text = "Choose a room"
+horizontal_alignment = 1
+
+[node name="DraftOptions" type="HBoxContainer" parent="DraftPanel/Center/Box" unique_id=1248539398]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 40
+alignment = 1
+
+[node name="RoomPanel" type="ColorRect" parent="." unique_id=874625720]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.75)
+
+[node name="Center" type="CenterContainer" parent="RoomPanel" unique_id=1397829776]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="RoomPanel/Center" unique_id=1479895652]
+custom_minimum_size = Vector2(560, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Box" type="VBoxContainer" parent="RoomPanel/Center/Panel" unique_id=2035254956]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="RoomTitle" type="Label" parent="RoomPanel/Center/Panel/Box" unique_id=1960641041]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+text = "Combat Room"
+horizontal_alignment = 1
+
+[node name="RoomBody" type="Label" parent="RoomPanel/Center/Panel/Box" unique_id=1693175971]
+modulate = Color(0.552941, 0.576471, 0.647059, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 22
+text = "The room's scene will go here."
+horizontal_alignment = 1
+
+[node name="LeaveButton" type="Button" parent="RoomPanel/Center/Panel/Box" unique_id=111813568]
+custom_minimum_size = Vector2(200, 56)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 24
+text = "Leave"
+
+[node name="GameOverPanel" type="ColorRect" parent="." unique_id=405203395]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.8)
+
+[node name="Center" type="CenterContainer" parent="GameOverPanel" unique_id=234353674]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Box" type="VBoxContainer" parent="GameOverPanel/Center" unique_id=769081432]
+layout_mode = 2
+theme_override_constants/separation = 32
+
+[node name="GameOverTitle" type="Label" parent="GameOverPanel/Center/Box" unique_id=311434852]
+layout_mode = 2
+theme_override_font_sizes/font_size = 56
+text = "Out of steps"
+horizontal_alignment = 1
+
+[node name="RestartButton" type="Button" parent="GameOverPanel/Center/Box" unique_id=1327074418]
+custom_minimum_size = Vector2(220, 60)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 26
+text = "Restart"
+
+[connection signal="cell_clicked" from="MapView" to="." method="_on_map_view_cell_clicked"]
+[connection signal="pressed" from="RoomPanel/Center/Panel/Box/LeaveButton" to="." method="_on_leave_pressed"]
+[connection signal="pressed" from="GameOverPanel/Center/Box/RestartButton" to="." method="_on_restart_pressed"]
