@@ -6,33 +6,37 @@
 
 - **Requirement/Prereq:** None
 - **Brief Description:** `CombatUnit` indexes `health[coords.x][coords.y]`, which only works with non-negative indices. Decide the convention: either matrix index = axial coords (as now), or store an offset (e.g. `+radius`) so negative axial coords work. `HealthGridView` and `has_health_tile()` must follow the same rule.
+- [x] Done ✅: Health is now a `Dictionary[Vector2i, HealthTile]` keyed by axial coords, so negative coords work without an offset. `has_health_tile()` is gone; everything checks `unit.health.has(cell)`.
 
 ### 1. Card Fan
 
 - **Requirement/Prereq:** -
 - **Brief Description:** Cards in hand should be fan as an arc of a circle. When hover a card, it should enlarges and shows the whole detail of card.
+- [x] Done ✅: `HandView` (`scripts/combat/ui/hand_view.gd`) lays cards on an arc, and spacing shrinks for big hands. Hover straightens, enlarges and lifts the card and pushes its neighbours aside. The selected card gets a blue border and bobs gently. Cards ease into place instead of snapping. The targeting arrow and draw/discard animations are not done yet.
 
 ### 2. Card Rendering
 
 - **Requirement/Prereq:** -
 - **Brief Description:**
-  - `BaseCard` contain property `tiles` which is used in `GridAction`. Chnage it to Array of Array of Tile, so that we can afford multiple `GridAction` in one card
-  - description property in BaseCard should have a format to render hex (e.g. "{render:0}\nDraw 1\nGain 1 {keyword:Strength}) means
-    - Line 1: Render tiles[0].
-    - Line 2: Print "Draw 1".
-    - Line 3: Print "Gain 1 Strength", but Strength is a keyword, it should be bold and show tooltips.
-      You can think of any format.
+  - A card holds `grid_actions: Array[GridAction]`, one distinct tile pattern each (e.g. poison 1 tile, then attack 3 straight tiles). Other actions (e.g. draw 2) go in the card's `execute` after `super()`.
+  - description property in BaseCard should have a format to render hex (e.g. "{render:0}\nDraw 1\nGain 1 {keyword:Strength}") means
+  - Line 1: Render grid_actions[0].
+  - Line 2: Print "Draw 1".
+  - Line 3: Print "Gain 1 Strength", but Strength is a keyword, it should be bold and show tooltips.
   - If the rendered hexes are too large, reduce the size.
+- [x] Done ✅: A line that is exactly `{render:N}` draws `grid_actions[N]` with `PatternView`, including its `anchor`: hexes shrink to fit a 124×28 box, and the (0,0) hex, where the cursor goes, is outlined. Each grid action gets its own click, in order, and its own target side (`GridAction.target`). `BaseCard.execute` then runs them all, so simple cards only set data. Other lines are rich text, and `{keyword:X}` shows as bold gold. Keyword definitions come from the matching `BaseEffect` (`Keywords.describe`), so a new effect needs no registration. They show as panels beside the hovered or selected card after 0.5s. The text area fits about 2 lines under one pattern before the card grows past 190px, so a card with two patterns is too tall for now.
 
 ### 3. Combat end
 
 - **Requirement/Prereq:** -
 - **Brief Description:** Implement `CombatUnit.is_dead()`, call `RunState.end_combat()`. Connect with post-combat reward.
 
-### 4. Card target type
+### 4. Rotating Pattern
 
-- **Requirement/Prereq:** -
-- **Brief Description:** `BaseAction.TargetType` (PLAYER/ENEMY) isn't used. Some cards can target player themself (e.g.Shield)
+- **Brief Description**
+  - Only when selecting a card, the grid pattern is rotateable. Add Input Listener when player click [E] or scroll mouse down for clockwise rotate. click [q] or scroll mouse up for anti-clockwise rotate. Each click rotates by 60 degree.
+  - Axial coords shall be changed from (q,r) to (-r, q+r) for clockwise, and to (q+r, -q) for anticlockwise. For Dictionary, you have to create new Dict.
+  - Do not change the axial coords of the tiles in card itself. Only change temporary dict.
 
 ### 5. Tile pattern rotation
 
@@ -58,6 +62,8 @@
 
 - **Requirement/Prereq:** 6
 - **Brief Description:** Apply status effect & draw & gain energy & etc
+  - Conditional actions: e.g. "deal [3 tiles]. If this damaged fewer than 2 enemy tiles, gain a random shield tile". `GridAction.execute` needs to report what it hit, and the condition lives in the card's `execute`.
+  - Random tile actions: e.g. "shield a random tile on your grid". The target cell is picked at play time, so it can't be drawn with `{render}`.
 
 ## Enemies
 
@@ -87,6 +93,7 @@
 
 - **Requirement/Prereq:** None
 - **Brief Description:** (`get_description()`) should contain description format that allow rendering symbol or tile patterns in the card.
+- [x] Done ✅: Same as #2.
 
 ## UI
 
@@ -94,6 +101,7 @@
 
 - **Requirement/Prereq:** None
 - **Brief Description:** Hand as fan shape. Hover to upsize.
+- [x] Done ✅: Same as #1.
 
 ### 16. Hover Health Grid
 
@@ -139,4 +147,4 @@
 - **Stale comments:** `HealthTile.hp` still says `-1 = empty`; `make_hex_health` says "hexagon of radius r in a (2r+1)x(2r+1) matrix" but takes a coord list and returns a Dictionary.
 - **Main scene is a dead end:** `mainmenu.tscn` is the main scene, but its button has no script. Combat has to be run directly (F6 on `combat.tscn`).
 - **Content placeholders:** `StatusStrike` costs 3 (all your energy), card descriptions are `"fdksmfdf."`, and `scripts/main.gd` is the empty template.
-- **TASK.md drift:** #1 is effectively done (health is now `Dictionary[Vector2i, HealthTile]`, so negative coords work); #2 is mostly done (enum exists); #6 mentions `StatusTile`/`BaseTileStatus`, which are now `ApplyEffectTile`/`BaseTileEffect`.
+- **TASK.md drift:** #6 mentions `StatusTile`/`BaseTileStatus`, which are now `ApplyEffectTile`/`BaseTileEffect`.

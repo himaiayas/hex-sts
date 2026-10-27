@@ -29,6 +29,8 @@ func start_new_run() -> void:
 		deck.append(Strike.new())
 		deck.append(StatusStrike.new())
 		deck.append(ShieldPlayer.new())
+	for i in 2:
+		deck.append(WomboCombo.new())
 
 
 func start_combat() -> CombatState:

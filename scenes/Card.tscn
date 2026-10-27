@@ -103,14 +103,10 @@ theme_override_font_sizes/font_size = 11
 text = "Attack"
 horizontal_alignment = 1
 
-[node name="DescriptionLabel" type="Label" parent="Panel/VBox" unique_id=1879360191]
+[node name="Description" type="VBoxContainer" parent="Panel/VBox" unique_id=1879360191]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(1, 0)
 layout_mode = 2
 size_flags_vertical = 3
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 13
-text = "Deal 6 damage."
-horizontal_alignment = 1
-vertical_alignment = 1
-autowrap_mode = 3
+mouse_filter = 2
+theme_override_constants/separation = 2
+alignment = 1

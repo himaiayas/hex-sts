@@ -2,6 +2,7 @@
 
 [ext_resource type="Script" uid="uid://dqjpwrdt3pnve" path="res://scripts/combat/combat_scene.gd" id="1_combat"]
 [ext_resource type="Script" uid="uid://c4g55kseks0cn" path="res://scripts/combat/ui/health_grid_view.gd" id="2_grid"]
+[ext_resource type="Script" uid="uid://e17p874bkot" path="res://scripts/combat/ui/hand_view.gd" id="3_hand"]
 
 [node name="Combat" type="Control"]
 layout_mode = 3
@@ -77,13 +78,6 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 40
 
-[node name="Hand" type="HBoxContainer" parent="Margin/Layout"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 190)
-layout_mode = 2
-mouse_filter = 2
-alignment = 1
-
 [node name="BottomBar" type="HBoxContainer" parent="Margin/Layout"]
 layout_mode = 2
 theme_override_constants/separation = 8
@@ -92,29 +86,48 @@ theme_override_constants/separation = 8
 unique_name_in_owner = true
 custom_minimum_size = Vector2(130, 36)
 layout_mode = 2
+size_flags_vertical = 8
 text = "Deck (0)"
 
 [node name="DrawPileButton" type="Button" parent="Margin/Layout/BottomBar"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(130, 36)
 layout_mode = 2
+size_flags_vertical = 8
 text = "Draw pile (0)"
 
-[node name="Spacer" type="Control" parent="Margin/Layout/BottomBar"]
+[node name="HandArea" type="Control" parent="Margin/Layout/BottomBar"]
+custom_minimum_size = Vector2(0, 80)
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
+
+[node name="Hand" type="Control" parent="Margin/Layout/BottomBar/HandArea"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -79.0
+offset_bottom = 111.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 1
+script = ExtResource("3_hand")
 
 [node name="DiscardButton" type="Button" parent="Margin/Layout/BottomBar"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(130, 36)
 layout_mode = 2
+size_flags_vertical = 8
 text = "Discard (0)"
 
 [node name="EndTurnButton" type="Button" parent="Margin/Layout/BottomBar"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(130, 36)
 layout_mode = 2
+size_flags_vertical = 8
 text = "End Turn"
 
 [node name="PileViewer" type="ColorRect" parent="."]

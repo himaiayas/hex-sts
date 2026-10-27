@@ -13,6 +13,9 @@ const NO_CELL := Vector2i(999999, 999999)  # not (0,0): that's a real cell
 const INTENT_ALPHA_MIN := 0.15
 const INTENT_ALPHA_MAX := 0.45
 const INTENT_PERIOD := 1.4  # seconds per pulse
+const PLACED_ALPHA_MIN := 0.2
+const PLACED_ALPHA_MAX := 0.85
+const PLACED_PERIOD := 0.4  # faster than intents so the two read differently
 
 const COLOR_ALIVE := Color("#ffffff")
 const COLOR_DAMAGED := Color("#454545")
@@ -23,8 +26,9 @@ const COLOR_SHIELDED := Color("#a0e5f6")
 
 var unit: CombatUnit
 var clickable := false
-var action_tiles: Array[BaseActionTile] = [] # action tiles of the currently selected card
+var grid_actions: Array[GridAction] = [] # grid actions of the currently selected card
 var intents: Array = [] # enemy attacks aimed at this grid: [{cell: Vector2i, tiles: Array[BaseActionTile]}]
+var placed: Array = [] # selected card's grid actions already clicked on this grid, same shape as intents
 
 var _hover := NO_CELL
 var _origin := Vector2.ZERO
@@ -44,7 +48,7 @@ func refresh() -> void:
 	var min_p := Vector2(INF, INF)
 	var max_p := Vector2(-INF, -INF)
 	for cell in unit.health.keys():
-		var p := _axial_to_pixel(cell)
+		var p := axial_to_pixel(cell)
 		min_p = min_p.min(p)
 		max_p = max_p.max(p)
 	if min_p.x == INF:
@@ -57,8 +61,8 @@ func refresh() -> void:
 
 
 func _process(_delta: float) -> void:
-	if not intents.is_empty():
-		queue_redraw()  # keep the intent pulse animating
+	if not intents.is_empty() or not placed.is_empty():
+		queue_redraw()  # keep the intent pulse and placed flicker animating
 
 
 func _draw() -> void:
@@ -90,7 +94,7 @@ func _draw() -> void:
 			color = COLOR_DAMAGED
 		# if action_tile_dict.has(cell):
 		# 	color = color.lerp(COLOR_PREVIEW, 0.65)
-		var corners := _corners(_origin + _axial_to_pixel(coord))
+		var corners := hex_corners(_origin + axial_to_pixel(coord), HEX_SIZE - 1.5)
 		draw_colored_polygon(corners, color)
 		corners.append(corners[0])
 		draw_polyline(corners, COLOR_EDGE, 2.0)
@@ -101,13 +105,22 @@ func _draw() -> void:
 		for t: BaseActionTile in intent.tiles:
 			var cell: Vector2i = intent.cell + t.coords
 			if unit.health.has(cell):
-				draw_colored_polygon(_corners(_origin + _axial_to_pixel(cell)), Color(t.get_color(), pulse))
+				draw_colored_polygon(hex_corners(_origin + axial_to_pixel(cell), HEX_SIZE - 1.5), Color(t.get_color(), pulse))
 
-	for t in action_tiles:
-		var cell := _hover + t.coords
-		if unit.health.has(cell):
-			var corners := _corners(_origin + _axial_to_pixel(cell))
-			draw_colored_polygon(corners, Color(t.get_color(),0.65))
+	var flicker_wave := 0.5 + 0.5 * sin(TAU * Time.get_ticks_msec() / 1000.0 / PLACED_PERIOD)
+	var flicker := lerpf(PLACED_ALPHA_MIN, PLACED_ALPHA_MAX, flicker_wave)
+	for p in placed:
+		for t: BaseActionTile in p.tiles:
+			var cell: Vector2i = p.cell + t.coords
+			if unit.health.has(cell):
+				draw_colored_polygon(hex_corners(_origin + axial_to_pixel(cell), HEX_SIZE - 1.5), Color(t.get_color(), flicker))
+
+	for action in grid_actions:
+		for t in action.tiles:
+			var cell := _hover + action.anchor + t.coords
+			if unit.health.has(cell):
+				var corners := hex_corners(_origin + axial_to_pixel(cell), HEX_SIZE - 1.5)
+				draw_colored_polygon(corners, Color(t.get_color(),0.65))
 
 	var font := ThemeDB.fallback_font
 	var title := "%s  %d/%d" % [unit.display_name, alive, coords.size()]
@@ -129,8 +142,8 @@ func _gui_input(event: InputEvent) -> void:
 			cell_clicked.emit(unit, cell)
 
 
-func _axial_to_pixel(c: Vector2i) -> Vector2:
-	return Vector2(HEX_SIZE * SQRT3 * (c.x + c.y / 2.0), HEX_SIZE * 1.5 * c.y)
+static func axial_to_pixel(c: Vector2i, hex_size := HEX_SIZE) -> Vector2:
+	return Vector2(hex_size * SQRT3 * (c.x + c.y / 2.0), hex_size * 1.5 * c.y)
 
 
 func _pixel_to_axial(p: Vector2) -> Vector2i:
@@ -150,9 +163,9 @@ func _pixel_to_axial(p: Vector2) -> Vector2i:
 	return Vector2i(int(q), int(r))
 
 
-func _corners(center: Vector2) -> PackedVector2Array:
+static func hex_corners(center: Vector2, radius: float) -> PackedVector2Array:
 	var points := PackedVector2Array()
 	for k in 6:
 		var angle := deg_to_rad(60.0 * k - 30.0)
-		points.append(center + Vector2(cos(angle), sin(angle)) * (HEX_SIZE - 1.5))
+		points.append(center + Vector2(cos(angle), sin(angle)) * radius)
 	return points

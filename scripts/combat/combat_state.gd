@@ -67,13 +67,13 @@ func can_play(card: BaseCard) -> bool:
 	return card in hand and card.cost <= energy
 
 
-## Pays the cost, runs the card on target's health grid at cell, then discards it.
-func play_card(card: BaseCard, target: CombatUnit, cell: Vector2i) -> bool:
+## Pays the cost, runs each grid action on units[i] at cells[i], then discards the card.
+func play_card(card: BaseCard, units: Array[CombatUnit], cells: Array[Vector2i]) -> bool:
 	if not can_play(card):
 		return false
 	energy -= card.cost
 	hand.erase(card)
-	card.execute(self, target, cell)
+	card.execute(self, units, cells)
 	discard_pile.append(card)
 	return true
 
