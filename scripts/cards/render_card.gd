@@ -12,6 +12,8 @@ const FONT_SIZE := 13
 
 ## {keyword:Poison} in a description.
 static var _keyword_regex := RegEx.create_from_string("\\{keyword:([^}]+)\\}")
+## A line that is just {render:N}.
+static var _render_regex := RegEx.create_from_string("^\\{render:(\\d+)\\}$")
 
 var card_data: BaseCard = Strike.new()
 
@@ -48,12 +50,17 @@ static func keywords_in(description: String) -> PackedStringArray:
 	return found
 
 
-## One row per line: a line that is just {render} draws the card's tiles, anything else is text.
+## One row per line: {render:N} draws grid_actions[N], anything else is text.
 static func _fill_description(box: VBoxContainer, data: BaseCard) -> void:
 	var keyword_bbcode := "[b][color=#%s]$1[/color][/b]" % COLOR_KEYWORD.to_html(false)
 	for line in data.get_description().split("\n"):
-		if line.strip_edges() == "{render}":
-			box.add_child(PatternView.new(data.tiles))
+		var render := _render_regex.search(line.strip_edges())
+		if render:
+			var index := render.get_string(1).to_int()
+			if index < data.grid_actions.size():
+				box.add_child(PatternView.new(data.grid_actions[index]))
+			else:
+				push_warning("%s has no grid action %d" % [data.card_name, index])
 			continue
 		var label := RichTextLabel.new()
 		label.bbcode_enabled = true

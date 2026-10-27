@@ -1,13 +1,15 @@
 extends Control
 
 ## Combat screen: hand, piles, energy, end turn, and health grids.
-## Click a card to select it, then click a cell on an enemy's health grid to play it.
+## Click a card to select it, then click a cell for each of its grid actions to play it.
 
 const RenderCard := preload("res://scripts/cards/render_card.gd")
 const CARD_SIZE := Vector2(140, 190)
 
 var combat: CombatState
 var selected: BaseCard = null
+var _units: Array[CombatUnit] = []  # grid and cell clicked for each grid action so far
+var _cells: Array[Vector2i] = []
 
 var _enemy_views: Array[HealthGridView] = []
 var _intent_labels: Array[Label] = []
@@ -56,9 +58,9 @@ func _ready() -> void:
 
 func _on_card_clicked(card: BaseCard) -> void:
 	if selected == card:
-		selected = null
+		_select(null)
 	elif combat.can_play(card):
-		selected = card
+		_select(card)
 	else:
 		_hint_label.text = "Not enough energy."
 		return
@@ -69,16 +71,21 @@ func _on_cell_clicked(unit: CombatUnit, cell: Vector2i) -> void:
 	if selected == null:
 		_hint_label.text = "Select a card first."
 		return
-	if (unit == combat.player) != _targets_player(selected):
-		_hint_label.text = "This card targets %s." % ("your grid" if _targets_player(selected) else "an enemy")
+	if (unit == combat.player) != _targets_player():
+		_hint_label.text = "This card targets %s." % ("your grid" if _targets_player() else "an enemy")
 		return
-	combat.play_card(selected, unit, cell)
-	selected = null
+	_units.append(unit)
+	_cells.append(cell)
+	if _cells.size() < selected.grid_actions.size():
+		_refresh()
+		return
+	combat.play_card(selected, _units, _cells)
+	_select(null)
 	_refresh()
 
 
 func _on_end_turn_pressed() -> void:
-	selected = null
+	_select(null)
 	combat.end_turn()
 	_refresh()
 
@@ -105,13 +112,17 @@ func _on_pile_viewer_input(event: InputEvent) -> void:
 		_pile_viewer.hide()
 
 
-func _unhandled_input(event: InputEvent) -> void:
+## _input, not _unhandled_input: the grids and this root stop mouse events, so right-clicks never arrive unhandled.
+func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
 		if _pile_viewer.visible:
 			_pile_viewer.hide()
 		elif selected:
-			selected = null
+			_select(null)
 			_refresh()
+		else:
+			return
+		get_viewport().set_input_as_handled()
 
 
 # --- Refresh -----------------------------------------------------------------
@@ -122,21 +133,33 @@ func _refresh() -> void:
 	_draw_button.text = "Draw pile (%d)" % combat.draw_pile.size()
 	_discard_button.text = "Discard (%d)" % combat.discard_pile.size()
 	if selected:
-		_hint_label.text = "Click a cell on %s. Right-click to cancel." % ("your grid" if _targets_player(selected) else "the enemy")
+		var step := ""
+		if selected.grid_actions.size() > 1:
+			step = " (pattern %d/%d)" % [_cells.size() + 1, selected.grid_actions.size()]
+		_hint_label.text = "Click a cell on %s%s. Right-click to cancel." % ["your grid" if _targets_player() else "the enemy", step]
 	else:
 		_hint_label.text = "Click a card to select it."
 
 	_hand.set_hand(combat.hand, selected, combat.can_play)
 
-	var pattern: Array[BaseActionTile] = []
-	if selected:
-		pattern = selected.tiles
-	var none: Array[BaseActionTile] = []
-	var on_player := selected != null and _targets_player(selected)
+	# Only the grid action the next click places is previewed.
+	var pattern: Array[GridAction] = []
+	if selected and _cells.size() < selected.grid_actions.size():
+		pattern = [selected.grid_actions[_cells.size()]]
+	var none: Array[GridAction] = []
+	var on_player := selected != null and _targets_player()
 	for view in _enemy_views:
-		view.action_tiles = none if on_player else pattern
+		view.grid_actions = none if on_player else pattern
 		view.refresh()
-	_player_view.action_tiles = pattern if on_player else none
+	_player_view.grid_actions = pattern if on_player else none
+
+	# Grid actions already clicked flicker where they will land.
+	for view in _enemy_views:
+		view.placed = []
+	_player_view.placed = []
+	for i in _cells.size():
+		var placed_action := selected.grid_actions[i]
+		_view_for(_units[i]).placed.append({cell = _cells[i] + placed_action.anchor, tiles = placed_action.tiles})
 
 	# Intents blink on the grid each part targets: attacks on the player, shields on the enemy itself.
 	var player_intents: Array = []
@@ -158,8 +181,24 @@ func _refresh() -> void:
 	_player_view.refresh()
 
 
-func _targets_player(card: BaseCard) -> bool:
-	return card.target == BaseAction.TargetType.PLAYER
+func _view_for(unit: CombatUnit) -> HealthGridView:
+	if unit == combat.player:
+		return _player_view
+	return _enemy_views[combat.enemies.find(unit)]
+
+
+func _select(card: BaseCard) -> void:
+	selected = card
+	_units.clear()
+	_cells.clear()
+
+
+## Whether the next click goes on the player's grid: the current grid action's target, or the card's.
+func _targets_player() -> bool:
+	var target := selected.target
+	if _cells.size() < selected.grid_actions.size():
+		target = selected.grid_actions[_cells.size()].target
+	return target == BaseAction.TargetType.PLAYER
 
 
 ## A card wrapped in a Control so containers can lay it out (Card.tscn's root is a Node2D).

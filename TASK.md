@@ -18,13 +18,13 @@
 
 - **Requirement/Prereq:** -
 - **Brief Description:**
-  - A card has one tile pattern (`tiles: Array[BaseActionTile]`) but can run several actions, e.g. "deal [3 tiles] and draw 2". Extra actions go in the card's `execute`.
-  - description property in BaseCard should have a format to render hex (e.g. "{render}\nDraw 1\nGain 1 {keyword:Strength}") means
-  - Line 1: Render the card's tiles.
+  - A card holds `grid_actions: Array[GridAction]`, one distinct tile pattern each (e.g. poison 1 tile, then attack 3 straight tiles). Other actions (e.g. draw 2) go in the card's `execute` after `super()`.
+  - description property in BaseCard should have a format to render hex (e.g. "{render:0}\nDraw 1\nGain 1 {keyword:Strength}") means
+  - Line 1: Render grid_actions[0].
   - Line 2: Print "Draw 1".
   - Line 3: Print "Gain 1 Strength", but Strength is a keyword, it should be bold and show tooltips.
   - If the rendered hexes are too large, reduce the size.
-- [x] Done ✅: A line that is exactly `{render}` draws the pattern with `PatternView`: hexes shrink to fit a 124×28 box, and the (0,0) hex, where the cursor goes, is outlined. Other lines are rich text, and `{keyword:X}` shows as bold gold. Keyword definitions come from the matching `BaseEffect` (`Keywords.describe`), so a new effect needs no registration. They show as panels beside the hovered or selected card after 0.5s. The text area fits about 2 lines under one pattern before the card grows past 190px.
+- [x] Done ✅: A line that is exactly `{render:N}` draws `grid_actions[N]` with `PatternView`, including its `anchor`: hexes shrink to fit a 124×28 box, and the (0,0) hex, where the cursor goes, is outlined. Each grid action gets its own click, in order, and its own target side (`GridAction.target`). `BaseCard.execute` then runs them all, so simple cards only set data. Other lines are rich text, and `{keyword:X}` shows as bold gold. Keyword definitions come from the matching `BaseEffect` (`Keywords.describe`), so a new effect needs no registration. They show as panels beside the hovered or selected card after 0.5s. The text area fits about 2 lines under one pattern before the card grows past 190px, so a card with two patterns is too tall for now.
 
 ### 3. Combat end
 
