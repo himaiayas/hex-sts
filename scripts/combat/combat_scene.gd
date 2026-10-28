@@ -134,6 +134,11 @@ func _on_pile_viewer_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed:
 		_pile_viewer.hide()
 
+func _on_win_combat_pressed()->void:
+	_end_combat()
+	_rewards = CombatRewards.roll(_room_type())
+	_refresh_rewards()
+	_reward_panel.show()
 
 ## _input, not _unhandled_input: the grids and this root stop mouse events, so right-clicks never arrive unhandled.
 func _input(event: InputEvent) -> void:
