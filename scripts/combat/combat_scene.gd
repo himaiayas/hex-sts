@@ -10,6 +10,8 @@ var combat: CombatState
 var selected: BaseCard = null
 var _units: Array[CombatUnit] = []  # grid and cell clicked for each grid action so far
 var _cells: Array[Vector2i] = []
+var _rotations: Array[int] = []  # rotation chosen for each of those clicks
+var _rotation := 0  # 60° clockwise steps for the next grid action, kept between clicks
 
 var _enemy_views: Array[HealthGridView] = []
 var _intent_labels: Array[Label] = []
@@ -76,10 +78,11 @@ func _on_cell_clicked(unit: CombatUnit, cell: Vector2i) -> void:
 		return
 	_units.append(unit)
 	_cells.append(cell)
+	_rotations.append(_rotation)
 	if _cells.size() < selected.grid_actions.size(): #store intents in _cells, when all grid has been chosen, this condition reeturn false
 		_refresh()
 		return
-	combat.play_card(selected, _units, _cells)
+	combat.play_card(selected, _units, _cells, _rotations)
 	_select(null)
 	_refresh()
 
@@ -123,6 +126,24 @@ func _input(event: InputEvent) -> void:
 		else:
 			return
 		get_viewport().set_input_as_handled()
+	elif selected and not _pile_viewer.visible and _rotation_step(event) != 0:
+		_rotation = posmod(_rotation + _rotation_step(event), 6)
+		_refresh()
+		get_viewport().set_input_as_handled()
+
+
+## +1 clockwise (E or wheel down), -1 anticlockwise (Q or wheel up), 0 for anything else.
+## Physical keys so Q/E stay put on other keyboard layouts.
+func _rotation_step(event: InputEvent) -> int:
+	if event is InputEventKey and event.pressed and not event.echo:
+		match event.physical_keycode:
+			KEY_E: return 1
+			KEY_Q: return -1
+	elif event is InputEventMouseButton and event.pressed:
+		match event.button_index:
+			MOUSE_BUTTON_WHEEL_DOWN: return 1
+			MOUSE_BUTTON_WHEEL_UP: return -1
+	return 0
 
 
 # --- Refresh -----------------------------------------------------------------
@@ -136,30 +157,29 @@ func _refresh() -> void:
 		var step := ""
 		if selected.grid_actions.size() > 1:
 			step = " (pattern %d/%d)" % [_cells.size() + 1, selected.grid_actions.size()]
-		_hint_label.text = "Click a cell on %s%s. Right-click to cancel." % ["your grid" if _targets_player() else "the enemy", step]
+		_hint_label.text = "Click a cell on %s%s. Q/E or scroll to rotate. Right-click to cancel." % ["your grid" if _targets_player() else "the enemy", step]
 	else:
 		_hint_label.text = "Click a card to select it."
 
 	_hand.set_hand(combat.hand, selected, combat.can_play)
 
 	# Only the grid action the next click places is previewed.
-	var pattern: Array[GridAction] = []
+	var pattern: Dictionary[Vector2i, BaseActionTile] = {}
 	if selected and _cells.size() < selected.grid_actions.size():
-		pattern = [selected.grid_actions[_cells.size()]]
-	var none: Array[GridAction] = []
+		pattern = selected.grid_actions[_cells.size()].rotated(_rotation)
+	var none: Dictionary[Vector2i, BaseActionTile] = {}
 	var on_player := selected != null and _targets_player()
 	for view in _enemy_views:
-		view.grid_actions = none if on_player else pattern
+		view.preview = none if on_player else pattern
 		view.refresh()
-	_player_view.grid_actions = pattern if on_player else none
+	_player_view.preview = pattern if on_player else none
 
 	# Grid actions already clicked flicker where they will land.
 	for view in _enemy_views:
 		view.placed = []
 	_player_view.placed = []
 	for i in _cells.size():
-		var placed_action := selected.grid_actions[i]
-		_view_for(_units[i]).placed.append({cell = _cells[i] + placed_action.anchor, tiles = placed_action.tiles})
+		_view_for(_units[i]).placed.append({cell = _cells[i], tiles = selected.grid_actions[i].rotated(_rotations[i])})
 
 	# Intents blink on the grid each part targets: attacks on the player, shields on the enemy itself.
 	var player_intents: Array = []
@@ -191,6 +211,8 @@ func _select(card: BaseCard) -> void:
 	selected = card
 	_units.clear()
 	_cells.clear()
+	_rotations.clear()
+	_rotation = 0
 
 
 ## Whether the next click goes on the player's grid: the current grid action's target, or the card's.

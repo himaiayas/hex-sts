@@ -37,11 +37,13 @@
   - Only when selecting a card, the grid pattern is rotateable. Add Input Listener when player click [E] or scroll mouse down for clockwise rotate. click [q] or scroll mouse up for anti-clockwise rotate. Each click rotates by 60 degree.
   - Axial coords shall be changed from (q,r) to (-r, q+r) for clockwise, and to (q+r, -q) for anticlockwise. For Dictionary, you have to create new Dict.
   - Do not change the axial coords of the tiles in card itself. Only change temporary dict.
+- [x] Done ✅: `GridAction.rotated(steps)` returns a new offset -> tile dict, turning `coords + anchor` around the clicked cell, so the card's tiles never change. While a card is selected, E / wheel down rotates clockwise and Q / wheel up anticlockwise (physical keys, so Thai layout works). Each click remembers its own rotation, the next grid action starts from the current one, and deselecting resets it. Check: `rotation_check.gd` (headless).
 
 ### 5. Tile pattern rotation
 
 - **Requirement/Prereq:** 1
 - **Brief Description:** Rotate a card's tile pattern in 60deg. Apply it to both the preview and `GridAction.execute`.
+- [x] Done ✅: Same as #4. The preview, the flickering placed patterns and `GridAction.execute` all use the same rotated dict. Enemies call `execute` without a rotation and get 0.
 
 ### 6. Tile statuses
 

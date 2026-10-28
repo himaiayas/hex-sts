@@ -26,9 +26,9 @@ const COLOR_SHIELDED := Color("#a0e5f6")
 
 var unit: CombatUnit
 var clickable := false
-var grid_actions: Array[GridAction] = [] # grid actions of the currently selected card
+var preview: Dictionary[Vector2i, BaseActionTile] = {} # next grid action of the selected card, rotated: offset from cursor -> tile
 var intents: Array = [] # enemy attacks aimed at this grid: [{cell: Vector2i, tiles: Array[BaseActionTile]}]
-var placed: Array = [] # selected card's grid actions already clicked on this grid, same shape as intents
+var placed: Array = [] # selected card's grid actions already clicked on this grid: [{cell: Vector2i, tiles: Dictionary[Vector2i, BaseActionTile]}]
 
 var _hover := NO_CELL
 var _origin := Vector2.ZERO
@@ -110,17 +110,16 @@ func _draw() -> void:
 	var flicker_wave := 0.5 + 0.5 * sin(TAU * Time.get_ticks_msec() / 1000.0 / PLACED_PERIOD)
 	var flicker := lerpf(PLACED_ALPHA_MIN, PLACED_ALPHA_MAX, flicker_wave)
 	for p in placed:
-		for t: BaseActionTile in p.tiles:
-			var cell: Vector2i = p.cell + t.coords
+		for offset: Vector2i in p.tiles:
+			var cell: Vector2i = p.cell + offset
 			if unit.health.has(cell):
-				draw_colored_polygon(hex_corners(_origin + axial_to_pixel(cell), HEX_SIZE - 1.5), Color(t.get_color(), flicker))
+				draw_colored_polygon(hex_corners(_origin + axial_to_pixel(cell), HEX_SIZE - 1.5), Color(p.tiles[offset].get_color(), flicker))
 
-	for action in grid_actions:
-		for t in action.tiles:
-			var cell := _hover + action.anchor + t.coords
-			if unit.health.has(cell):
-				var corners := hex_corners(_origin + axial_to_pixel(cell), HEX_SIZE - 1.5)
-				draw_colored_polygon(corners, Color(t.get_color(),0.65))
+	for offset in preview:
+		var cell := _hover + offset
+		if unit.health.has(cell):
+			var corners := hex_corners(_origin + axial_to_pixel(cell), HEX_SIZE - 1.5)
+			draw_colored_polygon(corners, Color(preview[offset].get_color(),0.65))
 
 	var font := ThemeDB.fallback_font
 	var title := "%s  %d/%d" % [unit.display_name, alive, coords.size()]
