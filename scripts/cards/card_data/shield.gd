@@ -7,10 +7,9 @@ func _init() -> void:
 	cost = 1
 	type = CardType.DEFENSE
 	target = BaseAction.TargetType.PLAYER
-	description = "Shield a tile on your grid."
-	tiles = [
-		ShieldTile.new(Vector2i(0,0)),
+	description = "{render:0}\nShield a tile on your grid."
+	grid_actions = [
+		GridAction.new(BaseAction.TargetType.PLAYER, [
+			ShieldTile.new(Vector2i(0,0)),
+		]),
 	]
-
-func execute(combat: CombatState, unit: CombatUnit, cell: Vector2i)->void:
-	GridAction.new(BaseAction.TargetType.PLAYER, tiles).execute(combat, unit, cell)
