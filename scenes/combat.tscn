@@ -181,9 +181,168 @@ custom_minimum_size = Vector2(217, 60)
 layout_mode = 2
 text = "Close"
 
+[node name="RewardPanel" type="ColorRect" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.75)
+
+[node name="Center" type="CenterContainer" parent="RewardPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="RewardPanel/Center"]
+custom_minimum_size = Vector2(560, 0)
+layout_mode = 2
+
+[node name="Box" type="VBoxContainer" parent="RewardPanel/Center/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="RewardTitle" type="Label" parent="RewardPanel/Center/Panel/Box"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 48
+text = "Victory"
+horizontal_alignment = 1
+
+[node name="GoldButton" type="Button" parent="RewardPanel/Center/Panel/Box"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "+0 Coins"
+
+[node name="ExpButton" type="Button" parent="RewardPanel/Center/Panel/Box"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "+0 EXP"
+
+[node name="CardButton" type="Button" parent="RewardPanel/Center/Panel/Box"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Choose a card"
+
+[node name="ContinueButton" type="Button" parent="RewardPanel/Center/Panel/Box"]
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Continue"
+
+[node name="CardChoicePanel" type="ColorRect" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.85)
+
+[node name="Center" type="CenterContainer" parent="CardChoicePanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Box" type="VBoxContainer" parent="CardChoicePanel/Center"]
+layout_mode = 2
+theme_override_constants/separation = 40
+
+[node name="CardChoiceTitle" type="Label" parent="CardChoicePanel/Center/Box"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 44
+text = "Choose a card"
+horizontal_alignment = 1
+
+[node name="CardChoices" type="HBoxContainer" parent="CardChoicePanel/Center/Box"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 420)
+layout_mode = 2
+theme_override_constants/separation = 48
+alignment = 1
+
+[node name="CardChoiceButtons" type="HBoxContainer" parent="CardChoicePanel/Center/Box"]
+layout_mode = 2
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="BackButton" type="Button" parent="CardChoicePanel/Center/Box/CardChoiceButtons"]
+custom_minimum_size = Vector2(200, 60)
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+text = "Back"
+
+[node name="SkipCardButton" type="Button" parent="CardChoicePanel/Center/Box/CardChoiceButtons"]
+custom_minimum_size = Vector2(200, 60)
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+text = "Skip"
+
+[node name="DefeatPanel" type="ColorRect" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.85)
+
+[node name="Center" type="CenterContainer" parent="DefeatPanel"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Box" type="VBoxContainer" parent="DefeatPanel/Center"]
+layout_mode = 2
+theme_override_constants/separation = 32
+
+[node name="DefeatTitle" type="Label" parent="DefeatPanel/Center/Box"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 64
+text = "Defeated"
+horizontal_alignment = 1
+
+[node name="NewRunButton" type="Button" parent="DefeatPanel/Center/Box"]
+custom_minimum_size = Vector2(260, 64)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 28
+text = "New Run"
+
 [connection signal="pressed" from="Margin/Layout/BottomBar/DeckButton" to="." method="_on_deck_pressed"]
 [connection signal="pressed" from="Margin/Layout/BottomBar/DrawPileButton" to="." method="_on_draw_pile_pressed"]
 [connection signal="pressed" from="Margin/Layout/BottomBar/DiscardButton" to="." method="_on_discard_pressed"]
 [connection signal="pressed" from="Margin/Layout/BottomBar/EndTurnButton" to="." method="_on_end_turn_pressed"]
 [connection signal="gui_input" from="PileViewer" to="." method="_on_pile_viewer_input"]
 [connection signal="pressed" from="PileViewer/Center/Panel/Box/CloseButton" to="." method="_on_close_pile_pressed"]
+[connection signal="pressed" from="RewardPanel/Center/Panel/Box/GoldButton" to="." method="_on_gold_reward_pressed"]
+[connection signal="pressed" from="RewardPanel/Center/Panel/Box/ExpButton" to="." method="_on_exp_reward_pressed"]
+[connection signal="pressed" from="RewardPanel/Center/Panel/Box/CardButton" to="." method="_on_card_reward_pressed"]
+[connection signal="pressed" from="RewardPanel/Center/Panel/Box/ContinueButton" to="." method="_on_continue_pressed"]
+[connection signal="pressed" from="CardChoicePanel/Center/Box/CardChoiceButtons/BackButton" to="." method="_on_card_choice_back_pressed"]
+[connection signal="pressed" from="CardChoicePanel/Center/Box/CardChoiceButtons/SkipCardButton" to="." method="_on_skip_card_pressed"]
+[connection signal="pressed" from="DefeatPanel/Center/Box/NewRunButton" to="." method="_on_new_run_pressed"]

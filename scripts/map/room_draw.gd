@@ -61,12 +61,60 @@ static func draw_icon(ci: CanvasItem, c: Vector2, s: float, type: int) -> void:
 		Enum.RoomType.START:
 			ci.draw_arc(c, s * 0.8, 0.0, TAU, 32, COLOR_ICON, width)
 			ci.draw_circle(c, s * 0.25, COLOR_ICON)
-		Enum.RoomType.COMBAT:
+		Enum.RoomType.NORMAL_COMBAT:
 			# Draw swords. We will use image assets instead.
-			for flip in [1.0, -1.0]:
-				var tip := c + Vector2(0.8 * s * flip, -0.8 * s)
-				var hilt := c + Vector2(-0.8 * s * flip, 0.8 * s)
-				ci.draw_line(hilt, tip, COLOR_ICON, width)
-				var guard := c + Vector2(-0.45 * s * flip, 0.45 * s)
-				var across := Vector2(1.0, flip).normalized() * s * 0.25
-				ci.draw_line(guard - across, guard + across, COLOR_ICON, width)
+			_draw_swords(ci, c, s, width)
+		Enum.RoomType.ELITE_COMBAT:
+			_draw_swords(ci, c, s * 0.85, width)
+			ci.draw_arc(c, s * 1.05, 0.0, TAU, 32, COLOR_ICON, width)
+		Enum.RoomType.BOSS_COMBAT:
+			# Skull.
+			ci.draw_circle(c + Vector2(0, -0.15 * s), 0.7 * s, COLOR_ICON)
+			ci.draw_rect(Rect2(c + Vector2(-0.4 * s, 0.3 * s), Vector2(0.8 * s, 0.5 * s)), COLOR_ICON)
+			for x in [-0.28, 0.28]:
+				ci.draw_circle(c + Vector2(x * s, -0.15 * s), 0.17 * s, COLOR_ROOM)
+		Enum.RoomType.CAMPFIRE:
+			var flame := PackedVector2Array([
+				c + Vector2(0, -0.9 * s), c + Vector2(0.45 * s, 0.1 * s),
+				c + Vector2(0.3 * s, 0.45 * s), c + Vector2(-0.3 * s, 0.45 * s),
+				c + Vector2(-0.45 * s, 0.1 * s),
+			])
+			ci.draw_colored_polygon(flame, COLOR_ICON)
+			ci.draw_line(c + Vector2(-0.7 * s, 0.85 * s), c + Vector2(0.7 * s, 0.55 * s), COLOR_ICON, width)
+			ci.draw_line(c + Vector2(-0.7 * s, 0.55 * s), c + Vector2(0.7 * s, 0.85 * s), COLOR_ICON, width)
+		Enum.RoomType.CARD_SHOP:
+			# Two fanned cards.
+			for angle in [-0.25, 0.25]:
+				var card := PackedVector2Array()
+				for corner in [Vector2(-0.4, -0.6), Vector2(0.4, -0.6), Vector2(0.4, 0.6), Vector2(-0.4, 0.6), Vector2(-0.4, -0.6)]:
+					card.append(c + (corner * s).rotated(angle) + Vector2(angle * s, 0))
+				ci.draw_polyline(card, COLOR_ICON, width)
+		Enum.RoomType.AUGMENT_SHOP:
+			# Gem.
+			var gem := PackedVector2Array([
+				c + Vector2(-0.8 * s, -0.25 * s), c + Vector2(-0.45 * s, -0.7 * s),
+				c + Vector2(0.45 * s, -0.7 * s), c + Vector2(0.8 * s, -0.25 * s),
+				c + Vector2(0, 0.85 * s), c + Vector2(-0.8 * s, -0.25 * s),
+			])
+			ci.draw_polyline(gem, COLOR_ICON, width)
+			ci.draw_line(c + Vector2(-0.8 * s, -0.25 * s), c + Vector2(0.8 * s, -0.25 * s), COLOR_ICON, width)
+		Enum.RoomType.TREASURE:
+			# Chest.
+			ci.draw_rect(Rect2(c + Vector2(-0.8 * s, -0.5 * s), Vector2(1.6 * s, 1.2 * s)), COLOR_ICON, false, width)
+			ci.draw_line(c + Vector2(-0.8 * s, -0.05 * s), c + Vector2(0.8 * s, -0.05 * s), COLOR_ICON, width)
+			ci.draw_rect(Rect2(c + Vector2(-0.15 * s, -0.2 * s), Vector2(0.3 * s, 0.35 * s)), COLOR_ICON)
+		Enum.RoomType.EVENT:
+			var font := ThemeDB.fallback_font
+			var font_size := int(s * 2.0)
+			ci.draw_string(font, c + Vector2(-s, font.get_ascent(font_size) * 0.38), "?",
+				HORIZONTAL_ALIGNMENT_CENTER, 2.0 * s, font_size, COLOR_ICON)
+
+
+static func _draw_swords(ci: CanvasItem, c: Vector2, s: float, width: float) -> void:
+	for flip in [1.0, -1.0]:
+		var tip := c + Vector2(0.8 * s * flip, -0.8 * s)
+		var hilt := c + Vector2(-0.8 * s * flip, 0.8 * s)
+		ci.draw_line(hilt, tip, COLOR_ICON, width)
+		var guard := c + Vector2(-0.45 * s * flip, 0.45 * s)
+		var across := Vector2(1.0, flip).normalized() * s * 0.25
+		ci.draw_line(guard - across, guard + across, COLOR_ICON, width)

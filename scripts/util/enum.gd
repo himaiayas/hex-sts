@@ -28,5 +28,20 @@ enum Side {
 
 enum RoomType {
 	START,
-	COMBAT,
+	NORMAL_COMBAT,
+	ELITE_COMBAT,
+	BOSS_COMBAT,
+	CAMPFIRE,
+	CARD_SHOP, # cards and artifacts
+	AUGMENT_SHOP,
+	TREASURE,
+	EVENT,
+}
+
+
+enum Trigger {
+	TURN_START, # start of the owner's turn
+	TURN_END,   # end of the owner's turn, before turn counters tick down
+	ON_HIT,     # damage took a tile's health
+	ON_BLOCK,   # a shield absorbed damage
 }

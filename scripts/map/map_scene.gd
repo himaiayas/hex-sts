@@ -4,7 +4,7 @@ const DESIGN_SIZE := Vector2(1920, 1080)
 const COLOR_BG := Color("#07080b")
 const HINT_TIME := 2.0
 
-var map := MapState.new()
+var map: MapState  # RunState.map, so it survives visiting a room's scene
 var _busy := false  # walking, having popup modal or in a room.
 
 @onready var _map_view: MapView = %MapView
@@ -20,11 +20,14 @@ func _ready() -> void:
 	RenderingServer.set_default_clear_color(COLOR_BG)
 	get_viewport().size_changed.connect(_fit_to_window)
 	_fit_to_window()
+	if RunState.map == null:
+		RunState.start_new_run()
 	_start()
+	_check_out_of_steps()  # coming back from a room may have used the last steps
 
 
 func _start() -> void:
-	map.start()
+	map = RunState.map
 	_map_view.setup(map)
 	_draft_panel.hide()
 	_game_over_panel.hide()
@@ -82,9 +85,7 @@ func _on_room_chosen(room: MapRoom) -> void:
 	map.place(room)
 	_refresh()
 	await _map_view.animate_path([room.coord] as Array[Vector2i])
-	# Switch to room's own scene
-	_room_title.text = room.display_name()
-	_on_leave_pressed() 
+	RunState.enter_room(room)  # switches to the room's scene; leaving it comes back here
 
 
 func _on_leave_pressed() -> void:
@@ -93,6 +94,7 @@ func _on_leave_pressed() -> void:
 
 
 func _on_restart_pressed() -> void:
+	RunState.start_new_run()
 	_start()
 
 

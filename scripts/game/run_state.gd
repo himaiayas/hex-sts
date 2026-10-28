@@ -8,8 +8,13 @@ var health:Dictionary[Vector2i, HealthTile] = {}
 var gold := 0
 var deck: Array[BaseCard] = []
 var level :=0
-var exp :=0
-var floor :=1
+var xp :=0
+var dungeon_floor :=1
+
+const MAP_SCENE := "res://scenes/map.tscn"
+
+var map: MapState = null
+var current_room: MapRoom = null
 
 ## Non-null only during a fight.
 var combat: CombatState = null
@@ -29,14 +34,32 @@ func start_new_run() -> void:
 	gold = 0
 	deck = []
 	level = 0
-	exp = 0
-	floor = 1
+	xp = 0
+	dungeon_floor = 1
 	for i in 4:
 		deck.append(Strike.new())
 		deck.append(StatusStrike.new())
 		deck.append(ShieldPlayer.new())
 	for i in 2:
 		deck.append(WomboCombo.new())
+	map = MapState.new()
+	map.start()
+	current_room = null
+	combat = null
+
+
+## Opens the room's scene. Rooms without one (the entrance) do nothing.
+func enter_room(room: MapRoom) -> void:
+	if room.scene_path().is_empty():
+		return
+	current_room = room
+	get_tree().change_scene_to_file(room.scene_path())
+
+
+## Called by a room's scene when the player is done there.
+func leave_room() -> void:
+	current_room = null
+	get_tree().change_scene_to_file(MAP_SCENE)
 
 
 func start_combat() -> CombatState:

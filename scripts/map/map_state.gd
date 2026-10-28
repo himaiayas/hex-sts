@@ -9,7 +9,18 @@ const BUILD_COST := 3
 const START_DOORS := 3
 const OPTION_COUNT := 3
 
-## Neighbour directions. Opposite of direction d is (d + 3) % 6.
+
+const ROOM_WEIGHTS := {
+	Enum.RoomType.NORMAL_COMBAT: 40,
+	Enum.RoomType.ELITE_COMBAT: 10,
+	Enum.RoomType.BOSS_COMBAT: 0, # not drafted; reserved for the end of the floor
+	Enum.RoomType.CAMPFIRE: 12,
+	Enum.RoomType.CARD_SHOP: 8,
+	Enum.RoomType.AUGMENT_SHOP: 5,
+	Enum.RoomType.TREASURE: 10,
+	Enum.RoomType.EVENT: 15,
+}
+
 const DIRS: Array[Vector2i] = [
 	Vector2i(1, 0), Vector2i(1, -1), Vector2i(0, -1),
 	Vector2i(-1, 0), Vector2i(-1, 1), Vector2i(0, 1),
@@ -85,19 +96,41 @@ func walk(path: Array[Vector2i]) -> void:
 
 
 ## OPTION_COUNT different rooms for cell, each with a door on side `door`.
+## Types are picked by ROOM_WEIGHTS, avoiding repeats while other types are available.
 func draft_options(cell: Vector2i, door: int) -> Array[MapRoom]:
 	var options: Array[MapRoom] = []
+	var used_types := {}
 	var seen := {}
 	var attempts := 0
 	while options.size() < OPTION_COUNT and attempts < 50:
 		attempts += 1
+		var type := random_room_type(used_types if attempts < 30 else {})
 		var doors := _random_doors(randi_range(2, 4), door)
-		var key := str(doors)
+		var key := str([type, doors])
 		if seen.has(key):
 			continue
 		seen[key] = true
-		options.append(MapRoom.new(cell, Enum.RoomType.COMBAT, doors))
+		used_types[type] = true
+		options.append(MapRoom.new(cell, type, doors))
 	return options
+
+
+## Weighted random room type, skipping types in `exclude` (unless nothing else is left).
+static func random_room_type(exclude := {}) -> Enum.RoomType:
+	var total := 0
+	for type in ROOM_WEIGHTS:
+		if not exclude.has(type):
+			total += ROOM_WEIGHTS[type]
+	if total <= 0:
+		return random_room_type() if not exclude.is_empty() else Enum.RoomType.NORMAL_COMBAT
+	var roll := randi_range(1, total)
+	for type in ROOM_WEIGHTS:
+		if exclude.has(type):
+			continue
+		roll -= ROOM_WEIGHTS[type]
+		if roll <= 0:
+			return type
+	return Enum.RoomType.NORMAL_COMBAT
 
 
 ## Build the chosen room, pay for it and move into it.
