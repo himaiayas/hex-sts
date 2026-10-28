@@ -21,8 +21,14 @@ RunState="*res://scripts/game/run_state.gd"
 
 [display]
 
+window/size/viewport_width=1920
+window/size/viewport_height=1080
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
+
+[gui]
+
+theme/default_theme_scale=1.667
 
 [physics]
 

@@ -4,7 +4,7 @@ extends Control
 ## Click a card to select it, then click a cell for each of its grid actions to play it.
 
 const RenderCard := preload("res://scripts/cards/render_card.gd")
-const CARD_SIZE := Vector2(140, 190)
+const CARD_SIZE := HandView.CARD_SIZE
 
 var combat: CombatState
 var selected: BaseCard = null

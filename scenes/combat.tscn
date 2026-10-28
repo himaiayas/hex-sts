@@ -31,15 +31,15 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
-theme_override_constants/margin_left = 16
-theme_override_constants/margin_top = 16
-theme_override_constants/margin_right = 16
-theme_override_constants/margin_bottom = 16
+theme_override_constants/margin_left = 27
+theme_override_constants/margin_top = 27
+theme_override_constants/margin_right = 27
+theme_override_constants/margin_bottom = 27
 
 [node name="Layout" type="VBoxContainer" parent="Margin"]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 12
+theme_override_constants/separation = 20
 
 [node name="TopBar" type="HBoxContainer" parent="Margin/Layout"]
 layout_mode = 2
@@ -47,7 +47,7 @@ layout_mode = 2
 [node name="StatusLabel" type="Label" parent="Margin/Layout/TopBar"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 33
 text = "Turn 1    Energy 3/3"
 
 [node name="HintLabel" type="Label" parent="Margin/Layout/TopBar"]
@@ -62,12 +62,12 @@ horizontal_alignment = 2
 layout_mode = 2
 size_flags_vertical = 3
 mouse_filter = 2
-theme_override_constants/separation = 160
+theme_override_constants/separation = 267
 alignment = 1
 
 [node name="PlayerGrid" type="Control" parent="Margin/Layout/Arena"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(200, 200)
+custom_minimum_size = Vector2(333, 333)
 layout_mode = 2
 mouse_filter = 2
 script = ExtResource("2_grid")
@@ -76,28 +76,28 @@ script = ExtResource("2_grid")
 unique_name_in_owner = true
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 40
+theme_override_constants/separation = 67
 
 [node name="BottomBar" type="HBoxContainer" parent="Margin/Layout"]
 layout_mode = 2
-theme_override_constants/separation = 8
+theme_override_constants/separation = 13
 
 [node name="DeckButton" type="Button" parent="Margin/Layout/BottomBar"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(130, 36)
+custom_minimum_size = Vector2(217, 60)
 layout_mode = 2
 size_flags_vertical = 8
 text = "Deck (0)"
 
 [node name="DrawPileButton" type="Button" parent="Margin/Layout/BottomBar"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(130, 36)
+custom_minimum_size = Vector2(217, 60)
 layout_mode = 2
 size_flags_vertical = 8
 text = "Draw pile (0)"
 
 [node name="HandArea" type="Control" parent="Margin/Layout/BottomBar"]
-custom_minimum_size = Vector2(0, 80)
+custom_minimum_size = Vector2(0, 133)
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
@@ -109,8 +109,8 @@ anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_top = -79.0
-offset_bottom = 111.0
+offset_top = -132.0
+offset_bottom = 184.0
 grow_horizontal = 2
 grow_vertical = 0
 mouse_filter = 1
@@ -118,14 +118,14 @@ script = ExtResource("3_hand")
 
 [node name="DiscardButton" type="Button" parent="Margin/Layout/BottomBar"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(130, 36)
+custom_minimum_size = Vector2(217, 60)
 layout_mode = 2
 size_flags_vertical = 8
 text = "Discard (0)"
 
 [node name="EndTurnButton" type="Button" parent="Margin/Layout/BottomBar"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(130, 36)
+custom_minimum_size = Vector2(217, 60)
 layout_mode = 2
 size_flags_vertical = 8
 text = "End Turn"
@@ -155,29 +155,29 @@ layout_mode = 2
 
 [node name="Box" type="VBoxContainer" parent="PileViewer/Center/Panel"]
 layout_mode = 2
-theme_override_constants/separation = 10
+theme_override_constants/separation = 17
 
 [node name="PileTitle" type="Label" parent="PileViewer/Center/Panel/Box"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 33
 text = "Pile (0)"
 horizontal_alignment = 1
 
 [node name="Scroll" type="ScrollContainer" parent="PileViewer/Center/Panel/Box"]
-custom_minimum_size = Vector2(740, 396)
+custom_minimum_size = Vector2(1233, 660)
 layout_mode = 2
 
 [node name="PileGrid" type="GridContainer" parent="PileViewer/Center/Panel/Box/Scroll"]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_constants/h_separation = 8
-theme_override_constants/v_separation = 8
+theme_override_constants/h_separation = 13
+theme_override_constants/v_separation = 13
 columns = 5
 
 [node name="CloseButton" type="Button" parent="PileViewer/Center/Panel/Box"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(130, 36)
+custom_minimum_size = Vector2(217, 60)
 layout_mode = 2
 text = "Close"
 

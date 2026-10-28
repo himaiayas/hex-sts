@@ -8,7 +8,7 @@ const TYPE_COLORS := {
 	BaseCard.CardType.POWER: Color("6a3a8c"),
 }
 const COLOR_KEYWORD := Color(1, 0.831373, 0.352941)
-const FONT_SIZE := 13
+const FONT_SIZE := 22
 
 ## {keyword:Poison} in a description.
 static var _keyword_regex := RegEx.create_from_string("\\{keyword:([^}]+)\\}")
@@ -21,7 +21,7 @@ var card_data: BaseCard = Strike.new()
 func _ready() -> void:
 	var card := create_card(card_data)
 	add_child(card)
-	card.position = get_viewport().get_visible_rect().size / 2 - Vector2(70, 95)
+	card.position = get_viewport().get_visible_rect().size / 2 - Vector2(117, 158)
 
 
 static func create_card(data: BaseCard) -> Node2D:
