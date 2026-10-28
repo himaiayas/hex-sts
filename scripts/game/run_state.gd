@@ -7,6 +7,9 @@ extends Node
 var health:Dictionary[Vector2i, HealthTile] = {}
 var gold := 0
 var deck: Array[BaseCard] = []
+var level :=0
+var exp :=0
+var floor :=1
 
 ## Non-null only during a fight.
 var combat: CombatState = null
@@ -25,6 +28,9 @@ func start_new_run() -> void:
 	])
 	gold = 0
 	deck = []
+	level = 0
+	exp = 0
+	floor = 1
 	for i in 4:
 		deck.append(Strike.new())
 		deck.append(StatusStrike.new())

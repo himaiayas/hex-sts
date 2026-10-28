@@ -28,7 +28,7 @@ func start() -> void:
 	rooms.clear()
 	steps = START_STEPS
 	current = Vector2i.ZERO
-	rooms[current] = MapRoom.new(current, MapRoom.RoomType.START, _random_doors(START_DOORS))
+	rooms[current] = MapRoom.new(current, Enum.RoomType.START, _random_doors(START_DOORS))
 
 
 ## True if room at cell and its neighbour in dir both have doors facing each other.
@@ -96,7 +96,7 @@ func draft_options(cell: Vector2i, door: int) -> Array[MapRoom]:
 		if seen.has(key):
 			continue
 		seen[key] = true
-		options.append(MapRoom.new(cell, MapRoom.RoomType.COMBAT, doors))
+		options.append(MapRoom.new(cell, Enum.RoomType.COMBAT, doors))
 	return options
 
 

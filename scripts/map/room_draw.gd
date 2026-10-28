@@ -58,10 +58,10 @@ static func draw_room(ci: CanvasItem, center: Vector2, size: float, room: MapRoo
 static func draw_icon(ci: CanvasItem, c: Vector2, s: float, type: int) -> void:
 	var width := maxf(2.0, s * 0.12)
 	match type:
-		MapRoom.RoomType.START:
+		Enum.RoomType.START:
 			ci.draw_arc(c, s * 0.8, 0.0, TAU, 32, COLOR_ICON, width)
 			ci.draw_circle(c, s * 0.25, COLOR_ICON)
-		MapRoom.RoomType.COMBAT:
+		Enum.RoomType.COMBAT:
 			# Draw swords. We will use image assets instead.
 			for flip in [1.0, -1.0]:
 				var tip := c + Vector2(0.8 * s * flip, -0.8 * s)

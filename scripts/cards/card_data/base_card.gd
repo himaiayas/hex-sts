@@ -2,13 +2,13 @@
 extends Resource
 
 
-enum CardType { ATTACK, DEFENSE, SKILL, POWER}
 var card_name: String
 var cost: int
-var type: CardType
-var target := BaseAction.TargetType.ENEMY  # ENEMY (default) or PLAYER
+var type: Enum.CardType
+var target := Enum.TargetType.ENEMY  # ENEMY (default) or PLAYER
 var image: Texture2D
 var description: String
+var rarity: Enum.CardRarity = Enum.CardRarity.COMMON
 var grid_actions: Array[GridAction] = []  # each is its own pattern, drawn with {render:N}
 
 

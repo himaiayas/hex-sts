@@ -4,19 +4,13 @@
 ## or the enemy's own grid, so one action can attack, shield itself, or both.
 ## plan() locks the target cells (the intent); execute() uses exactly those cells.
 
-enum BaseEnemyActionEnum {
-    ATTACK,
-    DEFEND,
-    BUFF,
-    DEBUFF,
-}
-var action_type: BaseEnemyActionEnum # used to determine the intent graphic, init in subclass
+var action_type: Enum.BaseEnemyActionEnum # used to determine the intent graphic, init in subclass
 var action_name: String # Apply for some big action, like "Cyborg uses 'NeoArmstrongCycloneJetArmstrongCannon'!"
 var probability: float # init in BaseEnemy (when instancing the action)
 var parts: Array[EnemyActionPart] = [] # set in subclass _init()
 
 
-func _init(_action_type: BaseEnemyActionEnum, _action_name: String, _probability: float) -> void:
+func _init(_action_type: Enum.BaseEnemyActionEnum,_action_name: String, _probability: float) -> void:
     action_type = _action_type
     action_name = _action_name
     probability = _probability
@@ -32,7 +26,7 @@ func plan(combat: CombatState, owner: CombatUnit) -> void:
 @abstract func execute(combat: CombatState, owner: CombatUnit) -> void
 
 func target_of(part: EnemyActionPart, combat: CombatState, owner: CombatUnit) -> CombatUnit:
-    return combat.player if part.side == EnemyActionPart.Side.PLAYER else owner
+    return combat.player if part.side == Enum.Side.PLAYER else owner
 
 
 ## Default: the cell where the pattern scores highest, ties broken randomly.
@@ -62,12 +56,12 @@ func score_cell(part: EnemyActionPart, cell: Vector2i, target: CombatUnit) -> in
         if tile == null:
             continue
         if t is DamageTile:
-            if tile.hp >= HealthTile.HealthTileEnum.SHIELDED:
+            if tile.hp >= Enum.HealthTileEnum.SHIELDED:
                 score += 1
-            elif tile.hp == HealthTile.HealthTileEnum.UNDAMAGED:
+            elif tile.hp == Enum.HealthTileEnum.UNDAMAGED:
                 score += 2
         elif t is ShieldTile:
-            if tile.hp == HealthTile.HealthTileEnum.UNDAMAGED:
+            if tile.hp == Enum.HealthTileEnum.UNDAMAGED:
                 score += 1
         else:
             score += 1

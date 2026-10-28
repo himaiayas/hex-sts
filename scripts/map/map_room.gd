@@ -3,20 +3,14 @@ extends RefCounted
 
 ## One hexagonal room on the map. Doors are direction indices into MapState.DIRS.
 
-enum RoomType {
-	START,
-	COMBAT,
-}
-
 var coord: Vector2i
-var type: RoomType
+var type: Enum.RoomType
 var doors: Array[int] = []
 
 
-# _type is a RoomType value as Godot rejects the class enum in _init from outside).
-func _init(_coord: Vector2i, _type: int, _doors: Array[int]) -> void:
+func _init(_coord: Vector2i, _type: Enum.RoomType, _doors: Array[int]) -> void:
 	coord = _coord
-	type = _type as RoomType
+	type = _type
 	doors = _doors
 
 
@@ -26,8 +20,8 @@ func has_door(dir: int) -> bool:
 
 func display_name() -> String:
 	match type:
-		RoomType.START:
+		Enum.RoomType.START:
 			return "Entrance"
-		RoomType.COMBAT:
+		Enum.RoomType.COMBAT:
 			return "Combat"
 	return "Room"

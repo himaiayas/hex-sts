@@ -191,7 +191,7 @@ func _refresh() -> void:
 		if action:
 			for part in action.parts:
 				var intent := {cell = part.cell, tiles = part.tiles}
-				if part.side == EnemyActionPart.Side.PLAYER:
+				if part.side == Enum.Side.PLAYER:
 					player_intents.append(intent)
 				else:
 					self_intents.append(intent)
@@ -220,7 +220,7 @@ func _targets_player() -> bool:
 	var target := selected.target
 	if _cells.size() < selected.grid_actions.size():
 		target = selected.grid_actions[_cells.size()].target
-	return target == BaseAction.TargetType.PLAYER
+	return target == Enum.TargetType.PLAYER
 
 
 ## A card wrapped in a Control so containers can lay it out (Card.tscn's root is a Node2D).

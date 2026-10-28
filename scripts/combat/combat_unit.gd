@@ -24,8 +24,8 @@ static func make_hex_health(coords: Array[Vector2i]) -> Dictionary[Vector2i, Hea
 func shield_health_tile(coords:Vector2i)->void:
 	var tile: HealthTile = health[coords]
 
-	if tile and tile.hp>HealthTile.HealthTileEnum.DAMAGED:
-		tile.hp = HealthTile.HealthTileEnum.SHIELDED
+	if tile and tile.hp>Enum.HealthTileEnum.DAMAGED:
+		tile.hp = Enum.HealthTileEnum.SHIELDED
 	
 
 func damage_health_tile(coords:Vector2i)->void:

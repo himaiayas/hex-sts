@@ -4,7 +4,7 @@ extends BaseAction
 var tiles:Array[BaseActionTile]
 var anchor: Vector2i
 
-func _init(_target: TargetType, _tiles:Array[BaseActionTile], _anchor: Vector2i=Vector2i.ZERO)->void:
+func _init(_target: Enum.TargetType, _tiles:Array[BaseActionTile], _anchor: Vector2i=Vector2i.ZERO)->void:
 	target = _target
 	tiles = _tiles
 	anchor = _anchor

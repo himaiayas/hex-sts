@@ -25,7 +25,7 @@ func _initialize() -> void:
 		var expect_damaged := {}
 		var expect_shielded := {}
 		for part in action.parts:
-			var target: CombatUnit = combat.player if part.side == EnemyActionPart.Side.PLAYER else slime
+			var target: CombatUnit = combat.player if part.side == Enum.Side.PLAYER else slime
 			for t in part.tiles:
 				var cell := part.cell + t.coords
 				if not target.health.has(cell):
@@ -38,11 +38,11 @@ func _initialize() -> void:
 		slime.take_turn(combat)
 
 		# What actually happened must match the intent exactly.
-		var damaged := _cells_with(combat.player, HealthTile.HealthTileEnum.DAMAGED)
-		var shielded := _cells_with(slime, HealthTile.HealthTileEnum.SHIELDED)
-		_check(damaged == expect_damaged.keys().size() and _all_in(combat.player, expect_damaged, HealthTile.HealthTileEnum.DAMAGED),
+		var damaged := _cells_with(combat.player, Enum.HealthTileEnum.DAMAGED)
+		var shielded := _cells_with(slime, Enum.HealthTileEnum.SHIELDED)
+		_check(damaged == expect_damaged.keys().size() and _all_in(combat.player, expect_damaged, Enum.HealthTileEnum.DAMAGED),
 			"turn %d (%s): player damage doesn't match intent" % [i, action.action_name])
-		_check(shielded == expect_shielded.keys().size() and _all_in(slime, expect_shielded, HealthTile.HealthTileEnum.SHIELDED),
+		_check(shielded == expect_shielded.keys().size() and _all_in(slime, expect_shielded, Enum.HealthTileEnum.SHIELDED),
 			"turn %d (%s): self shield doesn't match intent" % [i, action.action_name])
 		_check(slime.intent_action == null, "turn %d: intent not cleared after take_turn" % i)
 
@@ -62,7 +62,7 @@ func _check(ok: bool, msg: String) -> void:
 
 func _heal(unit: CombatUnit) -> void:
 	for tile in unit.health.values():
-		tile.hp = HealthTile.HealthTileEnum.UNDAMAGED
+		tile.hp = Enum.HealthTileEnum.UNDAMAGED
 
 
 func _cells_with(unit: CombatUnit, hp: int) -> int:

@@ -8,7 +8,7 @@ var _failures := 0
 
 func _initialize() -> void:
 	var tiles: Array[BaseActionTile] = [DamageTile.new(Vector2i(0, 0)), DamageTile.new(Vector2i(1, 0)), DamageTile.new(Vector2i(2, -1))]
-	var action := GridAction.new(BaseAction.TargetType.ENEMY, tiles, Vector2i(-1, 0))
+	var action := GridAction.new(Enum.TargetType.ENEMY, tiles, Vector2i(-1, 0))
 	var start := action.rotated(0)
 
 	_check(start.keys() == [Vector2i(-1, 0), Vector2i(0, 0), Vector2i(1, -1)], "rotation 0 = coords + anchor")
