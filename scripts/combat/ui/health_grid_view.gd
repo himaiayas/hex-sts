@@ -6,9 +6,9 @@ extends Control
 
 signal cell_clicked(unit: CombatUnit, coords: Vector2i)
 
-const HEX_SIZE := 22.0
+const HEX_SIZE := 36.0
 const SQRT3 := 1.7320508
-const NAME_HEIGHT := 24.0
+const NAME_HEIGHT := 40.0
 const NO_CELL := Vector2i(999999, 999999)  # not (0,0): that's a real cell
 const INTENT_ALPHA_MIN := 0.15
 const INTENT_ALPHA_MAX := 0.45
@@ -26,9 +26,9 @@ const COLOR_SHIELDED := Color("#a0e5f6")
 
 var unit: CombatUnit
 var clickable := false
-var grid_actions: Array[GridAction] = [] # grid actions of the currently selected card
+var preview: Dictionary[Vector2i, BaseActionTile] = {} # next grid action of the selected card, rotated: offset from cursor -> tile
 var intents: Array = [] # enemy attacks aimed at this grid: [{cell: Vector2i, tiles: Array[BaseActionTile]}]
-var placed: Array = [] # selected card's grid actions already clicked on this grid, same shape as intents
+var placed: Array = [] # selected card's grid actions already clicked on this grid: [{cell: Vector2i, tiles: Dictionary[Vector2i, BaseActionTile]}]
 
 var _hover := NO_CELL
 var _origin := Vector2.ZERO
@@ -94,10 +94,10 @@ func _draw() -> void:
 			color = COLOR_DAMAGED
 		# if action_tile_dict.has(cell):
 		# 	color = color.lerp(COLOR_PREVIEW, 0.65)
-		var corners := hex_corners(_origin + axial_to_pixel(coord), HEX_SIZE - 1.5)
+		var corners := hex_corners(_origin + axial_to_pixel(coord), HEX_SIZE - 2.5)
 		draw_colored_polygon(corners, color)
 		corners.append(corners[0])
-		draw_polyline(corners, COLOR_EDGE, 2.0)
+		draw_polyline(corners, COLOR_EDGE, 3.0)
 
 	var wave := 0.5 + 0.5 * sin(TAU * Time.get_ticks_msec() / 1000.0 / INTENT_PERIOD)
 	var pulse := lerpf(INTENT_ALPHA_MIN, INTENT_ALPHA_MAX, wave)
@@ -105,26 +105,25 @@ func _draw() -> void:
 		for t: BaseActionTile in intent.tiles:
 			var cell: Vector2i = intent.cell + t.coords
 			if unit.health.has(cell):
-				draw_colored_polygon(hex_corners(_origin + axial_to_pixel(cell), HEX_SIZE - 1.5), Color(t.get_color(), pulse))
+				draw_colored_polygon(hex_corners(_origin + axial_to_pixel(cell), HEX_SIZE - 2.5), Color(t.get_color(), pulse))
 
 	var flicker_wave := 0.5 + 0.5 * sin(TAU * Time.get_ticks_msec() / 1000.0 / PLACED_PERIOD)
 	var flicker := lerpf(PLACED_ALPHA_MIN, PLACED_ALPHA_MAX, flicker_wave)
 	for p in placed:
-		for t: BaseActionTile in p.tiles:
-			var cell: Vector2i = p.cell + t.coords
+		for offset: Vector2i in p.tiles:
+			var cell: Vector2i = p.cell + offset
 			if unit.health.has(cell):
-				draw_colored_polygon(hex_corners(_origin + axial_to_pixel(cell), HEX_SIZE - 1.5), Color(t.get_color(), flicker))
+				draw_colored_polygon(hex_corners(_origin + axial_to_pixel(cell), HEX_SIZE - 2.5), Color(p.tiles[offset].get_color(), flicker))
 
-	for action in grid_actions:
-		for t in action.tiles:
-			var cell := _hover + action.anchor + t.coords
-			if unit.health.has(cell):
-				var corners := hex_corners(_origin + axial_to_pixel(cell), HEX_SIZE - 1.5)
-				draw_colored_polygon(corners, Color(t.get_color(),0.65))
+	for offset in preview:
+		var cell := _hover + offset
+		if unit.health.has(cell):
+			var corners := hex_corners(_origin + axial_to_pixel(cell), HEX_SIZE - 2.5)
+			draw_colored_polygon(corners, Color(preview[offset].get_color(),0.65))
 
 	var font := ThemeDB.fallback_font
 	var title := "%s  %d/%d" % [unit.display_name, alive, coords.size()]
-	draw_string(font, Vector2(0, 16), title, HORIZONTAL_ALIGNMENT_CENTER, size.x, 16, COLOR_TEXT)
+	draw_string(font, Vector2(0, 27), title, HORIZONTAL_ALIGNMENT_CENTER, size.x, 27, COLOR_TEXT)
 
 
 func _gui_input(event: InputEvent) -> void:

@@ -9,19 +9,19 @@ extends Control
 signal card_clicked(card: BaseCard)
 
 const RenderCard := preload("res://scripts/cards/render_card.gd")
-const CARD_SIZE := Vector2(140, 190)
-const CARD_SPACING := 120.0  # distance between card centres
-const MAX_HAND_WIDTH := 640.0  # big hands squeeze closer instead of getting wider
-const FAN_RADIUS := 1400.0  # radius of the arc the cards sit on
+const CARD_SIZE := Vector2(234, 316)
+const CARD_SPACING := 200.0  # distance between card centres
+const MAX_HAND_WIDTH := 1066.0  # big hands squeeze closer instead of getting wider
+const FAN_RADIUS := 2333.0  # radius of the arc the cards sit on
 const HOVER_SCALE := 1.4
-const HOVER_RAISE := 100.0
-const HOVER_PUSH := 50.0
-const BOB_HEIGHT := 4
+const HOVER_RAISE := 166.0
+const HOVER_PUSH := 83.0
+const BOB_HEIGHT := 7
 const BOB_PERIOD := 1.2  # seconds per bob
 const SPEED := 14.0  # how fast cards ease toward their target
 const KEYWORD_DELAY := 0.5  # seconds before keyword panels show
-const KEYWORD_WIDTH := 180.0
-const KEYWORD_GAP := 8.0
+const KEYWORD_WIDTH := 300.0
+const KEYWORD_GAP := 13.0
 
 const COLOR_BORDER := Color(0.85098, 0.764706, 0.54902)
 const COLOR_SELECTED := Color("#4fa8ff")
@@ -167,7 +167,7 @@ func _set_border(card: BaseCard, selected: bool) -> void:
 	var panel: PanelContainer = _holders[card].get_child(0).get_node("Panel")
 	var style: StyleBoxFlat = panel.get_theme_stylebox("panel")
 	style.border_color = COLOR_SELECTED if selected else COLOR_BORDER
-	style.set_border_width_all(5 if selected else 3)
+	style.set_border_width_all(8 if selected else 5)
 
 
 func _update_keywords(delta: float) -> void:
@@ -203,9 +203,9 @@ func _show_keywords(card: BaseCard) -> void:
 		var style := StyleBoxFlat.new()
 		style.bg_color = COLOR_KEYWORD_BG
 		style.border_color = COLOR_BORDER
-		style.set_border_width_all(1)
-		style.set_corner_radius_all(6)
-		style.set_content_margin_all(8)
+		style.set_border_width_all(2)
+		style.set_corner_radius_all(10)
+		style.set_content_margin_all(13)
 		var panel := PanelContainer.new()
 		panel.add_theme_stylebox_override("panel", style)
 		panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -216,8 +216,8 @@ func _show_keywords(card: BaseCard) -> void:
 		var body := Label.new()
 		body.text = text
 		body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		body.custom_minimum_size.x = KEYWORD_WIDTH - 16
-		body.add_theme_font_size_override("font_size", 13)
+		body.custom_minimum_size.x = KEYWORD_WIDTH - 26
+		body.add_theme_font_size_override("font_size", 22)
 		rows.add_child(title)
 		rows.add_child(body)
 		panel.add_child(rows)

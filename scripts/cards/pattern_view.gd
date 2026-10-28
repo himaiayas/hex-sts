@@ -4,8 +4,8 @@ extends Control
 ## Draws one of a card's grid actions as small hexes, shrunk to fit the box.
 ## The (0,0) hex, where the cursor goes when you play the card, is outlined.
 
-const BOX_SIZE := Vector2(124, 28)
-const MAX_HEX_SIZE := 10.0
+const BOX_SIZE := Vector2(207, 47)
+const MAX_HEX_SIZE := 17.0
 const COLOR_EDGE := Color("#151515")
 const COLOR_ORIGIN := Color("#ffffff")
 
@@ -31,11 +31,11 @@ func _draw() -> void:
 	var offset := size / 2 - (min_p + max_p) / 2 * hex_size
 
 	for t in action.tiles:
-		var points := HealthGridView.hex_corners(offset + HealthGridView.axial_to_pixel(t.coords + action.anchor, hex_size), hex_size - 1.0)
+		var points := HealthGridView.hex_corners(offset + HealthGridView.axial_to_pixel(t.coords + action.anchor, hex_size), hex_size - 1.5)
 		draw_colored_polygon(points, t.get_color())
 		points.append(points[0])
-		draw_polyline(points, COLOR_EDGE, 1.0)
+		draw_polyline(points, COLOR_EDGE, 2.0)
 
-	var origin := HealthGridView.hex_corners(offset, hex_size - 1.0)
+	var origin := HealthGridView.hex_corners(offset, hex_size - 1.5)
 	origin.append(origin[0])
-	draw_polyline(origin, COLOR_ORIGIN, 2.0)
+	draw_polyline(origin, COLOR_ORIGIN, 3.0)
