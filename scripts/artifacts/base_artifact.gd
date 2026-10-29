@@ -7,11 +7,16 @@ extends Resource
 var name: String
 var description: String
 var rarity: Enum.ArtifactRarity
+var image: Texture2D  # shown wherever the artifact is (256x256)
 
-func _init(_name: String, _description: String, _rarity: Enum.ArtifactRarity) -> void:
+const PLACEHOLDER_IMAGE := preload("res://assets/artifacts/placeholder.png")
+
+func _init(_name: String, _description: String, _rarity: Enum.ArtifactRarity,
+		_image: Texture2D = PLACEHOLDER_IMAGE) -> void:
 	name = _name
 	description = _description
 	rarity = _rarity
+	image = _image
 
 
 ## unit is always the player. cell is the tile hit/blocked on ON_HIT/ON_BLOCK.

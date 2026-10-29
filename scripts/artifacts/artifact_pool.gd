@@ -16,8 +16,6 @@ const RARITY_WEIGHTS := {
 }
 
 
-## A random artifact the player doesn't own yet: rarity by RARITY_WEIGHTS, then
-## evenly within it. Rarities with nothing left are skipped. Null if all are owned.
 static func random_artifact(owned: Array[BaseArtifact]) -> BaseArtifact:
 	var owned_scripts := owned.map(func(a: BaseArtifact) -> Script: return a.get_script())
 	var by_rarity := {}

@@ -308,9 +308,133 @@ size_flags_horizontal = 4
 theme_override_font_sizes/font_size = 28
 text = "Close"
 
+[node name="LevelUpLayer" type="CanvasLayer" parent="."]
+layer = 10
+
+[node name="LevelUpModal" type="ColorRect" parent="LevelUpLayer"]
+unique_name_in_owner = true
+visible = false
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.75)
+
+[node name="Center" type="CenterContainer" parent="LevelUpLayer/LevelUpModal"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="LevelUpLayer/LevelUpModal/Center"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="Box" type="VBoxContainer" parent="LevelUpLayer/LevelUpModal/Center/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="LevelUpTitle" type="Label" parent="LevelUpLayer/LevelUpModal/Center/Panel/Box"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 44
+text = "Level Up!"
+horizontal_alignment = 1
+
+[node name="Content" type="HBoxContainer" parent="LevelUpLayer/LevelUpModal/Center/Panel/Box"]
+layout_mode = 2
+theme_override_constants/separation = 40
+
+[node name="HealthSide" type="VBoxContainer" parent="LevelUpLayer/LevelUpModal/Center/Panel/Box/Content"]
+custom_minimum_size = Vector2(480, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="HealthHeader" type="Label" parent="LevelUpLayer/LevelUpModal/Center/Panel/Box/Content/HealthSide"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "Add Health"
+horizontal_alignment = 1
+
+[node name="LevelUpHint" type="Label" parent="LevelUpLayer/LevelUpModal/Center/Panel/Box/Content/HealthSide"]
+unique_name_in_owner = true
+modulate = Color(0.552941, 0.576471, 0.647059, 1)
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+text = "Place 3 new health tiles"
+horizontal_alignment = 1
+
+[node name="LevelUpGrid" type="Control" parent="LevelUpLayer/LevelUpModal/Center/Panel/Box/Content/HealthSide"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 6
+script = ExtResource("3_grid")
+
+[node name="ResetButton" type="Button" parent="LevelUpLayer/LevelUpModal/Center/Panel/Box/Content/HealthSide"]
+custom_minimum_size = Vector2(200, 56)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 28
+text = "Reset"
+
+[node name="Divider" type="VSeparator" parent="LevelUpLayer/LevelUpModal/Center/Panel/Box/Content"]
+layout_mode = 2
+
+[node name="ArtifactSide" type="VBoxContainer" parent="LevelUpLayer/LevelUpModal/Center/Panel/Box/Content"]
+custom_minimum_size = Vector2(400, 0)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/separation = 16
+
+[node name="ArtifactHeader" type="Label" parent="LevelUpLayer/LevelUpModal/Center/Panel/Box/Content/ArtifactSide"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 32
+text = "New Artifact"
+horizontal_alignment = 1
+
+[node name="ArtifactCard" type="VBoxContainer" parent="LevelUpLayer/LevelUpModal/Center/Panel/Box/Content/ArtifactSide"]
+layout_mode = 2
+size_flags_vertical = 6
+theme_override_constants/separation = 16
+
+[node name="LevelUpArtifactImage" type="TextureRect" parent="LevelUpLayer/LevelUpModal/Center/Panel/Box/Content/ArtifactSide/ArtifactCard"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(160, 160)
+layout_mode = 2
+size_flags_horizontal = 4
+expand_mode = 1
+stretch_mode = 5
+
+[node name="LevelUpArtifact" type="RichTextLabel" parent="LevelUpLayer/LevelUpModal/Center/Panel/Box/Content/ArtifactSide/ArtifactCard"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/normal_font_size = 26
+theme_override_font_sizes/bold_font_size = 26
+bbcode_enabled = true
+text = "Artifact"
+fit_content = true
+
+[node name="ConfirmButton" type="Button" parent="LevelUpLayer/LevelUpModal/Center/Panel/Box"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(240, 56)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 28
+disabled = true
+text = "Confirm"
+
 [connection signal="pressed" from="Bar/Margin/Row/HealthButton" to="." method="_on_health_pressed"]
 [connection signal="pressed" from="Bar/Margin/Row/DeckButton" to="." method="_on_deck_pressed"]
 [connection signal="pressed" from="Bar/Margin/Row/ArtifactButton" to="." method="_on_artifacts_pressed"]
 [connection signal="pressed" from="HealthModal/Center/Panel/Box/CloseButton" to="." method="_on_close_pressed"]
 [connection signal="pressed" from="DeckModal/Center/Panel/Box/CloseButton" to="." method="_on_close_pressed"]
 [connection signal="pressed" from="ArtifactModal/Center/Panel/Box/CloseButton" to="." method="_on_close_pressed"]
+[connection signal="cell_clicked" from="LevelUpLayer/LevelUpModal/Center/Panel/Box/Content/HealthSide/LevelUpGrid" to="." method="_on_level_up_cell_clicked"]
+[connection signal="pressed" from="LevelUpLayer/LevelUpModal/Center/Panel/Box/Content/HealthSide/ResetButton" to="." method="_on_level_up_reset_pressed"]
+[connection signal="pressed" from="LevelUpLayer/LevelUpModal/Center/Panel/Box/ConfirmButton" to="." method="_on_level_up_confirm_pressed"]

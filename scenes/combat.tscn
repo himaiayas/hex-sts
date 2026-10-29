@@ -29,9 +29,9 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = 72.0
 grow_horizontal = 2
 grow_vertical = 2
-offset_top = 72.0
 mouse_filter = 2
 theme_override_constants/margin_left = 27
 theme_override_constants/margin_top = 27
@@ -136,7 +136,7 @@ layout_mode = 2
 size_flags_vertical = 8
 text = "End Turn"
 
-[node name="TopBar" parent="." instance=ExtResource("9_topbar")]
+[node name="TopBar" parent="." unique_id=1445216912 instance=ExtResource("9_topbar")]
 unique_name_in_owner = true
 layout_mode = 1
 
@@ -230,14 +230,14 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
-text = "+0 Coins"
+text = "0 Coins"
 
 [node name="ExpButton" type="Button" parent="RewardPanel/Center/Panel/Box" unique_id=114095799]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
-text = "+0 EXP"
+text = "0 EXP"
 
 [node name="CardButton" type="Button" parent="RewardPanel/Center/Panel/Box" unique_id=1804908842]
 unique_name_in_owner = true

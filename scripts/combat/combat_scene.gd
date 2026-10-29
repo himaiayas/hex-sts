@@ -327,8 +327,8 @@ func _end_combat() -> void:
 
 func _refresh_rewards() -> void:
 	_top_bar.refresh()
-	_gold_button.text = "+%d Coins" % _rewards.gold
-	_exp_button.text = "+%d EXP" % _rewards.exp_points
+	_gold_button.text = "%d Coins" % _rewards.gold
+	_exp_button.text = "%d EXP" % _rewards.exp_points
 	_gold_button.visible = not _rewards.gold_taken
 	_exp_button.visible = not _rewards.exp_taken
 	_card_button.visible = not _rewards.card_taken

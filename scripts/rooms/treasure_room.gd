@@ -27,8 +27,9 @@ func _on_chest_pressed() -> void:
 	_exp_button.text = "+%d EXP" % EXP
 	_artifact_button.visible = artifact != null
 	if artifact:
-		_artifact_button.text = "%s (%s)" % [artifact.name, Enum.ArtifactRarity.keys()[artifact.rarity].capitalize()]
+		_artifact_button.text = artifact.name
 		_artifact_button.tooltip_text = artifact.description
+		_artifact_button.icon = artifact.image
 	_modal.show()
 
 

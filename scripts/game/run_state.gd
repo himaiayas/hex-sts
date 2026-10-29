@@ -17,6 +17,10 @@ const MAP_SCENE := "res://scenes/map.tscn"
 ## EXP needed for each level-up: LEVEL_XP[0] takes level 0 to 1, ... LEVEL_XP[8] takes 8 to 9 (max).
 ## xp is the progress toward the next level; it resets (keeping the leftover) on level-up.
 const LEVEL_XP: Array[int] = [10, 20, 30, 45, 60, 80, 100, 125, 150]
+const LEVEL_UP_TILES := 3
+
+## Level-ups not yet claimed in the level-up modal.
+var pending_level_ups := 0
 
 var map: MapState = null
 var current_room: MapRoom = null
@@ -41,6 +45,7 @@ func start_new_run() -> void:
 	artifacts = []
 	level = 0
 	xp = 0
+	pending_level_ups = 0
 	dungeon_floor = 1
 	for i in 4:
 		deck.append(Strike.new())
@@ -73,6 +78,7 @@ func add_xp(amount: int) -> void:
 	while not is_max_level() and xp >= LEVEL_XP[level]:
 		xp -= LEVEL_XP[level]
 		level += 1
+		pending_level_ups += 1
 
 
 func is_max_level() -> bool:
