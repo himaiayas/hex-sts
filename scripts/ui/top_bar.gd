@@ -13,6 +13,9 @@ const ARTIFACT_IMAGE_SIZE := 96.0
 @onready var _artifact_button: Button = %ArtifactButton
 @onready var _exp: Control = %Exp
 @onready var _exp_bar: ProgressBar = %ExpBar
+@onready var _exp_text: Label = %ExpText
+@onready var _cur_level: Label = %CurrentLevelLabel
+@onready var _next_level: Label = %NextLevelLabel
 
 @onready var _health_modal: Control = %HealthModal
 @onready var _health_grid: HealthGridView = %HealthGrid
@@ -55,10 +58,16 @@ func refresh() -> void:
 	if RunState.is_max_level():
 		_exp_bar.max_value = 1
 		_exp_bar.value = 1
+		_cur_level.text = "LV%d" % RunState.level
+		_next_level.text = "LV%d" % RunState.level
+		_exp_text.text = "MAX"
 		_exp.tooltip_text = "Level %d  (MAX)" % RunState.level
 	else:
 		_exp_bar.max_value = RunState.xp_to_next()
 		_exp_bar.value = RunState.xp
+		_cur_level.text = "LV%d" % RunState.level
+		_next_level.text = "LV%d" % [RunState.level+1]
+		_exp_text.text = "%d/%d" % [RunState.xp, RunState.xp_to_next()]
 		_exp.tooltip_text = "Level %d  %d / %d EXP" % [RunState.level, RunState.xp, RunState.xp_to_next()]
 	if RunState.pending_level_ups > 0 and not _level_up_modal.visible:
 		_open_level_up()
