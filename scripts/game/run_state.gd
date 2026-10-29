@@ -7,6 +7,7 @@ extends Node
 var health:Dictionary[Vector2i, HealthTile] = {}
 var gold := 0
 var deck: Array[BaseCard] = []
+var artifacts: Array[BaseArtifact] = []
 var level :=0
 var xp :=0
 var dungeon_floor :=1
@@ -33,6 +34,7 @@ func start_new_run() -> void:
 	])
 	gold = 0
 	deck = []
+	artifacts = []
 	level = 0
 	xp = 0
 	dungeon_floor = 1
