@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c4dm6jwodt8vt"
-path="res://.godot/imported/Textbox.png-0339f7ca22e6f07728b7fe3828c0a131.ctex"
+uid="uid://oey6vjqx2j5e"
+path="res://.godot/imported/rarity_star.png-c71422d09e7a0bd841cde6f94bbdd0e3.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/cards/Textbox.png"
-dest_files=["res://.godot/imported/Textbox.png-0339f7ca22e6f07728b7fe3828c0a131.ctex"]
+source_file="res://assets/cards/rarity_star.png"
+dest_files=["res://.godot/imported/rarity_star.png-c71422d09e7a0bd841cde6f94bbdd0e3.ctex"]
 
 [params]
 

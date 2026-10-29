@@ -9,7 +9,7 @@ extends Control
 signal card_clicked(card: BaseCard)
 
 const RenderCard := preload("res://scripts/cards/render_card.gd")
-const CARD_SIZE := Vector2(234, 316)
+const CARD_SIZE := RenderCard.CARD_SIZE
 const CARD_SPACING := 200.0  # distance between card centres
 const MAX_HAND_WIDTH := 1066.0  # big hands squeeze closer instead of getting wider
 const FAN_RADIUS := 2333.0  # radius of the arc the cards sit on
@@ -164,10 +164,10 @@ func _update_order() -> void:
 
 
 func _set_border(card: BaseCard, selected: bool) -> void:
-	var panel: PanelContainer = _holders[card].get_child(0).get_node("Panel")
+	var panel: Panel = _holders[card].get_child(0).get_node("Panel")
 	var style: StyleBoxFlat = panel.get_theme_stylebox("panel")
-	style.border_color = COLOR_SELECTED if selected else COLOR_BORDER
-	style.set_border_width_all(8 if selected else 5)
+	style.border_color = COLOR_SELECTED
+	style.set_border_width_all(6 if selected else 0)  # drawn just outside the card
 
 
 func _update_keywords(delta: float) -> void:
