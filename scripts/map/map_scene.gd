@@ -8,6 +8,7 @@ var map: MapState  # RunState.map, so it survives visiting a room's scene
 var _busy := false  # walking, having popup modal or in a room.
 
 @onready var _map_view: MapView = %MapView
+@onready var _top_bar: TopBar = %TopBar
 @onready var _steps_label: Label = %StepsLabel
 @onready var _hint_label: Label = %HintLabel
 @onready var _draft_panel: Control = %DraftPanel
@@ -34,6 +35,7 @@ func _start() -> void:
 	_hint_label.text = ""
 	_busy = false
 	_refresh()
+	_top_bar.refresh()
 
 
 func _fit_to_window() -> void:

@@ -1,6 +1,7 @@
 [gd_scene format=3]
 
 [ext_resource type="Script" path="res://scripts/rooms/placeholder_room.gd" id="1_room"]
+[ext_resource type="PackedScene" path="res://scenes/ui/top_bar.tscn" id="9_topbar"]
 
 [node name="Campfire" type="Control"]
 layout_mode = 3
@@ -54,5 +55,9 @@ layout_mode = 2
 size_flags_horizontal = 4
 theme_override_font_sizes/font_size = 28
 text = "Leave"
+
+[node name="TopBar" parent="." instance=ExtResource("9_topbar")]
+unique_name_in_owner = true
+layout_mode = 1
 
 [connection signal="pressed" from="Center/Box/LeaveButton" to="." method="_on_leave_pressed"]

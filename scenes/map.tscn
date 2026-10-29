@@ -2,11 +2,7 @@
 
 [ext_resource type="Script" uid="uid://ddymykvgy3fil" path="res://scripts/map/map_scene.gd" id="1_map"]
 [ext_resource type="Script" uid="uid://d2mguidiwck0p" path="res://scripts/map/map_view.gd" id="2_view"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_topbar"]
-bg_color = Color(0.0627451, 0.0705882, 0.0980392, 1)
-border_width_bottom = 2
-border_color = Color(0.117647, 0.133333, 0.172549, 1)
+[ext_resource type="PackedScene" path="res://scenes/ui/top_bar.tscn" id="3_topbar"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 content_margin_left = 48.0
@@ -48,13 +44,9 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("2_view")
 
-[node name="TopBar" type="Panel" parent="." unique_id=1009282773]
+[node name="TopBar" parent="." instance=ExtResource("3_topbar")]
+unique_name_in_owner = true
 layout_mode = 1
-anchors_preset = 10
-anchor_right = 1.0
-offset_bottom = 72.0
-grow_horizontal = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_topbar")
 
 [node name="StepsLabel" type="Label" parent="." unique_id=1106001309]
 unique_name_in_owner = true

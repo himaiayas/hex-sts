@@ -6,6 +6,7 @@ extends Control
 const GOLD := Vector2i(25, 45)  # [min, max]
 const EXP := 15
 
+@onready var _top_bar: TopBar = %TopBar
 @onready var _chest: TextureButton = %Chest
 @onready var _hint: Label = %Hint
 @onready var _modal: ColorRect = %RewardModal
@@ -34,16 +35,19 @@ func _on_chest_pressed() -> void:
 func _on_gold_pressed() -> void:
 	RunState.gold += gold
 	_gold_button.hide()
+	_top_bar.refresh()
 
 
 func _on_exp_pressed() -> void:
-	RunState.xp += EXP
+	RunState.add_xp(EXP)
 	_exp_button.hide()
+	_top_bar.refresh()
 
 
 func _on_artifact_pressed() -> void:
 	RunState.artifacts.append(artifact)
 	_artifact_button.hide()
+	_top_bar.refresh()
 
 
 func _on_leave_pressed() -> void:

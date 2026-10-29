@@ -16,6 +16,7 @@ var _rotation := 0  # 60° clockwise steps for the next grid action, kept betwee
 var _enemy_views: Array[HealthGridView] = []
 var _intent_labels: Array[Label] = []
 
+@onready var _top_bar: TopBar = %TopBar
 @onready var _status_label: Label = %StatusLabel
 @onready var _hint_label: Label = %HintLabel
 @onready var _player_view: HealthGridView = %PlayerGrid
@@ -142,7 +143,7 @@ func _on_win_combat_pressed()->void:
 
 ## _input, not _unhandled_input: the grids and this root stop mouse events, so right-clicks never arrive unhandled.
 func _input(event: InputEvent) -> void:
-	if _over:
+	if _over or _top_bar.is_modal_open():
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
 		if _pile_viewer.visible:
@@ -176,6 +177,7 @@ func _rotation_step(event: InputEvent) -> int:
 # --- Refresh -----------------------------------------------------------------
 
 func _refresh() -> void:
+	_top_bar.refresh()
 	_status_label.text = "Turn %d    Energy %d/%d" % [combat.turn, combat.energy, combat.max_energy]
 	_deck_button.text = "Deck (%d)" % RunState.deck.size()
 	_draw_button.text = "Draw pile (%d)" % combat.draw_pile.size()
@@ -324,6 +326,7 @@ func _end_combat() -> void:
 
 
 func _refresh_rewards() -> void:
+	_top_bar.refresh()
 	_gold_button.text = "+%d Coins" % _rewards.gold
 	_exp_button.text = "+%d EXP" % _rewards.exp_points
 	_gold_button.visible = not _rewards.gold_taken

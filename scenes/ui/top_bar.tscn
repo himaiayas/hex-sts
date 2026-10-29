@@ -1,0 +1,316 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/top_bar.gd" id="1_bar"]
+[ext_resource type="Texture2D" path="res://assets/icons/heart.png" id="4_heart"]
+[ext_resource type="Texture2D" path="res://assets/icons/coin.png" id="5_coin"]
+[ext_resource type="Texture2D" path="res://assets/icons/cards.png" id="6_cards"]
+[ext_resource type="Texture2D" path="res://assets/icons/artifact.png" id="7_artifact"]
+[ext_resource type="Texture2D" path="res://assets/icons/exp.png" id="8_exp"]
+[ext_resource type="Script" path="res://scripts/combat/ui/health_grid_view.gd" id="3_grid"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bar"]
+bg_color = Color(0.0627451, 0.0705882, 0.0980392, 1)
+border_width_bottom = 2
+border_color = Color(0.117647, 0.133333, 0.172549, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_modal"]
+content_margin_left = 40.0
+content_margin_top = 32.0
+content_margin_right = 40.0
+content_margin_bottom = 32.0
+bg_color = Color(0.0784314, 0.0862745, 0.109804, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.231373, 0.254902, 0.321569, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_exp_bg"]
+bg_color = Color(0.14902, 0.164706, 0.207843, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_exp_fill"]
+bg_color = Color(1, 0.831373, 0.352941, 1)
+corner_radius_top_left = 6
+corner_radius_top_right = 6
+corner_radius_bottom_right = 6
+corner_radius_bottom_left = 6
+
+[node name="TopBar" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("1_bar")
+
+[node name="Bar" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 10
+anchor_right = 1.0
+offset_bottom = 72.0
+grow_horizontal = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_bar")
+
+[node name="Margin" type="MarginContainer" parent="Bar"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 24
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 8
+
+[node name="Row" type="HBoxContainer" parent="Bar/Margin"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 12
+
+[node name="HealthButton" type="Button" parent="Bar/Margin/Row"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 56)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+focus_mode = 0
+icon = ExtResource("4_heart")
+theme_override_constants/h_separation = 10
+theme_override_font_sizes/font_size = 28
+text = "0"
+expand_icon = true
+
+[node name="GoldDisplay" type="Button" parent="Bar/Margin/Row"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 56)
+layout_mode = 2
+focus_mode = 0
+icon = ExtResource("5_coin")
+theme_override_constants/h_separation = 10
+theme_override_font_sizes/font_size = 28
+text = "0"
+expand_icon = true
+
+[node name="DeckButton" type="Button" parent="Bar/Margin/Row"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 56)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+focus_mode = 0
+icon = ExtResource("6_cards")
+theme_override_constants/h_separation = 10
+theme_override_font_sizes/font_size = 28
+text = "0"
+expand_icon = true
+
+[node name="ArtifactButton" type="Button" parent="Bar/Margin/Row"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(140, 56)
+layout_mode = 2
+mouse_default_cursor_shape = 2
+focus_mode = 0
+icon = ExtResource("7_artifact")
+theme_override_constants/h_separation = 10
+theme_override_font_sizes/font_size = 28
+text = "0"
+expand_icon = true
+
+[node name="Spacer" type="Control" parent="Bar/Margin/Row"]
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="Exp" type="HBoxContainer" parent="Bar/Margin/Row"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 12
+
+[node name="ExpIcon" type="TextureRect" parent="Bar/Margin/Row/Exp"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+texture = ExtResource("8_exp")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ExpBar" type="ProgressBar" parent="Bar/Margin/Row/Exp"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(400, 20)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+theme_override_styles/background = SubResource("StyleBoxFlat_exp_bg")
+theme_override_styles/fill = SubResource("StyleBoxFlat_exp_fill")
+max_value = 10.0
+step = 1.0
+show_percentage = false
+
+[node name="HealthModal" type="ColorRect" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.75)
+
+[node name="Center" type="CenterContainer" parent="HealthModal"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="HealthModal/Center"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="Box" type="VBoxContainer" parent="HealthModal/Center/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="HealthTitle" type="Label" parent="HealthModal/Center/Panel/Box"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 44
+text = "Health"
+horizontal_alignment = 1
+
+[node name="HealthGrid" type="Control" parent="HealthModal/Center/Panel/Box"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+script = ExtResource("3_grid")
+
+[node name="CloseButton" type="Button" parent="HealthModal/Center/Panel/Box"]
+custom_minimum_size = Vector2(240, 56)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 28
+text = "Close"
+
+[node name="DeckModal" type="ColorRect" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.75)
+
+[node name="Center" type="CenterContainer" parent="DeckModal"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="DeckModal/Center"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="Box" type="VBoxContainer" parent="DeckModal/Center/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="DeckTitle" type="Label" parent="DeckModal/Center/Panel/Box"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 44
+text = "Deck (0)"
+horizontal_alignment = 1
+
+[node name="Scroll" type="ScrollContainer" parent="DeckModal/Center/Panel/Box"]
+custom_minimum_size = Vector2(1250, 680)
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="DeckGrid" type="GridContainer" parent="DeckModal/Center/Panel/Box/Scroll"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 13
+theme_override_constants/v_separation = 13
+columns = 5
+
+[node name="CloseButton" type="Button" parent="DeckModal/Center/Panel/Box"]
+custom_minimum_size = Vector2(240, 56)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 28
+text = "Close"
+
+[node name="ArtifactModal" type="ColorRect" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.75)
+
+[node name="Center" type="CenterContainer" parent="ArtifactModal"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="ArtifactModal/Center"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="Box" type="VBoxContainer" parent="ArtifactModal/Center/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="ArtifactTitle" type="Label" parent="ArtifactModal/Center/Panel/Box"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 44
+text = "Artifacts"
+horizontal_alignment = 1
+
+[node name="ArtifactList" type="VBoxContainer" parent="ArtifactModal/Center/Panel/Box"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(640, 0)
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="CloseButton" type="Button" parent="ArtifactModal/Center/Panel/Box"]
+custom_minimum_size = Vector2(240, 56)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 28
+text = "Close"
+
+[connection signal="pressed" from="Bar/Margin/Row/HealthButton" to="." method="_on_health_pressed"]
+[connection signal="pressed" from="Bar/Margin/Row/DeckButton" to="." method="_on_deck_pressed"]
+[connection signal="pressed" from="Bar/Margin/Row/ArtifactButton" to="." method="_on_artifacts_pressed"]
+[connection signal="pressed" from="HealthModal/Center/Panel/Box/CloseButton" to="." method="_on_close_pressed"]
+[connection signal="pressed" from="DeckModal/Center/Panel/Box/CloseButton" to="." method="_on_close_pressed"]
+[connection signal="pressed" from="ArtifactModal/Center/Panel/Box/CloseButton" to="." method="_on_close_pressed"]
