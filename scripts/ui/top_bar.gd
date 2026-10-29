@@ -120,7 +120,7 @@ func _on_artifacts_pressed() -> void:
 		row.add_child(image)
 		var text := RichTextLabel.new()
 		text.bbcode_enabled = true
-		text.fit_content = true  # else it has no height inside the row
+		text.fit_content = true 
 		text.text = "[b]%s[/b]\n[color=#8d93a5]%s[/color]" % [artifact.name, artifact.description]
 		text.add_theme_font_size_override("normal_font_size", 26)
 		text.add_theme_font_size_override("bold_font_size", 26)
