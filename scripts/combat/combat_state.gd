@@ -21,6 +21,7 @@ var turn := 0
 
 func _init(run: Node) -> void:
 	player = CombatUnit.new("Player", run.health, true)
+	player.artifacts = run.artifacts
 	for card in run.deck:
 		draw_pile.append(card.duplicate())
 	draw_pile.shuffle()
@@ -47,6 +48,8 @@ func discard_hand() -> void:
 func start_turn() -> void:
 	turn += 1
 	energy = max_energy
+	if turn == 1:
+		player.fire(Enum.Trigger.COMBAT_START, self)
 	player.on_turn_start(self)
 	draw(DRAW_PER_TURN)
 	for e in enemies:

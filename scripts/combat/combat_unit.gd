@@ -5,6 +5,7 @@ extends RefCounted
 var display_name: String
 var health: Dictionary[Vector2i, HealthTile]  #Matrix with element as HealthTile
 var statuses: Array[BaseEffect] = []
+var artifacts: Array[BaseArtifact] = []  # the player's, shared with RunState
 var is_player := false
 
 
@@ -61,8 +62,10 @@ func on_turn_end(combat: CombatState) -> void:
 		tile.status_effects.assign(tile.status_effects.filter(_still_active))
 
 
-## Runs trigger on every power and every tile effect.
+## Runs trigger on every artifact, power and tile effect.
 func fire(trigger: Enum.Trigger, combat: CombatState) -> void:
+	for artifact in artifacts.duplicate():
+		artifact.on_trigger(trigger, combat, self, Vector2i.ZERO)
 	for power in statuses.duplicate():
 		power.on_trigger(trigger, combat, self, Vector2i.ZERO)
 	for cell in health:
@@ -70,8 +73,10 @@ func fire(trigger: Enum.Trigger, combat: CombatState) -> void:
 			effect.on_trigger(trigger, combat, self, cell)
 
 
-## Runs trigger on every power and on the effects of the tile at cell.
+## Runs trigger on every artifact and power, and on the effects of the tile at cell.
 func fire_at(trigger: Enum.Trigger, combat: CombatState, cell: Vector2i) -> void:
+	for artifact in artifacts.duplicate():
+		artifact.on_trigger(trigger, combat, self, cell)
 	for power in statuses.duplicate():
 		power.on_trigger(trigger, combat, self, cell)
 	for effect in health[cell].status_effects.duplicate():

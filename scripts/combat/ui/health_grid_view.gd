@@ -23,12 +23,16 @@ const COLOR_PREVIEW := Color("#ff7a7a")
 const COLOR_EDGE := Color("#151515")
 const COLOR_TEXT := Color("#e8e0c8")
 const COLOR_SHIELDED := Color("#a0e5f6")
+const COLOR_CANDIDATE := Color("#ffd45a")
+const COLOR_NEW := Color("#ffe9a8")
 
 var unit: CombatUnit
 var clickable := false
 var preview: Dictionary[Vector2i, BaseActionTile] = {} # next grid action of the selected card, rotated: offset from cursor -> tile
 var intents: Array = [] # enemy attacks aimed at this grid: [{cell: Vector2i, tiles: Array[BaseActionTile]}]
 var placed: Array = [] # selected card's grid actions already clicked on this grid: [{cell: Vector2i, tiles: Dictionary[Vector2i, BaseActionTile]}]
+var candidates: Array[Vector2i] = [] # empty cells drawn as outlines and clickable (level-up tile placement)
+var new_cells: Array[Vector2i] = [] # health cells drawn in COLOR_NEW (tiles just placed)
 
 var _hover := NO_CELL
 var _origin := Vector2.ZERO
@@ -47,7 +51,7 @@ func setup(_unit: CombatUnit, _clickable: bool) -> void:
 func refresh() -> void:
 	var min_p := Vector2(INF, INF)
 	var max_p := Vector2(-INF, -INF)
-	for cell in unit.health.keys():
+	for cell in unit.health.keys() + candidates:
 		var p := axial_to_pixel(cell)
 		min_p = min_p.min(p)
 		max_p = max_p.max(p)
@@ -92,12 +96,21 @@ func _draw() -> void:
 				color = tile.status_effects[0].get_color()
 		else:
 			color = COLOR_DAMAGED
+		if new_cells.has(coord):
+			color = COLOR_NEW
 		# if action_tile_dict.has(cell):
 		# 	color = color.lerp(COLOR_PREVIEW, 0.65)
 		var corners := hex_corners(_origin + axial_to_pixel(coord), HEX_SIZE - 2.5)
 		draw_colored_polygon(corners, color)
 		corners.append(corners[0])
 		draw_polyline(corners, COLOR_EDGE, 3.0)
+
+	for cell in candidates:
+		var corners := hex_corners(_origin + axial_to_pixel(cell), HEX_SIZE - 2.5)
+		if cell == _hover:
+			draw_colored_polygon(corners, Color(COLOR_CANDIDATE, 0.35))
+		corners.append(corners[0])
+		draw_polyline(corners, Color(COLOR_CANDIDATE, 0.8), 2.0)
 
 	var wave := 0.5 + 0.5 * sin(TAU * Time.get_ticks_msec() / 1000.0 / INTENT_PERIOD)
 	var pulse := lerpf(INTENT_ALPHA_MIN, INTENT_ALPHA_MAX, wave)
@@ -136,7 +149,7 @@ func _gui_input(event: InputEvent) -> void:
 			queue_redraw()
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		var cell := _pixel_to_axial(event.position - _origin)
-		if unit.health.has(cell):
+		if unit.health.has(cell) or candidates.has(cell):
 			accept_event()
 			cell_clicked.emit(unit, cell)
 

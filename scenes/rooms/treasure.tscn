@@ -1,6 +1,16 @@
 [gd_scene format=3]
 
-[ext_resource type="Script" path="res://scripts/rooms/placeholder_room.gd" id="1_room"]
+[ext_resource type="Script" path="res://scripts/rooms/treasure_room.gd" id="1_room"]
+[ext_resource type="Texture2D" path="res://assets/rooms/chest_close.png" id="2_close"]
+[ext_resource type="Texture2D" path="res://assets/rooms/chest_open.png" id="3_open"]
+[ext_resource type="PackedScene" path="res://scenes/ui/top_bar.tscn" id="9_topbar"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.0784314, 0.0862745, 0.109804, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
 
 [node name="Treasure" type="Control"]
 layout_mode = 3
@@ -32,27 +42,119 @@ mouse_filter = 2
 
 [node name="Box" type="VBoxContainer" parent="Center"]
 layout_mode = 2
-theme_override_constants/separation = 32
+theme_override_constants/separation = 16
 
 [node name="Title" type="Label" parent="Center/Box"]
-unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 64
 text = "Treasure"
 horizontal_alignment = 1
 
-[node name="Body" type="Label" parent="Center/Box"]
+[node name="Chest" type="TextureButton" parent="Center/Box"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(420, 420)
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_default_cursor_shape = 2
+texture_normal = ExtResource("2_close")
+texture_disabled = ExtResource("3_open")
+ignore_texture_size = true
+stretch_mode = 5
+
+[node name="Hint" type="Label" parent="Center/Box"]
+unique_name_in_owner = true
 modulate = Color(0.552941, 0.576471, 0.647059, 1)
 layout_mode = 2
 theme_override_font_sizes/font_size = 28
-text = "Open the chest. (Coming soon)"
+text = "Click the chest to open it."
 horizontal_alignment = 1
 
-[node name="LeaveButton" type="Button" parent="Center/Box"]
-custom_minimum_size = Vector2(240, 64)
+[node name="TopBar" parent="." instance=ExtResource("9_topbar")]
+unique_name_in_owner = true
+layout_mode = 1
+
+[node name="RewardModal" type="ColorRect" parent="."]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.6)
+
+[node name="Center" type="CenterContainer" parent="RewardModal"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="RewardModal/Center"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="Margin" type="MarginContainer" parent="RewardModal/Center/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 32
+theme_override_constants/margin_top = 24
+theme_override_constants/margin_right = 32
+theme_override_constants/margin_bottom = 24
+
+[node name="Box" type="VBoxContainer" parent="RewardModal/Center/Panel/Margin"]
+layout_mode = 2
+theme_override_constants/separation = 24
+
+[node name="RewardTitle" type="Label" parent="RewardModal/Center/Panel/Margin/Box"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 48
+text = "Rewards"
+horizontal_alignment = 1
+
+[node name="Rewards" type="HBoxContainer" parent="RewardModal/Center/Panel/Margin/Box"]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="GoldButton" type="Button" parent="RewardModal/Center/Panel/Margin/Box/Rewards"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(320, 120)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 28
+autowrap_mode = 3
+text = "+0 Coins"
+
+[node name="ExpButton" type="Button" parent="RewardModal/Center/Panel/Margin/Box/Rewards"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(320, 120)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 28
+autowrap_mode = 3
+text = "+0 EXP"
+
+[node name="ArtifactButton" type="Button" parent="RewardModal/Center/Panel/Margin/Box/Rewards"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(320, 120)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 28
+autowrap_mode = 3
+text = "Artifact"
+expand_icon = true
+
+[node name="LeaveButton" type="Button" parent="RewardModal/Center/Panel/Margin/Box"]
+custom_minimum_size = Vector2(240, 56)
 layout_mode = 2
 size_flags_horizontal = 4
 theme_override_font_sizes/font_size = 28
 text = "Leave"
 
-[connection signal="pressed" from="Center/Box/LeaveButton" to="." method="_on_leave_pressed"]
+[connection signal="pressed" from="Center/Box/Chest" to="." method="_on_chest_pressed"]
+[connection signal="pressed" from="RewardModal/Center/Panel/Margin/Box/Rewards/GoldButton" to="." method="_on_gold_pressed"]
+[connection signal="pressed" from="RewardModal/Center/Panel/Margin/Box/Rewards/ExpButton" to="." method="_on_exp_pressed"]
+[connection signal="pressed" from="RewardModal/Center/Panel/Margin/Box/Rewards/ArtifactButton" to="." method="_on_artifact_pressed"]
+[connection signal="pressed" from="RewardModal/Center/Panel/Margin/Box/LeaveButton" to="." method="_on_leave_pressed"]

@@ -5,6 +5,7 @@ extends RefCounted
 
 enum CardType { ATTACK, DEFENSE, SKILL, POWER }
 enum CardRarity { COMMON, UNCOMMON, RARE, LEGENDARY }
+enum ArtifactRarity { COMMON, UNCOMMON, RARE, LEGENDARY }
 
 
 enum TargetType { PLAYER, ENEMY }
@@ -40,6 +41,7 @@ enum RoomType {
 
 
 enum Trigger {
+	COMBAT_START, # once, at the start of the first player turn (after energy is set)
 	TURN_START, # start of the owner's turn
 	TURN_END,   # end of the owner's turn, before turn counters tick down
 	ON_HIT,     # damage took a tile's health

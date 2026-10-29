@@ -45,7 +45,7 @@ func take_gold(run: Node) -> void:
 
 func take_exp(run: Node) -> void:
 	if not exp_taken:
-		run.xp += exp_points
+		run.add_xp(exp_points)
 		exp_taken = true
 
 
