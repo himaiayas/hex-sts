@@ -3,7 +3,7 @@ extends BaseAction
 
 var amount: int
 
-func _init(_target: TargetType = TargetType.PLAYER, _amount := 1)->void:
+func _init(_target: Enum.TargetType = Enum.TargetType.PLAYER, _amount := 1)->void:
 	super(_target)
 	amount = _amount
 

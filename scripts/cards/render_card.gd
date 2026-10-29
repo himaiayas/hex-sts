@@ -2,10 +2,10 @@ extends Node
 
 const CARD_SCENE := preload("res://scenes/Card.tscn")
 const TYPE_COLORS := {
-	BaseCard.CardType.ATTACK: Color("8c2f2f"),
-	BaseCard.CardType.DEFENSE: Color("2f6f4f"),
-	BaseCard.CardType.SKILL: Color("2f5f8c"),
-	BaseCard.CardType.POWER: Color("6a3a8c"),
+	Enum.CardType.ATTACK: Color("8c2f2f"),
+	Enum.CardType.DEFENSE: Color("2f6f4f"),
+	Enum.CardType.SKILL: Color("2f5f8c"),
+	Enum.CardType.POWER: Color("6a3a8c"),
 }
 const COLOR_KEYWORD := Color(1, 0.831373, 0.352941)
 const FONT_SIZE := 22
@@ -28,7 +28,7 @@ static func create_card(data: BaseCard) -> Node2D:
 	var card: Node2D = CARD_SCENE.instantiate()
 	card.get_node("%CostLabel").text = str(data.cost)
 	card.get_node("%NameLabel").text = data.card_name
-	card.get_node("%TypeLabel").text = BaseCard.CardType.keys()[data.type].capitalize()
+	card.get_node("%TypeLabel").text = Enum.CardType.keys()[data.type].capitalize()
 	_fill_description(card.get_node("%Description"), data)
 	if data.image:
 		card.get_node("%CardImage").texture = data.image

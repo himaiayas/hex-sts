@@ -82,11 +82,11 @@ func _draw() -> void:
 	for coord in unit.health.keys():
 		var tile: HealthTile = unit.health[coord]
 		var color = COLOR_ALIVE
-		if tile.hp >= HealthTile.HealthTileEnum.SHIELDED:
+		if tile.hp >= Enum.HealthTileEnum.SHIELDED:
 			alive += 1
 			color = COLOR_SHIELDED
 			
-		elif tile.hp == HealthTile.HealthTileEnum.UNDAMAGED:
+		elif tile.hp == Enum.HealthTileEnum.UNDAMAGED:
 			alive += 1
 			if tile.status_effects.size() > 0:
 				color = tile.status_effects[0].get_color()
