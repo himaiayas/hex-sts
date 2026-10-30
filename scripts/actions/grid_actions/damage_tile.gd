@@ -11,3 +11,6 @@ func inflict(combat: CombatState, unit: CombatUnit, cell: Vector2i)->void:
 
 func get_color()->Color:
 	return Color("#ff7a7a")
+
+func get_icon() -> Texture2D:
+	return preload("res://assets/grid_effects/damage.png")

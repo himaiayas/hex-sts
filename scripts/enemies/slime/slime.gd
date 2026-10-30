@@ -23,6 +23,7 @@ func _init() -> void:
 		Vector2i(2, -1),
 	]
 	super("Slime", CombatUnit.make_hex_health(coords))
+	sprite = preload("res://assets/enemies/slime.png")
 	actions = [
 		SlimeAttack1.new(0.5),
 		SlimeHarden.new(0.25),

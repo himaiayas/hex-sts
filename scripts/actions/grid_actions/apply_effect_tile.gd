@@ -13,3 +13,6 @@ func inflict(_combat: CombatState, unit: CombatUnit, cell: Vector2i)->void:
 
 func get_color()->Color:
 	return effect.get_color()
+
+func get_icon() -> Texture2D:
+	return effect.get_icon()

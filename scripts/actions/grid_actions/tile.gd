@@ -11,3 +11,7 @@ func inflict(combat: CombatState, unit: CombatUnit, cell: Vector2i)->void
 
 @abstract
 func get_color()->Color
+
+## Drawn on targeted health tiles (intents, previews). Null: draw get_color() instead.
+func get_icon() -> Texture2D:
+	return null
