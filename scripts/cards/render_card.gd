@@ -2,7 +2,9 @@ extends Node
 
 ## Layout, in card pixels (0,0 = top-left of the card). Adjust freely.
 const CARD_SIZE := Vector2(234, 334)
-const IMAGE_RECT := Rect2(12, 28, 210, 108)  # card image, upper part
+const IMAGE_RECT := Rect2(5, 6, 224, 158)  # card image: from the frame's inner edge down into the name frame
+const NAME_FILL_RECT := Rect2(12, 143, 210, 41)  # fills the name frame's see-through middle
+const NAME_FILL_COLOR := Color.WHITE
 const NAME_RECT := Rect2(26, 141, 182, 45)  # name text, inside the name frame
 const DESCRIPTION_RECT := Rect2(14, 194, 206, 128)  # text and patterns, lower part
 const COST_RECT := Rect2(-25, -35, 90, 96)  # cost frame, upper-left (may stick out)
@@ -69,6 +71,9 @@ static func create_card(data: BaseCard) -> Node2D:
 
 	_place(card.get_node("%Background"), Rect2(Vector2.ZERO, CARD_SIZE), _crop(BACKGROUNDS[data.type]))
 	_place(card.get_node("%CardImage"), IMAGE_RECT, data.image)
+	var name_fill: ColorRect = card.get_node("%NameFill")
+	_place(name_fill, NAME_FILL_RECT)
+	name_fill.color = NAME_FILL_COLOR
 	_place(card.get_node("%NameFrame"), Rect2(Vector2.ZERO, CARD_SIZE), _crop(NAME_FRAME))
 	_place(card.get_node("%Outline"), Rect2(Vector2.ZERO, CARD_SIZE), _crop(OUTLINES[data.type]))
 	_place(card.get_node("%CostFrame"), COST_RECT, COST_FRAMES[data.type])

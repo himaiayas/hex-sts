@@ -37,7 +37,13 @@ offset_bottom = 40.0
 mouse_filter = 2
 texture = ExtResource("1_icon")
 expand_mode = 1
-stretch_mode = 5
+stretch_mode = 6
+
+[node name="NameFill" type="ColorRect" parent="Panel"]
+unique_name_in_owner = true
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
 
 [node name="NameFrame" type="TextureRect" parent="Panel"]
 unique_name_in_owner = true
