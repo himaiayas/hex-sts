@@ -95,8 +95,6 @@ func walk(path: Array[Vector2i]) -> void:
 	current = path.back()
 
 
-## OPTION_COUNT different rooms for cell, each with a door on side `door`.
-## Types are picked by ROOM_WEIGHTS, avoiding repeats while other types are available.
 func draft_options(cell: Vector2i, door: int) -> Array[MapRoom]:
 	var options: Array[MapRoom] = []
 	var used_types := {}
@@ -133,7 +131,6 @@ static func random_room_type(exclude := {}) -> Enum.RoomType:
 	return Enum.RoomType.NORMAL_COMBAT
 
 
-## Build the chosen room, pay for it and move into it.
 func place(room: MapRoom) -> void:
 	rooms[room.coord] = room
 	steps -= BUILD_COST
