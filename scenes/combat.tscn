@@ -1,10 +1,11 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://f661qnsmfu2f"]
 
 [ext_resource type="Script" uid="uid://dqjpwrdt3pnve" path="res://scripts/combat/combat_scene.gd" id="1_combat"]
 [ext_resource type="Script" uid="uid://c4g55kseks0cn" path="res://scripts/combat/ui/health_grid_view.gd" id="2_grid"]
 [ext_resource type="Script" uid="uid://e17p874bkot" path="res://scripts/combat/ui/hand_view.gd" id="3_hand"]
+[ext_resource type="PackedScene" path="res://scenes/ui/top_bar.tscn" id="9_topbar"]
 
-[node name="Combat" type="Control"]
+[node name="Combat" type="Control" unique_id=1963554734]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -13,7 +14,7 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_combat")
 
-[node name="Background" type="ColorRect" parent="."]
+[node name="Background" type="ColorRect" parent="." unique_id=506100174]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -23,11 +24,12 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0.105882, 0.113725, 0.141176, 1)
 
-[node name="Margin" type="MarginContainer" parent="."]
+[node name="Margin" type="MarginContainer" parent="." unique_id=1512294163]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = 72.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
@@ -36,21 +38,25 @@ theme_override_constants/margin_top = 27
 theme_override_constants/margin_right = 27
 theme_override_constants/margin_bottom = 27
 
-[node name="Layout" type="VBoxContainer" parent="Margin"]
+[node name="Layout" type="VBoxContainer" parent="Margin" unique_id=223817747]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 20
 
-[node name="TopBar" type="HBoxContainer" parent="Margin/Layout"]
+[node name="StatusBar" type="HBoxContainer" parent="Margin/Layout" unique_id=164278894]
 layout_mode = 2
 
-[node name="StatusLabel" type="Label" parent="Margin/Layout/TopBar"]
+[node name="StatusLabel" type="Label" parent="Margin/Layout/StatusBar" unique_id=1205878526]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 33
 text = "Turn 1    Energy 3/3"
 
-[node name="HintLabel" type="Label" parent="Margin/Layout/TopBar"]
+[node name="WinCombatButton" type="Button" parent="Margin/Layout/StatusBar" unique_id=254824290]
+layout_mode = 2
+text = "WinCombat"
+
+[node name="HintLabel" type="Label" parent="Margin/Layout/StatusBar" unique_id=2117940320]
 unique_name_in_owner = true
 modulate = Color(0.8, 0.8, 0.8, 1)
 layout_mode = 2
@@ -58,51 +64,51 @@ size_flags_horizontal = 3
 text = "Click a card to select it."
 horizontal_alignment = 2
 
-[node name="Arena" type="HBoxContainer" parent="Margin/Layout"]
+[node name="Arena" type="HBoxContainer" parent="Margin/Layout" unique_id=548162205]
 layout_mode = 2
 size_flags_vertical = 3
 mouse_filter = 2
 theme_override_constants/separation = 267
 alignment = 1
 
-[node name="PlayerGrid" type="Control" parent="Margin/Layout/Arena"]
+[node name="PlayerGrid" type="Control" parent="Margin/Layout/Arena" unique_id=1707787748]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(333, 333)
 layout_mode = 2
 mouse_filter = 2
 script = ExtResource("2_grid")
 
-[node name="Enemies" type="HBoxContainer" parent="Margin/Layout/Arena"]
+[node name="Enemies" type="HBoxContainer" parent="Margin/Layout/Arena" unique_id=975986018]
 unique_name_in_owner = true
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 67
 
-[node name="BottomBar" type="HBoxContainer" parent="Margin/Layout"]
+[node name="BottomBar" type="HBoxContainer" parent="Margin/Layout" unique_id=826284063]
 layout_mode = 2
 theme_override_constants/separation = 13
 
-[node name="DeckButton" type="Button" parent="Margin/Layout/BottomBar"]
+[node name="DeckButton" type="Button" parent="Margin/Layout/BottomBar" unique_id=68551890]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(217, 60)
 layout_mode = 2
 size_flags_vertical = 8
 text = "Deck (0)"
 
-[node name="DrawPileButton" type="Button" parent="Margin/Layout/BottomBar"]
+[node name="DrawPileButton" type="Button" parent="Margin/Layout/BottomBar" unique_id=1059927777]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(217, 60)
 layout_mode = 2
 size_flags_vertical = 8
 text = "Draw pile (0)"
 
-[node name="HandArea" type="Control" parent="Margin/Layout/BottomBar"]
+[node name="HandArea" type="Control" parent="Margin/Layout/BottomBar" unique_id=1145192042]
 custom_minimum_size = Vector2(0, 133)
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
-[node name="Hand" type="Control" parent="Margin/Layout/BottomBar/HandArea"]
+[node name="Hand" type="Control" parent="Margin/Layout/BottomBar/HandArea" unique_id=202639967]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 12
@@ -116,21 +122,25 @@ grow_vertical = 0
 mouse_filter = 1
 script = ExtResource("3_hand")
 
-[node name="DiscardButton" type="Button" parent="Margin/Layout/BottomBar"]
+[node name="DiscardButton" type="Button" parent="Margin/Layout/BottomBar" unique_id=1811883424]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(217, 60)
 layout_mode = 2
 size_flags_vertical = 8
 text = "Discard (0)"
 
-[node name="EndTurnButton" type="Button" parent="Margin/Layout/BottomBar"]
+[node name="EndTurnButton" type="Button" parent="Margin/Layout/BottomBar" unique_id=1483384867]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(217, 60)
 layout_mode = 2
 size_flags_vertical = 8
 text = "End Turn"
 
-[node name="PileViewer" type="ColorRect" parent="."]
+[node name="TopBar" parent="." unique_id=1445216912 instance=ExtResource("9_topbar")]
+unique_name_in_owner = true
+layout_mode = 1
+
+[node name="PileViewer" type="ColorRect" parent="." unique_id=43795427]
 unique_name_in_owner = true
 visible = false
 layout_mode = 1
@@ -141,7 +151,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0, 0, 0, 0.75)
 
-[node name="Center" type="CenterContainer" parent="PileViewer"]
+[node name="Center" type="CenterContainer" parent="PileViewer" unique_id=202222515]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -150,40 +160,200 @@ grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
-[node name="Panel" type="PanelContainer" parent="PileViewer/Center"]
+[node name="Panel" type="PanelContainer" parent="PileViewer/Center" unique_id=1025028164]
 layout_mode = 2
 
-[node name="Box" type="VBoxContainer" parent="PileViewer/Center/Panel"]
+[node name="Box" type="VBoxContainer" parent="PileViewer/Center/Panel" unique_id=296024803]
 layout_mode = 2
 theme_override_constants/separation = 17
 
-[node name="PileTitle" type="Label" parent="PileViewer/Center/Panel/Box"]
+[node name="PileTitle" type="Label" parent="PileViewer/Center/Panel/Box" unique_id=801749232]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 33
 text = "Pile (0)"
 horizontal_alignment = 1
 
-[node name="Scroll" type="ScrollContainer" parent="PileViewer/Center/Panel/Box"]
+[node name="Scroll" type="ScrollContainer" parent="PileViewer/Center/Panel/Box" unique_id=374267133]
 custom_minimum_size = Vector2(1233, 660)
 layout_mode = 2
 
-[node name="PileGrid" type="GridContainer" parent="PileViewer/Center/Panel/Box/Scroll"]
+[node name="PileGrid" type="GridContainer" parent="PileViewer/Center/Panel/Box/Scroll" unique_id=1904357649]
 unique_name_in_owner = true
 layout_mode = 2
 theme_override_constants/h_separation = 13
 theme_override_constants/v_separation = 13
 columns = 5
 
-[node name="CloseButton" type="Button" parent="PileViewer/Center/Panel/Box"]
+[node name="CloseButton" type="Button" parent="PileViewer/Center/Panel/Box" unique_id=1350744232]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(217, 60)
 layout_mode = 2
 text = "Close"
 
+[node name="RewardPanel" type="ColorRect" parent="." unique_id=1355867906]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.75)
+
+[node name="Center" type="CenterContainer" parent="RewardPanel" unique_id=1017494245]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="RewardPanel/Center" unique_id=832313361]
+custom_minimum_size = Vector2(560, 0)
+layout_mode = 2
+
+[node name="Box" type="VBoxContainer" parent="RewardPanel/Center/Panel" unique_id=1582079815]
+layout_mode = 2
+theme_override_constants/separation = 16
+
+[node name="RewardTitle" type="Label" parent="RewardPanel/Center/Panel/Box" unique_id=785644568]
+layout_mode = 2
+theme_override_font_sizes/font_size = 48
+text = "Victory"
+horizontal_alignment = 1
+
+[node name="GoldButton" type="Button" parent="RewardPanel/Center/Panel/Box" unique_id=1812771760]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "0 Coins"
+
+[node name="ExpButton" type="Button" parent="RewardPanel/Center/Panel/Box" unique_id=114095799]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "0 EXP"
+
+[node name="CardButton" type="Button" parent="RewardPanel/Center/Panel/Box" unique_id=1804908842]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Choose a card"
+
+[node name="ContinueButton" type="Button" parent="RewardPanel/Center/Panel/Box" unique_id=1705992731]
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Continue"
+
+[node name="CardChoicePanel" type="ColorRect" parent="." unique_id=1379687643]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.85)
+
+[node name="Center" type="CenterContainer" parent="CardChoicePanel" unique_id=165225373]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Box" type="VBoxContainer" parent="CardChoicePanel/Center" unique_id=829844311]
+layout_mode = 2
+theme_override_constants/separation = 40
+
+[node name="CardChoiceTitle" type="Label" parent="CardChoicePanel/Center/Box" unique_id=1091773263]
+layout_mode = 2
+theme_override_font_sizes/font_size = 44
+text = "Choose a card"
+horizontal_alignment = 1
+
+[node name="CardChoices" type="HBoxContainer" parent="CardChoicePanel/Center/Box" unique_id=1957998960]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 420)
+layout_mode = 2
+theme_override_constants/separation = 48
+alignment = 1
+
+[node name="CardChoiceButtons" type="HBoxContainer" parent="CardChoicePanel/Center/Box" unique_id=1002458866]
+layout_mode = 2
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="BackButton" type="Button" parent="CardChoicePanel/Center/Box/CardChoiceButtons" unique_id=469353582]
+custom_minimum_size = Vector2(200, 60)
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+text = "Back"
+
+[node name="SkipCardButton" type="Button" parent="CardChoicePanel/Center/Box/CardChoiceButtons" unique_id=1221468663]
+custom_minimum_size = Vector2(200, 60)
+layout_mode = 2
+theme_override_font_sizes/font_size = 26
+text = "Skip"
+
+[node name="DefeatPanel" type="ColorRect" parent="." unique_id=782311784]
+unique_name_in_owner = true
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.85)
+
+[node name="Center" type="CenterContainer" parent="DefeatPanel" unique_id=80355052]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Box" type="VBoxContainer" parent="DefeatPanel/Center" unique_id=1935881017]
+layout_mode = 2
+theme_override_constants/separation = 32
+
+[node name="DefeatTitle" type="Label" parent="DefeatPanel/Center/Box" unique_id=1797336825]
+layout_mode = 2
+theme_override_font_sizes/font_size = 64
+text = "Defeated"
+horizontal_alignment = 1
+
+[node name="NewRunButton" type="Button" parent="DefeatPanel/Center/Box" unique_id=1342314440]
+custom_minimum_size = Vector2(260, 64)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_font_sizes/font_size = 28
+text = "New Run"
+
+[connection signal="pressed" from="Margin/Layout/StatusBar/WinCombatButton" to="." method="_on_win_combat_pressed"]
 [connection signal="pressed" from="Margin/Layout/BottomBar/DeckButton" to="." method="_on_deck_pressed"]
 [connection signal="pressed" from="Margin/Layout/BottomBar/DrawPileButton" to="." method="_on_draw_pile_pressed"]
 [connection signal="pressed" from="Margin/Layout/BottomBar/DiscardButton" to="." method="_on_discard_pressed"]
 [connection signal="pressed" from="Margin/Layout/BottomBar/EndTurnButton" to="." method="_on_end_turn_pressed"]
 [connection signal="gui_input" from="PileViewer" to="." method="_on_pile_viewer_input"]
 [connection signal="pressed" from="PileViewer/Center/Panel/Box/CloseButton" to="." method="_on_close_pile_pressed"]
+[connection signal="pressed" from="RewardPanel/Center/Panel/Box/GoldButton" to="." method="_on_gold_reward_pressed"]
+[connection signal="pressed" from="RewardPanel/Center/Panel/Box/ExpButton" to="." method="_on_exp_reward_pressed"]
+[connection signal="pressed" from="RewardPanel/Center/Panel/Box/CardButton" to="." method="_on_card_reward_pressed"]
+[connection signal="pressed" from="RewardPanel/Center/Panel/Box/ContinueButton" to="." method="_on_continue_pressed"]
+[connection signal="pressed" from="CardChoicePanel/Center/Box/CardChoiceButtons/BackButton" to="." method="_on_card_choice_back_pressed"]
+[connection signal="pressed" from="CardChoicePanel/Center/Box/CardChoiceButtons/SkipCardButton" to="." method="_on_skip_card_pressed"]
+[connection signal="pressed" from="DefeatPanel/Center/Box/NewRunButton" to="." method="_on_new_run_pressed"]

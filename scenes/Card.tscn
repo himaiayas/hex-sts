@@ -2,111 +2,98 @@
 
 [ext_resource type="Texture2D" uid="uid://0o6h0e2roy5h" path="res://icon.svg" id="1_icon"]
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_card"]
-content_margin_left = 13.0
-content_margin_top = 13.0
-content_margin_right = 13.0
-content_margin_bottom = 13.0
-bg_color = Color(0.54902, 0.184314, 0.184314, 1)
-border_width_left = 5
-border_width_top = 5
-border_width_right = 5
-border_width_bottom = 5
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_select"]
+draw_center = false
 border_color = Color(0.85098, 0.764706, 0.54902, 1)
-corner_radius_top_left = 16
-corner_radius_top_right = 16
-corner_radius_bottom_right = 16
-corner_radius_bottom_left = 16
+corner_radius_top_left = 14
+corner_radius_top_right = 14
+corner_radius_bottom_right = 14
+corner_radius_bottom_left = 14
+expand_margin_left = 6.0
+expand_margin_top = 6.0
+expand_margin_right = 6.0
+expand_margin_bottom = 6.0
 
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_image"]
-bg_color = Color(0.301961, 0.101961, 0.101961, 1)
-border_width_left = 2
-border_width_top = 2
-border_width_right = 2
-border_width_bottom = 2
-border_color = Color(0.85098, 0.764706, 0.54902, 1)
-corner_radius_top_left = 7
-corner_radius_top_right = 7
-corner_radius_bottom_right = 7
-corner_radius_bottom_left = 7
+[node name="Card" type="Node2D"]
 
-[node name="Card" type="Node2D" unique_id=1676586401]
-
-[node name="Panel" type="PanelContainer" parent="." unique_id=1618397570]
-custom_minimum_size = Vector2(234, 316)
+[node name="Panel" type="Panel" parent="."]
 offset_right = 234.0
-offset_bottom = 316.0
-pivot_offset = Vector2(117, 316)
+offset_bottom = 334.0
+pivot_offset = Vector2(117, 334)
 mouse_default_cursor_shape = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_card")
+theme_override_styles/panel = SubResource("StyleBoxFlat_select")
 
-[node name="Node2D" type="Node2D" parent="Panel" unique_id=900625286]
-position = Vector2(27, 27)
-
-[node name="CostLabel" type="Label" parent="Panel/Node2D" unique_id=1277945826]
+[node name="Background" type="TextureRect" parent="Panel"]
 unique_name_in_owner = true
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -11.0
-offset_top = -26.0
-offset_right = 11.0
-offset_bottom = 26.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_colors/font_color = Color(1, 0.831373, 0.352941, 1)
-theme_override_font_sizes/font_size = 36
-text = "1"
-
-[node name="VBox" type="VBoxContainer" parent="Panel" unique_id=1073593886]
-layout_mode = 2
+offset_right = 234.0
+offset_bottom = 334.0
 mouse_filter = 2
-theme_override_constants/separation = 7
+expand_mode = 1
 
-[node name="Header" type="HBoxContainer" parent="Panel/VBox" unique_id=831152310]
-layout_mode = 2
-mouse_filter = 2
-
-[node name="NameLabel" type="Label" parent="Panel/VBox/Header" unique_id=723784918]
+[node name="CardImage" type="TextureRect" parent="Panel"]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(1, 0)
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_font_sizes/font_size = 25
-text = "Strike"
-horizontal_alignment = 1
-vertical_alignment = 1
-autowrap_mode = 3
-
-[node name="ImageFrame" type="PanelContainer" parent="Panel/VBox" unique_id=1683482983]
-layout_mode = 2
-mouse_filter = 2
-theme_override_styles/panel = SubResource("StyleBoxFlat_image")
-
-[node name="CardImage" type="TextureRect" parent="Panel/VBox/ImageFrame" unique_id=869305634]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(0, 93)
-layout_mode = 2
+offset_right = 40.0
+offset_bottom = 40.0
 mouse_filter = 2
 texture = ExtResource("1_icon")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="TypeLabel" type="Label" parent="Panel/VBox" unique_id=1769836685]
+[node name="NameFrame" type="TextureRect" parent="Panel"]
 unique_name_in_owner = true
-layout_mode = 2
-theme_override_colors/font_color = Color(0.85098, 0.764706, 0.54902, 1)
-theme_override_font_sizes/font_size = 18
-text = "Attack"
-horizontal_alignment = 1
+offset_right = 234.0
+offset_bottom = 334.0
+mouse_filter = 2
+expand_mode = 1
 
-[node name="Description" type="VBoxContainer" parent="Panel/VBox" unique_id=1879360191]
+[node name="NameLabel" type="Label" parent="Panel"]
 unique_name_in_owner = true
-layout_mode = 2
-size_flags_vertical = 3
+offset_right = 40.0
+offset_bottom = 23.0
+theme_override_colors/font_color = Color(0.117647, 0.117647, 0.137255, 1)
+text = "Strike"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+clip_text = true
+
+[node name="Description" type="VBoxContainer" parent="Panel"]
+unique_name_in_owner = true
+offset_right = 40.0
+offset_bottom = 40.0
 mouse_filter = 2
 theme_override_constants/separation = 3
 alignment = 1
+
+[node name="Outline" type="TextureRect" parent="Panel"]
+unique_name_in_owner = true
+offset_right = 234.0
+offset_bottom = 334.0
+mouse_filter = 2
+expand_mode = 1
+
+[node name="CostFrame" type="TextureRect" parent="Panel"]
+unique_name_in_owner = true
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+expand_mode = 1
+
+[node name="CostLabel" type="Label" parent="Panel/CostFrame"]
+unique_name_in_owner = true
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_colors/font_color = Color(0.117647, 0.117647, 0.137255, 1)
+text = "1"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Stars" type="HBoxContainer" parent="Panel"]
+unique_name_in_owner = true
+offset_right = 40.0
+offset_bottom = 40.0
+mouse_filter = 2
+alignment = 2

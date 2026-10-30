@@ -16,6 +16,7 @@ var _rotation := 0  # 60° clockwise steps for the next grid action, kept betwee
 var _enemy_views: Array[HealthGridView] = []
 var _intent_labels: Array[Label] = []
 
+@onready var _top_bar: TopBar = %TopBar
 @onready var _status_label: Label = %StatusLabel
 @onready var _hint_label: Label = %HintLabel
 @onready var _player_view: HealthGridView = %PlayerGrid
@@ -29,12 +30,24 @@ var _intent_labels: Array[Label] = []
 @onready var _pile_title: Label = %PileTitle
 @onready var _pile_grid: GridContainer = %PileGrid
 
+@onready var _reward_panel: Control = %RewardPanel
+@onready var _gold_button: Button = %GoldButton
+@onready var _exp_button: Button = %ExpButton
+@onready var _card_button: Button = %CardButton
+@onready var _card_choice_panel: Control = %CardChoicePanel
+@onready var _card_choices: HBoxContainer = %CardChoices
+@onready var _defeat_panel: Control = %DefeatPanel
+
+var _rewards: CombatRewards
+var _over := false  # won or lost: ignore combat input
+
 
 func _ready() -> void:
 	if RunState.deck.is_empty():
 		RunState.start_new_run()
 	combat = RunState.start_combat()
-	combat.enemies.append(Slime.new())
+	for enemy in _enemies_for(_room_type()):
+		combat.enemies.append(enemy)
 
 	_hand.card_clicked.connect(_on_card_clicked)
 	_player_view.setup(combat.player, true)
@@ -59,6 +72,8 @@ func _ready() -> void:
 # --- Input -------------------------------------------------------------------
 
 func _on_card_clicked(card: BaseCard) -> void:
+	if _over:
+		return
 	if selected == card:
 		_select(null)
 	elif combat.can_play(card):
@@ -70,6 +85,8 @@ func _on_card_clicked(card: BaseCard) -> void:
 
 
 func _on_cell_clicked(unit: CombatUnit, cell: Vector2i) -> void:
+	if _over:
+		return
 	if selected == null:
 		_hint_label.text = "Select a card first."
 		return
@@ -85,12 +102,16 @@ func _on_cell_clicked(unit: CombatUnit, cell: Vector2i) -> void:
 	combat.play_card(selected, _units, _cells, _rotations)
 	_select(null)
 	_refresh()
+	_check_combat_end()
 
 
 func _on_end_turn_pressed() -> void:
+	if _over:
+		return
 	_select(null)
 	combat.end_turn()
 	_refresh()
+	_check_combat_end()
 
 
 func _on_deck_pressed() -> void:
@@ -114,9 +135,16 @@ func _on_pile_viewer_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed:
 		_pile_viewer.hide()
 
+func _on_win_combat_pressed()->void:
+	_end_combat()
+	_rewards = CombatRewards.roll(_room_type())
+	_refresh_rewards()
+	_reward_panel.show()
 
 ## _input, not _unhandled_input: the grids and this root stop mouse events, so right-clicks never arrive unhandled.
 func _input(event: InputEvent) -> void:
+	if _over or _top_bar.is_modal_open():
+		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
 		if _pile_viewer.visible:
 			_pile_viewer.hide()
@@ -149,6 +177,7 @@ func _rotation_step(event: InputEvent) -> int:
 # --- Refresh -----------------------------------------------------------------
 
 func _refresh() -> void:
+	_top_bar.refresh()
 	_status_label.text = "Turn %d    Energy %d/%d" % [combat.turn, combat.energy, combat.max_energy]
 	_deck_button.text = "Deck (%d)" % RunState.deck.size()
 	_draw_button.text = "Draw pile (%d)" % combat.draw_pile.size()
@@ -191,7 +220,7 @@ func _refresh() -> void:
 		if action:
 			for part in action.parts:
 				var intent := {cell = part.cell, tiles = part.tiles}
-				if part.side == EnemyActionPart.Side.PLAYER:
+				if part.side == Enum.Side.PLAYER:
 					player_intents.append(intent)
 				else:
 					self_intents.append(intent)
@@ -220,7 +249,7 @@ func _targets_player() -> bool:
 	var target := selected.target
 	if _cells.size() < selected.grid_actions.size():
 		target = selected.grid_actions[_cells.size()].target
-	return target == BaseAction.TargetType.PLAYER
+	return target == Enum.TargetType.PLAYER
 
 
 ## A card wrapped in a Control so containers can lay it out (Card.tscn's root is a Node2D).
@@ -250,3 +279,106 @@ func _show_pile(title: String, cards: Array[BaseCard], hide_order := false) -> v
 		empty.text = "Empty"
 		_pile_grid.add_child(empty)
 	_pile_viewer.show()
+
+
+# --- Room, end of combat and rewards ----------------------------------------
+
+func _room_type() -> Enum.RoomType:
+	if RunState.current_room and RunState.current_room.is_combat():
+		return RunState.current_room.type
+	return Enum.RoomType.NORMAL_COMBAT
+
+
+## Placeholder line-ups until there are more enemies.
+func _enemies_for(room_type: Enum.RoomType) -> Array[CombatUnit]:
+	var count := 1
+	match room_type:
+		Enum.RoomType.ELITE_COMBAT:
+			count = 2
+		Enum.RoomType.BOSS_COMBAT:
+			count = 3
+	var enemies: Array[CombatUnit] = []
+	for i in count:
+		enemies.append(Slime.new())
+	return enemies
+
+
+func _check_combat_end() -> void:
+	if _over:
+		return
+	if combat.is_lost():
+		_end_combat()
+		_defeat_panel.show()
+	elif combat.is_won():
+		_end_combat()
+		_rewards = CombatRewards.roll(_room_type())
+		_refresh_rewards()
+		_reward_panel.show()
+
+
+func _end_combat() -> void:
+	_over = true
+	_select(null)
+	_pile_viewer.hide()
+	_hand.hide()
+	_hand.set_process_input(false)
+	RunState.end_combat()
+
+
+func _refresh_rewards() -> void:
+	_top_bar.refresh()
+	_gold_button.text = "%d Coins" % _rewards.gold
+	_exp_button.text = "%d EXP" % _rewards.exp_points
+	_gold_button.visible = not _rewards.gold_taken
+	_exp_button.visible = not _rewards.exp_taken
+	_card_button.visible = not _rewards.card_taken
+
+
+func _on_gold_reward_pressed() -> void:
+	_rewards.take_gold(RunState)
+	_refresh_rewards()
+
+
+func _on_exp_reward_pressed() -> void:
+	_rewards.take_exp(RunState)
+	_refresh_rewards()
+
+
+func _on_card_reward_pressed() -> void:
+	for child in _card_choices.get_children():
+		child.queue_free()
+	for card in _rewards.cards:
+		var slot := _card_slot(card)
+		var panel: Control = slot.get_child(0).get_node("Panel")
+		panel.gui_input.connect(_on_reward_card_input.bind(card))
+		_card_choices.add_child(slot)
+	_card_choice_panel.show()
+
+
+func _on_reward_card_input(event: InputEvent, card: BaseCard) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		_rewards.take_card(RunState, card)
+		_card_choice_panel.hide()
+		_refresh_rewards()
+
+
+func _on_skip_card_pressed() -> void:
+	_rewards.take_card(RunState, null)
+	_card_choice_panel.hide()
+	_refresh_rewards()
+
+
+func _on_card_choice_back_pressed() -> void:
+	_card_choice_panel.hide()
+
+
+## Coins and EXP left on the table are collected on the way out; an unpicked card is lost.
+func _on_continue_pressed() -> void:
+	_rewards.take_gold(RunState)
+	_rewards.take_exp(RunState)
+	RunState.leave_room()
+
+
+func _on_new_run_pressed() -> void:
+	RunState.start_new_run()
+	get_tree().change_scene_to_file(RunState.MAP_SCENE)
