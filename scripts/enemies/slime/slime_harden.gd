@@ -1,13 +1,13 @@
 class_name SlimeHarden
 extends BaseEnemyAction
-## Shields three cells of the slime's own grid.
+## Plates three cells of the slime's own grid.
 func _init(_probability: float) -> void:
 	super(Enum.BaseEnemyActionEnum.DEFEND, "Harden", _probability)
 	parts = [
 		EnemyActionPart.new(Enum.Side.SELF, [
-			ShieldTile.new(Vector2i(0,0)),
-			ShieldTile.new(Vector2i(1,0)),
-			ShieldTile.new(Vector2i(0,1)),
+			ApplyEffectTile.new(Vector2i(0,0), PlateTileEffect.new()),
+			ApplyEffectTile.new(Vector2i(1,0), PlateTileEffect.new()),
+			ApplyEffectTile.new(Vector2i(0,1), PlateTileEffect.new()),
 		]),
 	]
 

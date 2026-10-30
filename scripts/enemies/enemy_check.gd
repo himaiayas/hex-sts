@@ -23,7 +23,7 @@ func _initialize() -> void:
 
 		# What the intent shows, per grid.
 		var expect_damaged := {}
-		var expect_shielded := {}
+		var expect_plated := {}
 		for part in action.parts:
 			var target: CombatUnit = combat.player if part.side == Enum.Side.PLAYER else slime
 			for t in part.tiles:
@@ -32,18 +32,18 @@ func _initialize() -> void:
 					continue
 				if t is DamageTile:
 					expect_damaged[cell] = true
-				elif t is ShieldTile:
-					expect_shielded[cell] = true
+				elif t is ApplyEffectTile and t.effect is PlateTileEffect:
+					expect_plated[cell] = true
 
 		slime.take_turn(combat)
 
 		# What actually happened must match the intent exactly.
 		var damaged := _cells_with(combat.player, Enum.HealthTileEnum.DAMAGED)
-		var shielded := _cells_with(slime, Enum.HealthTileEnum.SHIELDED)
+		var plated := slime.health.values().filter(func(t: HealthTile) -> bool: return t.has_effect(PlateTileEffect)).size()
 		_check(damaged == expect_damaged.keys().size() and _all_in(combat.player, expect_damaged, Enum.HealthTileEnum.DAMAGED),
 			"turn %d (%s): player damage doesn't match intent" % [i, action.action_name])
-		_check(shielded == expect_shielded.keys().size() and _all_in(slime, expect_shielded, Enum.HealthTileEnum.SHIELDED),
-			"turn %d (%s): self shield doesn't match intent" % [i, action.action_name])
+		_check(plated == expect_plated.keys().size() and expect_plated.keys().all(func(c: Vector2i) -> bool: return slime.health[c].has_effect(PlateTileEffect)),
+			"turn %d (%s): self plate doesn't match intent" % [i, action.action_name])
 		_check(slime.intent_action == null, "turn %d: intent not cleared after take_turn" % i)
 
 	for name in ["Slime Attack 1", "Harden", "Guarded Bash"]:
@@ -63,6 +63,7 @@ func _check(ok: bool, msg: String) -> void:
 func _heal(unit: CombatUnit) -> void:
 	for tile in unit.health.values():
 		tile.hp = Enum.HealthTileEnum.UNDAMAGED
+		tile.status_effects.clear()
 
 
 func _cells_with(unit: CombatUnit, hp: int) -> int:

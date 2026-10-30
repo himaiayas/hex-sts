@@ -7,3 +7,7 @@ var hp: int # an Enum.HealthTileEnum value: 0 = damaged, 1 = undamaged, 2 = shie
 func _init() -> void:
 	status_effects = []
 	hp = 1
+
+
+func has_effect(type: Script) -> bool:
+	return status_effects.any(func(e: BaseTileEffect) -> bool: return e.get_script() == type)

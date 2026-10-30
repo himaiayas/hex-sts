@@ -1,6 +1,6 @@
 class_name SlimeGuardedBash
 extends BaseEnemyAction
-## Attacks one player cell and shields one of its own cells in the same turn.
+## Attacks one player cell and plates one of its own cells in the same turn.
 func _init(_probability: float) -> void:
     super(Enum.BaseEnemyActionEnum.ATTACK, "Guarded Bash", _probability)
     parts = [
@@ -8,7 +8,7 @@ func _init(_probability: float) -> void:
             DamageTile.new(Vector2i(0,0)),
         ]),
         EnemyActionPart.new(Enum.Side.SELF, [
-            ShieldTile.new(Vector2i(0,0)),
+            ApplyEffectTile.new(Vector2i(0,0), PlateTileEffect.new()),
         ]),
     ]
 

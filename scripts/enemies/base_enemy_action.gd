@@ -48,7 +48,8 @@ func pick_cell(part: EnemyActionPart, target: CombatUnit) -> Vector2i:
     return best.pick_random() if not best.is_empty() else Vector2i.ZERO
 
 
-## Damage: undamaged = 2, shielded = 1. Shield: undamaged = 1. Other tiles on the grid = 1.
+## Damage: undamaged = 2, shielded = 1, +1 if plated (it would shield again). Shield: undamaged = 1.
+## Plate: undamaged without Plate = 1. Other tiles on the grid = 1.
 func score_cell(part: EnemyActionPart, cell: Vector2i, target: CombatUnit) -> int:
     var score := 0
     for t in part.tiles:
@@ -60,8 +61,13 @@ func score_cell(part: EnemyActionPart, cell: Vector2i, target: CombatUnit) -> in
                 score += 1
             elif tile.hp == Enum.HealthTileEnum.UNDAMAGED:
                 score += 2
+            if tile.has_effect(PlateTileEffect):
+                score += 1
         elif t is ShieldTile:
             if tile.hp == Enum.HealthTileEnum.UNDAMAGED:
+                score += 1
+        elif t is ApplyEffectTile and t.effect is PlateTileEffect:
+            if tile.hp > Enum.HealthTileEnum.DAMAGED and not tile.has_effect(PlateTileEffect):
                 score += 1
         else:
             score += 1
