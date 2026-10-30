@@ -18,6 +18,11 @@ const ICON_ALPHA_MAX := 1.0
 const PREVIEW_ALPHA := 0.85  # icons under the cursor (selected card)
 const SHIELD_SCALE := 0.55  # shield = a smaller hex inside the tile
 const SHIELD_ALPHA := 0.8
+const PARTICLE_AMOUNT := 3  # per effect, per tile
+const PARTICLE_LIFETIME := 1.8
+const PARTICLE_SIZE := 14.0  # px; effect icons are scaled down to this
+const PARTICLE_SPEED := Vector2(8, 16)  # min/max px per second, drifting up
+const PARTICLE_SPREAD := 18.0  # px from the tile centre where they appear
 
 const COLOR_ALIVE := Color("#ffffff")
 const COLOR_DAMAGED := Color("#454545")
@@ -42,6 +47,7 @@ var _origin := Vector2.ZERO
 var _info_cell := NO_CELL  # tile under the mouse, for the info panels (any grid, clickable or not)
 var _info_timer := 0.0
 var _info_box := InfoPanel.make_box()
+var _particles: Dictionary[String, CPUParticles2D] = {}  # "cell|effect script" -> emitter
 
 
 func _ready() -> void:
@@ -86,6 +92,56 @@ func _process(delta: float) -> void:
 		_info_timer -= delta
 		if _info_timer <= 0.0:
 			_show_info(_info_cell)
+	_sync_particles()
+
+
+## One emitter per effect on each tile, using the effect's icon; added and removed as effects come and go.
+func _sync_particles() -> void:
+	var wanted := {}
+	if unit:
+		for cell in unit.health:
+			for effect in unit.health[cell].status_effects:
+				var key := "%s|%s" % [cell, effect.get_script().resource_path]
+				wanted[key] = true
+				if not _particles.has(key):
+					_particles[key] = _make_particles(effect)
+					add_child(_particles[key])
+				_particles[key].position = _origin + axial_to_pixel(cell)
+	for key in _particles.keys():
+		if not wanted.has(key):
+			_particles[key].queue_free()
+			_particles.erase(key)
+
+
+func _make_particles(effect: BaseTileEffect) -> CPUParticles2D:
+	var particles := CPUParticles2D.new()
+	particles.amount = PARTICLE_AMOUNT
+	particles.lifetime = PARTICLE_LIFETIME
+	particles.preprocess = PARTICLE_LIFETIME  # already drifting when it appears
+	particles.emission_shape = CPUParticles2D.EMISSION_SHAPE_SPHERE
+	particles.emission_sphere_radius = PARTICLE_SPREAD
+	particles.direction = Vector2.UP
+	particles.spread = 20.0
+	particles.gravity = Vector2.ZERO
+	particles.initial_velocity_min = PARTICLE_SPEED.x
+	particles.initial_velocity_max = PARTICLE_SPEED.y
+	var ramp := Gradient.new()  # fade in, then out
+	ramp.set_color(0, Color(1, 1, 1, 0))
+	ramp.set_color(1, Color(1, 1, 1, 0))
+	ramp.add_point(0.25, Color.WHITE)
+	ramp.add_point(0.7, Color.WHITE)
+	particles.color_ramp = ramp
+	var icon := effect.get_icon()
+	if icon:
+		particles.texture = icon
+		var scale_amount := PARTICLE_SIZE / icon.get_width()
+		particles.scale_amount_min = scale_amount * 0.8
+		particles.scale_amount_max = scale_amount
+	else:  # no icon: small dots in the effect's colour
+		particles.color = effect.get_color()
+		particles.scale_amount_min = 3.0
+		particles.scale_amount_max = 4.0
+	return particles
 
 
 func _draw() -> void:
