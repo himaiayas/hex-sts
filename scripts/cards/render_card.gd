@@ -13,7 +13,9 @@ const STAR_SPACING := 1  # between stars
 const STAR_MARGIN := Vector2(6, 1)  # from the card's top-right corner
 const NAME_FONT_SIZE := 22
 const COST_FONT_SIZE := 30
-const FONT_SIZE := 16  # description
+const INLINE_PATTERN_HEIGHT := 26.0  # a {render:N} that shares its line with text
+const INLINE_SPACING := 4  # between text and an inline pattern
+const FONT_SIZE :=16  # description
 const COLOR_DESCRIPTION := Color(0.117647, 0.117647, 0.137255)  # dark, like the name
 
 ## Background, name frame and outline images are 1034x1436 with the card drawn in this
@@ -49,6 +51,8 @@ const COLOR_KEYWORD := Color(1, 0.831373, 0.352941)
 static var _keyword_regex := RegEx.create_from_string("\\{keyword:([^}]+)\\}")
 ## A line that is just {render:N}.
 static var _render_regex := RegEx.create_from_string("^\\{render:(\\d+)\\}$")
+## {render:N} anywhere in a line.
+static var _inline_render_regex := RegEx.create_from_string("\\{render:(\\d+)\\}")
 
 var card_data: BaseCard = Strike.new()
 
@@ -108,10 +112,11 @@ static func create_card(data: BaseCard) -> Node2D:
 	return card
 
 
-## Shrinks the description when it's taller than DESCRIPTION_RECT, keeping it centred.
+## Shrinks the description when it's taller or wider than DESCRIPTION_RECT, keeping it centred.
 static func _fit_description(box: VBoxContainer) -> void:
 	box.size = DESCRIPTION_RECT.size  # grows back to its minimum size if the content is bigger
-	var fit := minf(1.0, DESCRIPTION_RECT.size.y / maxf(1.0, box.size.y))
+	var fit := minf(1.0, minf(DESCRIPTION_RECT.size.x / maxf(1.0, box.size.x),
+		DESCRIPTION_RECT.size.y / maxf(1.0, box.size.y)))
 	box.scale = Vector2(fit, fit)
 	box.position = DESCRIPTION_RECT.position + Vector2((DESCRIPTION_RECT.size.x - box.size.x * fit) / 2.0, 0)
 
@@ -139,27 +144,61 @@ static func keywords_in(description: String) -> PackedStringArray:
 	return found
 
 
-## One row per line: {render:N} draws grid_actions[N], anything else is text.
+## One row per line: a line that is just {render:N} draws grid_actions[N] full width;
+## {render:N} inside text draws it small, in a row with the text (that text doesn't wrap).
 static func _fill_description(box: VBoxContainer, data: BaseCard) -> void:
-	var keyword_bbcode := "[b][color=#%s]$1[/color][/b]" % COLOR_KEYWORD.to_html(false)
 	for line in data.get_description().split("\n"):
 		var render := _render_regex.search(line.strip_edges())
 		if render:
-			var index := render.get_string(1).to_int()
-			if index < data.grid_actions.size():
-				box.add_child(PatternView.new(data.grid_actions[index]))
-			else:
-				push_warning("%s has no grid action %d" % [data.card_name, index])
+			var action := _grid_action(data, render.get_string(1).to_int())
+			if action:
+				box.add_child(PatternView.new(action))
 			continue
-		var label := RichTextLabel.new()
-		label.bbcode_enabled = true
-		label.fit_content = true
-		label.scroll_active = false
-		label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		label.add_theme_font_size_override("normal_font_size", FONT_SIZE)
-		label.add_theme_font_size_override("bold_font_size", FONT_SIZE)
-		label.add_theme_color_override("default_color", COLOR_DESCRIPTION)
-		label.text = _keyword_regex.sub(line, keyword_bbcode, true)
-		box.add_child(label)
+		if not _inline_render_regex.search(line):
+			box.add_child(_text_label(line, true))
+			continue
+		var row := HBoxContainer.new()
+		row.alignment = BoxContainer.ALIGNMENT_CENTER
+		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_theme_constant_override("separation", INLINE_SPACING)
+		var start := 0
+		for m in _inline_render_regex.search_all(line):
+			_add_inline_text(row, line.substr(start, m.get_start() - start))
+			var action := _grid_action(data, m.get_string(1).to_int())
+			if action:
+				var pattern := PatternView.new(action, INLINE_PATTERN_HEIGHT)
+				pattern.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+				row.add_child(pattern)
+			start = m.get_end()
+		_add_inline_text(row, line.substr(start))
+		box.add_child(row)
+
+
+static func _grid_action(data: BaseCard, index: int) -> GridAction:
+	if index < data.grid_actions.size():
+		return data.grid_actions[index]
+	push_warning("%s has no grid action %d" % [data.card_name, index])
+	return null
+
+
+static func _add_inline_text(row: HBoxContainer, text: String) -> void:
+	if not text.strip_edges().is_empty():
+		var label := _text_label(text.strip_edges(), false)
+		label.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		row.add_child(label)
+
+
+## wrap: wraps to the description's width; otherwise as wide as its text.
+static func _text_label(text: String, wrap: bool) -> RichTextLabel:
+	var label := RichTextLabel.new()
+	label.bbcode_enabled = true
+	label.fit_content = true
+	label.scroll_active = false
+	label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART if wrap else TextServer.AUTOWRAP_OFF
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.add_theme_font_size_override("normal_font_size", FONT_SIZE)
+	label.add_theme_font_size_override("bold_font_size", FONT_SIZE)
+	label.add_theme_color_override("default_color", COLOR_DESCRIPTION)
+	label.text = _keyword_regex.sub(text, "[b][color=#%s]$1[/color][/b]" % COLOR_KEYWORD.to_html(false), true)
+	return label
