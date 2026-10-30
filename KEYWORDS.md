@@ -3,7 +3,7 @@
 English translation of the **Keywords** tab of the design sheet
 (https://docs.google.com/spreadsheets/d/1ka0HmraZKJdy5WNRn9CmD43_94UFQQe9Yh29IsCXNtU, tab "Keywords").
 ⚙️ marks a rule clarification that was already in the sheet. The examples come from the sheet's Card and Monster tabs.
-The last two sections, "Decided" and "For Mai", are not from the sheet. They say how the keywords map to our code.
+The last section, "Decided", is not from the sheet. It says how the keywords map to our code, as agreed in issue #8.
 
 ## Core rules
 | Keyword | Meaning |
@@ -74,57 +74,42 @@ The last two sections, "Decided" and "For Mai", are not from the sheet. They say
 | P1 / P2 (Phase) | The boss switches action sets below 50% HP. | Dragon, Dracula, Ramiel |
 
 ## Decided
-Where this differs from the sheet translation above, this section wins.
+Agreed with Mai in issue #8. Where this differs from the sheet translation above, this section wins.
 
-- **Block** replaces Shield (`ShieldTile`, `HealthTile.SHIELDED`, the "Shield" card).
-  - It absorbs 1 hit, then it's gone. A second hit on the same hex in the same turn damages it.
-  - It clears at the start of its owner's turn (the player's Block at the start of the player's turn, an enemy's at the start of the enemy's). Enemies may get Block skills later.
-- **Plate** is a new tile effect. It doesn't expire, but each hit removes 1 stack (see For Mai #3), and the hex only takes damage once Plate is gone. Plate is never permanent (the sheet says only Smash / Shred / Corrode remove it; we don't follow that).
-  - Not implemented yet, sheet draft only: the 20-hex cap and Smash / Shred / Corrode.
-- Block and Plate can't go on a damaged hex.
-- Block and Plate are `BaseTileEffect`s in `HealthTile.status_effects`, so `HealthTile.hp` becomes just 0 / 1. Each tile gets its own effect object (today one card shares one object across every tile it hits).
-- Effect triggers (task #8, done together with #6):
-  - `BaseEffect` gets two empty methods that subclasses override: `on_turn_start(combat, unit, cell)` and `on_hit(combat, unit, cell) -> bool` (true = the hit was absorbed). `CombatUnit` calls them on every tile's `status_effects` (tile-wise) and on its own `statuses` (global). More triggers get added when an effect needs one.
-  - Player turn start: top of `CombatState.start_turn()`, before drawing and before enemies plan. Enemy turn start: in `end_turn()`, right before that enemy's `take_turn()`. So an enemy's Block lasts the whole player turn.
-  - Every hit goes through `CombatUnit.damage_health_tile`, which asks the tile's effects (`on_hit`) before reducing hp. A pierce flag (Poison, Sacrifice) gets added there when needed.
-- Grid colours: Block keeps today's blue, Plate is steel grey, stacks above 1 show as a small number. Draw order Block > Plate > other effects. If Block can sit on Plate (For Mai #4), it's drawn as 50% blue over the steel grey.
-- **Slime Harden** and **Guarded Bash**'s self-shield use Plate. Ignore Rune Armor / Bone Armor / Armor Plating / Absolute Terror Field for now.
-- The "Shield" card becomes **Guard** (`guard.gd`).
-- **Strength** instead of Edge. Not implemented (task #7), and how the player places the extra hexes is undecided.
-- **Sacrifice** instead of Fracture (the Card tab's "Trade 2" / "Sacifice 3" mean this too).
-- Tooltips: **Exhaust, Retain, Sacrifice** get one, from a small list in `keywords.gd` (they aren't effects). **Draw** and **Cost X** don't.
+**Shield** (the sheet's Block and Plate are replaced by Shield + Plate below)
+- Block and Shield are the same thing. We call it Shield.
+- Shield stays hard-coded: `hp == SHIELDED`, applied by `ShieldTile`. No rename.
+- It stays until it's hit, and it absorbs 1 hit. A second hit on the same hex damages it. It never expires and doesn't stack.
+- Shield can't go on a damaged hex.
+
+**Plate**
+- A tile effect (`PlateTileEffect`), applied with `ApplyEffectTile`. It doesn't stack.
+- At the start of each of its owner's turns, it gives its tile Shield, unless the opponent attacked that tile during the opponent's last turn. A hit that Shield absorbed still counts as an attack.
+- So there's no Shield on the turn it's cast. The first one comes at the owner's next turn start, if the tile wasn't attacked in between.
+- It's removed when its tile's hp reaches 0 (ON_HIT). Hitting a Plated hex that has Shield twice in one turn breaks the Shield and then removes the Plate.
+- Plate can't go on a damaged hex.
+- Not implemented, sheet draft only: the 20-hex cap and Smash / Shred / Corrode.
+- Slime Harden and Guarded Bash's self-shield use Plate.
+
+**Poison**
+- A tile effect: at the start of its owner's turn, its tile takes 1 damage (a Shield on that tile absorbs it).
+- Both the player and enemies can apply it.
+- At TURN_START, Poison fires before Plate gives Shield, so Plate on its own doesn't make a tile immune. Poison damage on the owner's own turn doesn't count as an attack for Plate.
+
+**Triggers** (task #8, already on main)
+- Effects override `on_trigger(Enum.Trigger, combat, unit, cell)`. Each unit fires TURN_START / TURN_END on its own turn, and ON_HIT / ON_BLOCK when one of its tiles is hit.
+- Effects tick at their owner's TURN_END.
+
+**Damage with no pattern** (Retaliate, Living Wall, Ashes to Ashes)
+- Hit X random undamaged hexes, with no targeting logic.
+
+**Enemy targeting**
+- `score_cell` stays as it is: a shielded hex scores 1, an open hex scores 2.
+
+**Names and tooltips**
+- Strength instead of Edge. Not implemented (task #7), and how the player places the extra hexes is undecided.
+- Sacrifice instead of Fracture (the Card tab's "Trade 2" / "Sacifice 3" mean this too).
+- Tooltips: Shield, Exhaust, Retain and Sacrifice get one from a small list in `keywords.gd` (they aren't effects). Plate and Poison get theirs from their effect class. Draw and Cost X get none.
+- The "Shield" card keeps its name.
+- Rune Armor / Bone Armor / Armor Plating / Absolute Terror Field are ignored for now.
 - Numbers that don't fit the grids (Block 12 and Plate 15 on a 7-hex player, Slime 12 HP vs 17 hexes, bosses up to 170 HP) stay as they are for now.
-
-## For Mai
-The Block / Plate rename touches your files: `scripts/enemies/slime/slime_harden.gd`, `slime_guarded_bash.gd`, `base_enemy_action.gd` (`score_cell` checks `SHIELDED` and `ShieldTile`), `enemy_check.gd`, `scripts/cards/card_data/shield.gd` and `scripts/game/run_state.gd`. We'll only touch them after you've answered below.
-
-Please tick one option, or write your own.
-
-**1. Poison.** The code has `PoisonTileEffect` on single tiles (`ApplyEffectTile`). The sheet makes Poison X a stack on the whole unit: at the start of the turn, lose 1 hex, going through Block and Plate, then drop 1 stack. Its wording ("1 hex per stack") also contradicts its own note; Dark Elf ("lose 1 hex/turn for 3 turns") settles it as 1 hex per turn.
-- [ ] Tile-wise: the poisoned tile itself is the one that gets damaged.
-- [ ] Unit-wise: a stack on the unit (that's the Power/status task, #7), and we need a rule for which hex is lost.
-
-**2. Damage with no pattern.** Retaliate, Living Wall and Ashes to Ashes "deal X to the enemy", often during the enemy's turn when the player can't click. My suggestion is one of these:
-- [ ] Hit X random undamaged hexes (just random, no targeting logic).
-- [ ] Remove these cards/keywords.
-- [ ] Other:
-
-**3. Can Block and Plate stack?** With stacks, Block 2 on a hex absorbs 2 hits. Without them, Block / Plate is on or off and absorbs 1 hit.
-- [ ] Both stack. Block stacks still all expire at the start of the owner's next turn. (my suggestion)
-- [ ] Only Plate stacks.
-- [ ] Neither stacks.
-- [ ] Other:
-
-**4. Can Block and Plate be on the same hex?** Fortify Grid ("turn Block into Plate") works either way.
-- [ ] No overlap: a hex has Block or Plate, not both. Also pick what happens when you apply one on a hex that has the other: [ ] nothing happens / [ ] the new one replaces it. (my suggestion)
-- [ ] Overlap allowed: a hit uses up Block first, then Plate.
-- [ ] Other:
-
-**5. Which tile applies Block / Plate?** (my proposal, affects `score_cell`)
-- [ ] Delete `ShieldTile` and use `ApplyEffectTile.new(cell, BlockTileEffect.new())` / `PlateTileEffect.new()`. Fewer classes; colour and tooltip come from the effect. `score_cell` checks `t is ApplyEffectTile and t.effect is BlockTileEffect`. (my suggestion)
-- [ ] Keep thin `BlockTile` / `PlateTile` subclasses of `ApplyEffectTile`, so `score_cell` stays `t is BlockTile`.
-- [ ] Other:
-
-**6. Enemy targeting on protected hexes.** `score_cell` gives damage on a shielded hex 1 and on an open hex 2. A hit on Block / Plate now just uses up a stack.
-- [ ] Keep it: a Blocked or Plated hex scores 1 no matter how many stacks, so open hexes are still preferred. (my suggestion)
-- [ ] Other:
