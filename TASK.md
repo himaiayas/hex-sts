@@ -48,7 +48,8 @@
 ### 6. Tile statuses
 
 - **Requirement/Prereq:** -
-- **Brief Description:** Design `BaseTileStatus` (e.g. poison). Implement `StatusTile.inflict` to call `apply_status_health_tile`
+- **Brief Description:** Design `BaseTileEffect` (e.g. poison). Implement `ApplyEffectTile.inflict` to call `apply_effect_health_tile`
+- [x] Done ✅: Rules are in `KEYWORDS.md` (decided in issue #8). Shield stays hard-coded (`hp == SHIELDED`). New `PlateTileEffect` shields its tile at the start of its owner's turn unless the opponent attacked it during their turn, and goes away when the tile is damaged. Slime Harden and Guarded Bash use Plate, and enemy attacks score Plated hexes +1. Effects fire in `order`, so Poison goes before Plate. No tile effect goes on a damaged hex. Shield / Exhaust / Retain / Sacrifice tooltips come from `Keywords.NOT_EFFECTS`. Check: `effect_check.gd` (headless).
 
 ### 7. Power
 
@@ -59,6 +60,7 @@
 
 - **Requirement/Prereq:** ?
 - **Brief Description:** Somehow make trigger such as On_turn_start or on_tile_damage work. Should be able to both global and tile-wise.
+- [x] Done ✅: Mai's `on_trigger(Enum.Trigger, ...)` on effects, powers and artifacts, fired by `CombatUnit.fire` / `fire_at`. Added `CombatUnit.in_turn` so an effect can tell whose turn it is, and put back `BaseEffect.tick()`, which was removed while `CombatUnit` still called it, so effects never ran out.
 
 ### 9. Remaining Action
 
@@ -141,12 +143,8 @@
 
 - ~~**Hover sentinel collides with a real cell:**~~ Fixed: `NO_CELL` is now `Vector2i(999999, 999999)`.
 - **Dead units still act (#3):** enemies now take turns (`BaseEnemy.take_turn`) even when every tile is damaged, and the player can reach 0 undamaged tiles with nothing happening. Needs `is_dead()` + checks in `CombatState.end_turn()`.
-- **Shield stacks forever:** `CombatUnit.shield_health_tile` does `hp + 1` with no cap (2 → 3 → 4...). The view treats `>= SHIELDED` as shielded, so it's hidden.
 - ~~**Target type ignored (see #4):**~~ Partly fixed: `BaseCard.target` (default ENEMY) decides which grid a card is played on; `ShieldEnemy` became `ShieldPlayer` and shields your own grid. `BaseAction.target` is still unused.
-- **Shared effect instance:** each card creates one `PoisonTileEffect` and every tile it hits gets that same object. `card.duplicate()` is shallow, so all copies of the card share it too. Per-tile stacks/duration will break; create or duplicate the effect in `apply_effect_health_tile`.
-- **Orphan `.uid` files** left from the status→effect rename: `scripts/effects/base_status.gd.uid`, `scripts/effects/tile_effects/base_tile_status.gd.uid`, `scripts/effects/tile_effects/poison_tile_status.gd.uid`.
 - ~~**Mixed indentation:**~~ Fixed in `be87566`: all `.gd` files now use tabs (Godot's default, applied on save), and `.editorconfig` enforces it.
 - **Stale comments:** `HealthTile.hp` still says `-1 = empty`; `make_hex_health` says "hexagon of radius r in a (2r+1)x(2r+1) matrix" but takes a coord list and returns a Dictionary.
 - **Main scene is a dead end:** `mainmenu.tscn` is the main scene, but its button has no script. Combat has to be run directly (F6 on `combat.tscn`).
 - **Content placeholders:** `StatusStrike` costs 3 (all your energy), card descriptions are `"fdksmfdf."`, and `scripts/main.gd` is the empty template.
-- **TASK.md drift:** #6 mentions `StatusTile`/`BaseTileStatus`, which are now `ApplyEffectTile`/`BaseTileEffect`.

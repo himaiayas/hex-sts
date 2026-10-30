@@ -7,6 +7,7 @@ var health: Dictionary[Vector2i, HealthTile]  #Matrix with element as HealthTile
 var statuses: Array[BaseEffect] = []
 var artifacts: Array[BaseArtifact] = []  # the player's, shared with RunState
 var is_player := false
+var in_turn := false  # true between this unit's TURN_START and TURN_END
 
 
 func _init(_name: String, _health: Dictionary[Vector2i, HealthTile], _is_player := false) -> void:
@@ -42,7 +43,7 @@ func damage_health_tile(combat: CombatState, coords: Vector2i)->void:
 
 func apply_effect_health_tile(coords:Vector2i, effect:BaseTileEffect)->void:
 	var tile: HealthTile = health[coords]
-	if tile:
+	if tile and tile.hp > Enum.HealthTileEnum.DAMAGED:
 		_add_or_stack(tile.status_effects, effect)
 
 
@@ -51,12 +52,14 @@ func add_power(power: BaseEffect) -> void:
 
 
 func on_turn_start(combat: CombatState) -> void:
+	in_turn = true
 	fire(Enum.Trigger.TURN_START, combat)
 
 
 ## Fires TURN_END, then counts every effect down and drops the ones that ran out.
 func on_turn_end(combat: CombatState) -> void:
 	fire(Enum.Trigger.TURN_END, combat)
+	in_turn = false
 	statuses.assign(statuses.filter(_still_active))
 	for tile in health.values():
 		tile.status_effects.assign(tile.status_effects.filter(_still_active))
@@ -89,6 +92,7 @@ func _add_or_stack(effects: Array, effect: BaseEffect) -> void:
 			existing.stack(effect)
 			return
 	effects.append(effect)
+	effects.sort_custom(func(a: BaseEffect, b: BaseEffect) -> bool: return a.order < b.order)
 
 
 func _still_active(effect: BaseEffect) -> bool:

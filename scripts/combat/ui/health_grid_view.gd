@@ -23,6 +23,7 @@ const COLOR_PREVIEW := Color("#ff7a7a")
 const COLOR_EDGE := Color("#151515")
 const COLOR_TEXT := Color("#e8e0c8")
 const COLOR_SHIELDED := Color("#a0e5f6")
+const COLOR_PLATE := Color("#8a96a3")
 const COLOR_CANDIDATE := Color("#ffd45a")
 const COLOR_NEW := Color("#ffe9a8")
 
@@ -86,13 +87,17 @@ func _draw() -> void:
 	for coord in unit.health.keys():
 		var tile: HealthTile = unit.health[coord]
 		var color = COLOR_ALIVE
+		# ponytail: one colour per tile, so Plate hides Poison on the same tile. Draw effect icons if both need to show.
+		var plated := tile.has_effect(PlateTileEffect)
 		if tile.hp >= Enum.HealthTileEnum.SHIELDED:
 			alive += 1
-			color = COLOR_SHIELDED
+			color = COLOR_PLATE.lerp(COLOR_SHIELDED, 0.5) if plated else COLOR_SHIELDED
 			
 		elif tile.hp == Enum.HealthTileEnum.UNDAMAGED:
 			alive += 1
-			if tile.status_effects.size() > 0:
+			if plated:
+				color = COLOR_PLATE
+			elif tile.status_effects.size() > 0:
 				color = tile.status_effects[0].get_color()
 		else:
 			color = COLOR_DAMAGED
