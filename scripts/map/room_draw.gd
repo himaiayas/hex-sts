@@ -2,13 +2,14 @@ class_name RoomDraw
 
 
 const SQRT3 := 1.7320508
-const INSET := 0.94 #gap
+const INSET := 0.95 #gap
 const COLOR_ROOM := Color("#262a35")
 const COLOR_ROOM_EDGE := Color("#3b4152")
 const COLOR_DOOR := Color("#9aa1b5")
 const COLOR_ENTRY := Color("#ffd45a")
 const COLOR_ICON := Color.WHITE
 const ICON_SCALE := 2.6  # image width in units of the icon size s
+const DOOR_LENGTH := 0.5
 
 ## Room images; types not listed (START, BOSS_COMBAT) are drawn with shapes.
 const ROOM_ICONS := {
@@ -58,11 +59,24 @@ static func draw_room(ci: CanvasItem, center: Vector2, size: float, room: MapRoo
 	points.append(points[0])
 	ci.draw_polyline(points, COLOR_ROOM_EDGE, 2.0)
 
-	for dir in room.doors:
-		var mid := center + axial_to_pixel(MapState.DIRS[dir], size) * 0.5 * INSET
-		var along := (mid - center).normalized().orthogonal() * size * 0.22
-		var color := COLOR_ENTRY if dir == entry_door else COLOR_DOOR
-		ci.draw_line(mid - along, mid + along, color, size * 0.12)
+	for i in room.doors:
+		var vector_A := Vector2(
+			cos((i)*PI/3),
+			-sin((i)*PI/3)
+		)
+		var point_A := center + size*(vector_A)
+		var vector_AB := Vector2(
+			cos((i+4)*PI/3),
+			-sin((i+4)*PI/3)
+		)
+		print(vector_AB)
+		var door_start := point_A + size*(1-DOOR_LENGTH)/2*vector_AB
+		var door_end := point_A + size*(1+DOOR_LENGTH)/2*vector_AB
+
+		#var mid := center + axial_to_pixel(MapState.DIRS[dir], size) * 0.5 * INSET
+		#var along := (mid - center).normalized().orthogonal() * size * 0.22
+		var color := COLOR_ENTRY if i == entry_door else COLOR_DOOR
+		ci.draw_line(door_start, door_end, color, size * 0.2)
 
 	draw_icon(ci, center, size * 0.32, room.type)
 
