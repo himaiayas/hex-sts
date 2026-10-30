@@ -26,3 +26,7 @@ func on_trigger(trigger: Enum.Trigger, _combat: CombatState, unit: CombatUnit, c
 
 func get_color() -> Color:
 	return HealthGridView.COLOR_PLATE
+
+
+func get_icon() -> Texture2D:
+	return preload("res://assets/grid_effects/plate.png")

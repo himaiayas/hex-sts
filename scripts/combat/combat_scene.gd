@@ -5,6 +5,7 @@ extends Control
 
 const RenderCard := preload("res://scripts/cards/render_card.gd")
 const CARD_SIZE := HandView.CARD_SIZE
+const ENEMY_IMAGE_SIZE := Vector2(300, 300)
 
 var combat: CombatState
 var selected: BaseCard = null
@@ -59,9 +60,22 @@ func _ready() -> void:
 		var intent_label := Label.new()
 		intent_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		var box := VBoxContainer.new()
+		box.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		box.add_child(view)
 		box.add_child(intent_label)
-		_enemies_box.add_child(box)
+		# Enemy image on the left, its health grid on the right.
+		var side := HBoxContainer.new()
+		side.add_theme_constant_override("separation", 24)
+		var image := TextureRect.new()
+		image.texture = enemy.sprite
+		image.custom_minimum_size = ENEMY_IMAGE_SIZE
+		image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		image.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		side.add_child(image)
+		side.add_child(box)
+		_enemies_box.add_child(side)
 		_enemy_views.append(view)
 		_intent_labels.append(intent_label)
 

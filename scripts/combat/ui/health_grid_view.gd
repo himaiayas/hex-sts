@@ -10,12 +10,14 @@ const HEX_SIZE := 36.0
 const SQRT3 := 1.7320508
 const NAME_HEIGHT := 40.0
 const NO_CELL := Vector2i(999999, 999999)  # not (0,0): that's a real cell
-const INTENT_ALPHA_MIN := 0.15
-const INTENT_ALPHA_MAX := 0.45
 const INTENT_PERIOD := 1.4  # seconds per pulse
-const PLACED_ALPHA_MIN := 0.2
-const PLACED_ALPHA_MAX := 0.85
 const PLACED_PERIOD := 0.4  # faster than intents so the two read differently
+const ICON_SIZE := 40.0  # action icons on targeted tiles (a hex is ~62 wide)
+const ICON_ALPHA_MIN := 0.35  # icons blink between these; brighter than the old colour fill
+const ICON_ALPHA_MAX := 1.0
+const PREVIEW_ALPHA := 0.85  # icons under the cursor (selected card)
+const SHIELD_SCALE := 0.55  # shield = a smaller hex inside the tile
+const SHIELD_ALPHA := 0.8
 
 const COLOR_ALIVE := Color("#ffffff")
 const COLOR_DAMAGED := Color("#454545")
@@ -37,14 +39,26 @@ var new_cells: Array[Vector2i] = [] # health cells drawn in COLOR_NEW (tiles jus
 
 var _hover := NO_CELL
 var _origin := Vector2.ZERO
+var _info_cell := NO_CELL  # tile under the mouse, for the info panels (any grid, clickable or not)
+var _info_timer := 0.0
+var _info_box := InfoPanel.make_box()
+
+
+func _ready() -> void:
+	_info_box.top_level = true  # positioned in screen space, outside the grid
+	_info_box.z_index = 10  # above the hand's cards
+	add_child(_info_box)
 
 
 func setup(_unit: CombatUnit, _clickable: bool) -> void:
 	unit = _unit
 	clickable = _clickable
-	mouse_filter = Control.MOUSE_FILTER_STOP if clickable else Control.MOUSE_FILTER_IGNORE
+	# PASS rather than IGNORE so read-only grids still get hover info.
+	mouse_filter = Control.MOUSE_FILTER_STOP if clickable else Control.MOUSE_FILTER_PASS
 	mouse_exited.connect(func() -> void:
 		_hover = NO_CELL
+		_info_cell = NO_CELL
+		_info_box.hide()
 		queue_redraw())
 	refresh()
 
@@ -65,9 +79,13 @@ func refresh() -> void:
 	queue_redraw()
 
 
-func _process(_delta: float) -> void:
+func _process(delta: float) -> void:
 	if not intents.is_empty() or not placed.is_empty():
 		queue_redraw()  # keep the intent pulse and placed flicker animating
+	if _info_cell != NO_CELL and not _info_box.visible:
+		_info_timer -= delta
+		if _info_timer <= 0.0:
+			_show_info(_info_cell)
 
 
 func _draw() -> void:
@@ -89,11 +107,7 @@ func _draw() -> void:
 		var color = COLOR_ALIVE
 		# ponytail: one colour per tile, so Plate hides Poison on the same tile. Draw effect icons if both need to show.
 		var plated := tile.has_effect(PlateTileEffect)
-		if tile.hp >= Enum.HealthTileEnum.SHIELDED:
-			alive += 1
-			color = COLOR_PLATE.lerp(COLOR_SHIELDED, 0.5) if plated else COLOR_SHIELDED
-			
-		elif tile.hp == Enum.HealthTileEnum.UNDAMAGED:
+		if tile.hp >= Enum.HealthTileEnum.UNDAMAGED:
 			alive += 1
 			if plated:
 				color = COLOR_PLATE
@@ -109,6 +123,8 @@ func _draw() -> void:
 		draw_colored_polygon(corners, color)
 		corners.append(corners[0])
 		draw_polyline(corners, COLOR_EDGE, 3.0)
+		if tile.hp >= Enum.HealthTileEnum.SHIELDED:
+			_draw_shield(_origin + axial_to_pixel(coord), SHIELD_ALPHA)
 
 	for cell in candidates:
 		var corners := hex_corners(_origin + axial_to_pixel(cell), HEX_SIZE - 2.5)
@@ -118,33 +134,84 @@ func _draw() -> void:
 		draw_polyline(corners, Color(COLOR_CANDIDATE, 0.8), 2.0)
 
 	var wave := 0.5 + 0.5 * sin(TAU * Time.get_ticks_msec() / 1000.0 / INTENT_PERIOD)
-	var pulse := lerpf(INTENT_ALPHA_MIN, INTENT_ALPHA_MAX, wave)
+	var pulse := lerpf(ICON_ALPHA_MIN, ICON_ALPHA_MAX, wave)
 	for intent in intents:
 		for t: BaseActionTile in intent.tiles:
 			var cell: Vector2i = intent.cell + t.coords
 			if unit.health.has(cell):
-				draw_colored_polygon(hex_corners(_origin + axial_to_pixel(cell), HEX_SIZE - 2.5), Color(t.get_color(), pulse))
+				_draw_action(t, cell, pulse)
 
 	var flicker_wave := 0.5 + 0.5 * sin(TAU * Time.get_ticks_msec() / 1000.0 / PLACED_PERIOD)
-	var flicker := lerpf(PLACED_ALPHA_MIN, PLACED_ALPHA_MAX, flicker_wave)
+	var flicker := lerpf(ICON_ALPHA_MIN, ICON_ALPHA_MAX, flicker_wave)
 	for p in placed:
 		for offset: Vector2i in p.tiles:
 			var cell: Vector2i = p.cell + offset
 			if unit.health.has(cell):
-				draw_colored_polygon(hex_corners(_origin + axial_to_pixel(cell), HEX_SIZE - 2.5), Color(p.tiles[offset].get_color(), flicker))
+				_draw_action(p.tiles[offset], cell, flicker)
 
 	for offset in preview:
 		var cell := _hover + offset
 		if unit.health.has(cell):
-			var corners := hex_corners(_origin + axial_to_pixel(cell), HEX_SIZE - 2.5)
-			draw_colored_polygon(corners, Color(preview[offset].get_color(),0.65))
+			_draw_action(preview[offset], cell, PREVIEW_ALPHA)
 
 	var font := ThemeDB.fallback_font
 	var title := "%s  %d/%d" % [unit.display_name, alive, coords.size()]
 	draw_string(font, Vector2(0, 27), title, HORIZONTAL_ALIGNMENT_CENTER, size.x, 27, COLOR_TEXT)
 
 
+## Info panels for a tile, like a card's keyword panels: its state (if not plain healthy),
+## then one panel per effect. Shown beside the tile, flipped left near the screen edge.
+func _show_info(cell: Vector2i) -> void:
+	InfoPanel.clear(_info_box)
+	var tile: HealthTile = unit.health[cell]
+	match tile.hp:
+		Enum.HealthTileEnum.DAMAGED:
+			_info_box.add_child(InfoPanel.make("Damaged", "This tile is lost and no longer counts toward health."))
+		Enum.HealthTileEnum.SHIELDED:
+			_info_box.add_child(InfoPanel.make("Shielded", "Blocks the next hit on this tile.", COLOR_SHIELDED))
+	for effect in tile.status_effects:
+		var turns := "" if effect.turns < 0 else " (%d turn%s)" % [effect.turns, "" if effect.turns == 1 else "s"]
+		_info_box.add_child(InfoPanel.make(effect.name + turns, effect.description, effect.get_color()))
+	if _info_box.get_child_count() == 0:
+		return
+	_info_box.reset_size()
+	var tile_center := get_global_transform() * (_origin + axial_to_pixel(cell))
+	var pos := tile_center + Vector2(HEX_SIZE + InfoPanel.GAP, -HEX_SIZE)
+	var screen := get_viewport_rect().size
+	if pos.x + _info_box.size.x > screen.x:
+		pos.x = tile_center.x - HEX_SIZE - InfoPanel.GAP - _info_box.size.x
+	pos.y = clampf(pos.y, 0.0, maxf(0.0, screen.y - _info_box.size.y))
+	_info_box.position = pos
+	_info_box.show()
+
+
+## What an action will do to a tile: its icon, a small shield hex, or (no icon) its colour.
+func _draw_action(t: BaseActionTile, cell: Vector2i, alpha: float) -> void:
+	var center := _origin + axial_to_pixel(cell)
+	if t is ShieldTile:
+		_draw_shield(center, alpha * SHIELD_ALPHA)
+		return
+	var icon := t.get_icon()
+	if icon:
+		var half := Vector2.ONE * ICON_SIZE / 2.0
+		draw_texture_rect(icon, Rect2(center - half, half * 2.0), false, Color(1, 1, 1, alpha))
+	else:
+		draw_colored_polygon(hex_corners(center, HEX_SIZE - 2.5), Color(t.get_color(), alpha * 0.5))
+
+
+func _draw_shield(center: Vector2, alpha: float) -> void:
+	draw_colored_polygon(hex_corners(center, HEX_SIZE * SHIELD_SCALE), Color(COLOR_SHIELDED, alpha))
+
+
 func _gui_input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		var hovered := _pixel_to_axial(event.position - _origin)
+		if not unit.health.has(hovered):
+			hovered = NO_CELL
+		if hovered != _info_cell:
+			_info_cell = hovered
+			_info_timer = InfoPanel.DELAY
+			_info_box.hide()
 	if not clickable:
 		return
 	if event is InputEventMouseMotion:

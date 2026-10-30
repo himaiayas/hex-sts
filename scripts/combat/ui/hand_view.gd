@@ -19,14 +19,12 @@ const HOVER_PUSH := 83.0
 const BOB_HEIGHT := 7
 const BOB_PERIOD := 1.2  # seconds per bob
 const SPEED := 14.0  # how fast cards ease toward their target
-const KEYWORD_DELAY := 0.5  # seconds before keyword panels show
-const KEYWORD_WIDTH := 300.0
-const KEYWORD_GAP := 13.0
+const KEYWORD_DELAY := InfoPanel.DELAY  # seconds before keyword panels show
+const KEYWORD_WIDTH := InfoPanel.WIDTH
+const KEYWORD_GAP := InfoPanel.GAP
 
-const COLOR_BORDER := Color(0.85098, 0.764706, 0.54902)
 const COLOR_SELECTED := Color("#4fa8ff")
 const COLOR_UNPLAYABLE := Color(0.55, 0.55, 0.55)
-const COLOR_KEYWORD_BG := Color(0.08, 0.08, 0.1, 0.92)
 
 var _cards: Array[BaseCard] = []
 var _holders: Dictionary[BaseCard, Node2D] = {}  # pivot at the card's bottom centre
@@ -193,34 +191,10 @@ func _update_keywords(delta: float) -> void:
 
 
 func _show_keywords(card: BaseCard) -> void:
-	for child in _keyword_box.get_children():
-		_keyword_box.remove_child(child)
-		child.queue_free()
+	InfoPanel.clear(_keyword_box)
 	for keyword in RenderCard.keywords_in(card.get_description()):
 		var text := Keywords.describe(keyword)
-		if text.is_empty():
-			continue
-		var style := StyleBoxFlat.new()
-		style.bg_color = COLOR_KEYWORD_BG
-		style.border_color = COLOR_BORDER
-		style.set_border_width_all(2)
-		style.set_corner_radius_all(10)
-		style.set_content_margin_all(13)
-		var panel := PanelContainer.new()
-		panel.add_theme_stylebox_override("panel", style)
-		panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var rows := VBoxContainer.new()
-		var title := Label.new()
-		title.text = keyword
-		title.add_theme_color_override("font_color", RenderCard.COLOR_KEYWORD)
-		var body := Label.new()
-		body.text = text
-		body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		body.custom_minimum_size.x = KEYWORD_WIDTH - 26
-		body.add_theme_font_size_override("font_size", 22)
-		rows.add_child(title)
-		rows.add_child(body)
-		panel.add_child(rows)
-		_keyword_box.add_child(panel)
+		if not text.is_empty():
+			_keyword_box.add_child(InfoPanel.make(keyword, text))
 	_keyword_box.reset_size()
 	_keyword_box.visible = _keyword_box.get_child_count() > 0

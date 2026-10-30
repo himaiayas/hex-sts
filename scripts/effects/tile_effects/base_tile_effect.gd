@@ -7,3 +7,7 @@ func _init(_name: String, _description: String, _turns := -1) -> void:
 
 
 @abstract func get_color() -> Color
+
+## Shown where an attack would apply this effect. Null: use get_color().
+func get_icon() -> Texture2D:
+	return null

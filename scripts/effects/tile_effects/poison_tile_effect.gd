@@ -10,3 +10,6 @@ func on_trigger(trigger: Enum.Trigger, combat: CombatState, unit: CombatUnit, ce
 
 func get_color() -> Color:
 	return Color("#00ff00")  # Green color for poison
+
+func get_icon() -> Texture2D:
+	return preload("res://assets/grid_effects/poison.png")
