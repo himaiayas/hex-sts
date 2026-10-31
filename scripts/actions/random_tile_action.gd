@@ -25,7 +25,15 @@ func execute(combat: CombatState, _unit: CombatUnit, _cell: Vector2i)->Array[Vec
 				pool.append([unit, cell])
 	pool.shuffle()
 	var hits: Array[Vector2i] = []
+	var hits_on: Dictionary[CombatUnit, Array] = {}  # Strength spreads on the grid each hit landed on
 	for pick in pool.slice(0, amount):
 		if tile.inflict(combat, pick[0], pick[1]):
 			hits.append(pick[1])
+			if not hits_on.has(pick[0]):
+				hits_on[pick[0]] = [] as Array[Vector2i]
+			hits_on[pick[0]].append(pick[1])
+	if tile is DamageTile:
+		for unit in hits_on:
+			var on_unit: Array[Vector2i] = hits_on[unit]
+			hits.append_array(StrengthPower.spread(combat, unit, on_unit))
 	return hits

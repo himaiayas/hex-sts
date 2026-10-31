@@ -91,6 +91,16 @@ func play_card(card: BaseCard, units: Array[CombatUnit], cells: Array[Vector2i],
 	return true
 
 
+## The unit whose turn it is: the player, or the enemy taking its turn. Null between turns.
+func acting_unit() -> CombatUnit:
+	if player.in_turn:
+		return player
+	for enemy in enemies:
+		if enemy.in_turn:
+			return enemy
+	return null
+
+
 func is_won() -> bool:
 	return not player.is_dead() and enemies.all(func(e: CombatUnit) -> bool: return e.is_dead())
 
