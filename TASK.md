@@ -69,6 +69,7 @@
 - **Brief Description:** Apply status effect & draw & gain energy & etc
   - Conditional actions: e.g. "deal [3 tiles]. If this damaged fewer than 2 enemy tiles, gain a random shield tile". `GridAction.execute` needs to report what it hit, and the condition lives in the card's `execute`.
   - Random tile actions: e.g. "shield a random tile on your grid". The target cell is picked at play time, so it can't be drawn with `{render}`.
+- [x] Done ✅: `inflict`, `GridAction.execute` and `BaseAction.execute` report the cells they changed (a shield block isn't a hit), and `BaseCard.execute` returns them per grid action, so a card checks `super()`'s result for conditions. New `GainEnergyAction` (not capped by `max_energy`), `RandomTileAction` (random tiles from one pool: your grid, or every living enemy) and `RandomGridAction` (random tiles on the grid you click; every grid it can go on flickers while selected). `can_inflict` keeps random picks off tiles they can't change. Cards with no grid actions are cast by dragging them to the middle of the screen. Example cards Thrust, Divine Mercy, Rapid Fire and Arrow Rain are in the pool and, for testing, the starting deck. Check: `action_check.gd` (headless).
 
 ## Enemies
 
@@ -144,8 +145,8 @@
 
 - ~~**Hover sentinel collides with a real cell:**~~ Fixed: `NO_CELL` is now `Vector2i(999999, 999999)`.
 - ~~**Dead units still act (#3):**~~ Fixed by Mai in #3. Was: enemies now take turns (`BaseEnemy.take_turn`) even when every tile is damaged, and the player can reach 0 undamaged tiles with nothing happening. Needs `is_dead()` + checks in `CombatState.end_turn()`.
-- ~~**Target type ignored (see #4):**~~ Partly fixed: `BaseCard.target` (default ENEMY) decides which grid a card is played on; `ShieldEnemy` became `ShieldPlayer` and shields your own grid. `BaseAction.target` is still unused.
+- ~~**Target type ignored (see #4):**~~ Partly fixed: `BaseCard.target` (default ENEMY) decides which grid a card is played on; `ShieldEnemy` became `ShieldPlayer` and shields your own grid. `BaseAction.target` is only used by `RandomTileAction`.
 - ~~**Mixed indentation:**~~ Fixed in `be87566`: all `.gd` files now use tabs (Godot's default, applied on save), and `.editorconfig` enforces it.
-- **Stale comments:** `HealthTile.hp` still says `-1 = empty`; `make_hex_health` says "hexagon of radius r in a (2r+1)x(2r+1) matrix" but takes a coord list and returns a Dictionary.
+- ~~**Stale comments:**~~ Fixed: `HealthTile.hp` no longer says `-1 = empty`, and `make_hex_health`'s comment matches what it does.
 - **Main scene is a dead end:** `mainmenu.tscn` is the main scene, but its button has no script. Combat has to be run directly (F6 on `combat.tscn`).
 - **Content placeholders:** `StatusStrike` costs 3 (all your energy), card descriptions are `"fdksmfdf."`, and `scripts/main.gd` is the empty template.
