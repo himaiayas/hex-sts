@@ -13,13 +13,13 @@ func _init(_target: Enum.TargetType, _tiles:Array[BaseActionTile], _anchor: Vect
 func execute(combat: CombatState, unit: CombatUnit, cell: Vector2i, rotation := 0)->Array[Vector2i]:
 	var pattern := rotated(rotation)
 	var hits: Array[Vector2i] = []
-	var damaged: Array[Vector2i] = []
+	var landed := []  # [unit, cell] of damage tiles on the grid, hit or not, for Strength
 	for offset in pattern:
+		if pattern[offset] is DamageTile and unit.health.has(cell + offset):
+			landed.append([unit, cell + offset])
 		if pattern[offset].inflict(combat, unit, cell + offset):
 			hits.append(cell + offset)
-			if pattern[offset] is DamageTile:
-				damaged.append(cell + offset)
-	hits.append_array(StrengthPower.spread(combat, unit, damaged))
+	hits.append_array(StrengthPower.spread(combat, landed))
 	return hits
 
 ## New dict of offset from the clicked cell -> tile, turned 60° clockwise per step. Never changes tiles itself.

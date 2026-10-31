@@ -18,11 +18,12 @@ func execute(combat: CombatState, unit: CombatUnit, _cell: Vector2i, _rotation :
 			pool.append(cell)
 	pool.shuffle()
 	var hits: Array[Vector2i] = []
-	for cell in pool.slice(0, amount):
+	var picks := pool.slice(0, amount)
+	for cell in picks:
 		if tiles[0].inflict(combat, unit, cell):
 			hits.append(cell)
 	if tiles[0] is DamageTile:
-		hits.append_array(StrengthPower.spread(combat, unit, hits))
+		hits.append_array(StrengthPower.spread(combat, picks.map(func(c: Vector2i) -> Array: return [unit, c])))
 	return hits
 
 ## No pattern to preview; the grid view highlights the whole grid instead.
