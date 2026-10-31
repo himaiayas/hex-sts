@@ -103,7 +103,7 @@ func _on_restart_pressed() -> void:
 func _check_out_of_steps() -> void:
 	if map.steps <= 0:
 		_busy = true
-		_game_over_panel.show() # will change to transition to boss room
+		RunState.start_boss()
 
 
 func _hint(text: String) -> void:

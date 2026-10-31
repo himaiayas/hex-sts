@@ -305,13 +305,11 @@ func _room_type() -> Enum.RoomType:
 
 ## Placeholder line-ups until there are more enemies.
 func _enemies_for(room_type: Enum.RoomType) -> Array[CombatUnit]:
-	var count := 1
-	match room_type:
-		Enum.RoomType.ELITE_COMBAT:
-			count = 2
-		Enum.RoomType.BOSS_COMBAT:
-			count = 3
 	var enemies: Array[CombatUnit] = []
+	if room_type == Enum.RoomType.BOSS_COMBAT:
+		enemies.append(RunState.floor_boss())
+		return enemies
+	var count := 2 if room_type == Enum.RoomType.ELITE_COMBAT else 1
 	for i in count:
 		enemies.append(Slime.new())
 	return enemies
