@@ -23,6 +23,8 @@ const PARTICLE_LIFETIME := 1.8
 const PARTICLE_SIZE := 14.0  # px; effect icons are scaled down to this
 const PARTICLE_SPEED := Vector2(8, 16)  # min/max px per second, drifting up
 const PARTICLE_SPREAD := 18.0  # px from the tile centre where they appear
+const POWER_SIZE := 36.0  # power badges, in a row under the grid
+const POWER_GAP := 8.0
 
 const COLOR_ALIVE := Color("#ffffff")
 const COLOR_DAMAGED := Color("#454545")
@@ -46,7 +48,9 @@ var new_cells: Array[Vector2i] = [] # health cells drawn in COLOR_NEW (tiles jus
 var _hover := NO_CELL
 var _origin := Vector2.ZERO
 var _info_cell := NO_CELL  # tile under the mouse, for the info panels (any grid, clickable or not)
+var _info_power := -1  # index in unit.statuses of the power badge under the mouse
 var _info_timer := 0.0
+var _powers_y := 0.0  # top of the power badge row
 var _info_box := InfoPanel.make_box()
 var _particles: Dictionary[String, CPUParticles2D] = {}  # "cell|effect script" -> emitter
 
@@ -65,6 +69,7 @@ func setup(_unit: CombatUnit, _clickable: bool) -> void:
 	mouse_exited.connect(func() -> void:
 		_hover = NO_CELL
 		_info_cell = NO_CELL
+		_info_power = -1
 		_info_box.hide()
 		queue_redraw())
 	refresh()
@@ -83,16 +88,22 @@ func refresh() -> void:
 	var pad := Vector2(HEX_SIZE, HEX_SIZE)
 	_origin = -min_p + pad + Vector2(0, NAME_HEIGHT)
 	custom_minimum_size = max_p - min_p + pad * 2 + Vector2(0, NAME_HEIGHT)
+	_powers_y = custom_minimum_size.y
+	if not unit.statuses.is_empty():
+		custom_minimum_size.y += POWER_SIZE + POWER_GAP
 	queue_redraw()
 
 
 func _process(delta: float) -> void:
 	if not intents.is_empty() or not placed.is_empty() or random_target:
 		queue_redraw()  # keep the intent pulse and placed flicker animating
-	if _info_cell != NO_CELL and not _info_box.visible:
+	if (_info_cell != NO_CELL or _info_power != -1) and not _info_box.visible:
 		_info_timer -= delta
 		if _info_timer <= 0.0:
-			_show_info(_info_cell)
+			if _info_power != -1:
+				_show_power_info(_info_power)
+			else:
+				_show_info(_info_cell)
 	_sync_particles()
 
 
@@ -222,6 +233,32 @@ func _draw() -> void:
 	var title := "%s  %d/%d" % [unit.display_name, alive, coords.size()]
 	draw_string(font, Vector2(0, 27), title, HORIZONTAL_ALIGNMENT_CENTER, size.x, 27, COLOR_TEXT)
 
+	# Power badges: icon with its stack count in the corner.
+	for i in unit.statuses.size():
+		var power := unit.statuses[i] as BasePower
+		if power == null:
+			continue
+		var rect := _power_rect(i)
+		draw_texture_rect(power.get_icon(), rect, false)
+		var corner := rect.end - Vector2(rect.size.x, 2)
+		draw_string_outline(font, corner, str(power.amount), HORIZONTAL_ALIGNMENT_RIGHT, rect.size.x, 20, 4, Color.BLACK)
+		draw_string(font, corner, str(power.amount), HORIZONTAL_ALIGNMENT_RIGHT, rect.size.x, 20, power.get_color())
+
+
+## Badge i in the row under the grid, centred.
+func _power_rect(i: int) -> Rect2:
+	var count := unit.statuses.size()
+	var width := count * POWER_SIZE + (count - 1) * POWER_GAP
+	var x := (size.x - width) / 2 + i * (POWER_SIZE + POWER_GAP)
+	return Rect2(x, _powers_y, POWER_SIZE, POWER_SIZE)
+
+
+func _power_at(p: Vector2) -> int:
+	for i in unit.statuses.size():
+		if _power_rect(i).has_point(p):
+			return i
+	return -1
+
 
 ## Info panels for a tile, like a card's keyword panels: its state (if not plain healthy),
 ## then one panel per effect. Shown beside the tile, flipped left near the screen edge.
@@ -244,6 +281,24 @@ func _show_info(cell: Vector2i) -> void:
 	var screen := get_viewport_rect().size
 	if pos.x + _info_box.size.x > screen.x:
 		pos.x = tile_center.x - HEX_SIZE - InfoPanel.GAP - _info_box.size.x
+	pos.y = clampf(pos.y, 0.0, maxf(0.0, screen.y - _info_box.size.y))
+	_info_box.position = pos
+	_info_box.show()
+
+
+## Name with stacks, and description, beside the badge.
+func _show_power_info(i: int) -> void:
+	InfoPanel.clear(_info_box)
+	var power := unit.statuses[i] as BasePower
+	if power == null:
+		return
+	_info_box.add_child(InfoPanel.make("%s %d" % [power.name, power.amount], power.description, power.get_color()))
+	_info_box.reset_size()
+	var rect := get_global_transform() * _power_rect(i)
+	var pos := Vector2(rect.end.x + InfoPanel.GAP, rect.position.y)
+	var screen := get_viewport_rect().size
+	if pos.x + _info_box.size.x > screen.x:
+		pos.x = rect.position.x - InfoPanel.GAP - _info_box.size.x
 	pos.y = clampf(pos.y, 0.0, maxf(0.0, screen.y - _info_box.size.y))
 	_info_box.position = pos
 	_info_box.show()
@@ -272,8 +327,10 @@ func _gui_input(event: InputEvent) -> void:
 		var hovered := _pixel_to_axial(event.position - _origin)
 		if not unit.health.has(hovered):
 			hovered = NO_CELL
-		if hovered != _info_cell:
+		var power := _power_at(event.position)
+		if hovered != _info_cell or power != _info_power:
 			_info_cell = hovered
+			_info_power = power
 			_info_timer = InfoPanel.DELAY
 			_info_box.hide()
 	if not clickable:
