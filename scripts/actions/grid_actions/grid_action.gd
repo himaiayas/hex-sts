@@ -9,11 +9,14 @@ func _init(_target: Enum.TargetType, _tiles:Array[BaseActionTile], _anchor: Vect
 	tiles = _tiles
 	anchor = _anchor
 
-## rotation = 60° clockwise steps around the clicked cell.
-func execute(combat: CombatState, unit: CombatUnit, cell: Vector2i, rotation := 0)->void:
+## rotation = 60° clockwise steps around the clicked cell. Returns the cells it changed.
+func execute(combat: CombatState, unit: CombatUnit, cell: Vector2i, rotation := 0)->Array[Vector2i]:
 	var pattern := rotated(rotation)
+	var hits: Array[Vector2i] = []
 	for offset in pattern:
-		pattern[offset].inflict(combat, unit, cell + offset)
+		if pattern[offset].inflict(combat, unit, cell + offset):
+			hits.append(cell + offset)
+	return hits
 
 ## New dict of offset from the clicked cell -> tile, turned 60° clockwise per step. Never changes tiles itself.
 func rotated(steps: int)->Dictionary[Vector2i, BaseActionTile]:
