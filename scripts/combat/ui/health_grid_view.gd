@@ -6,7 +6,8 @@ extends Control
 
 signal cell_clicked(unit: CombatUnit, coords: Vector2i)
 
-const HEX_SIZE := 36.0
+const HEX_SIZE := 36.0  # largest hex radius; big grids shrink below it
+const MAX_GRID_SIZE := Vector2(360, 330)  # hexes shrink so the grid (without its name) fits in this
 const SQRT3 := 1.7320508
 const NAME_HEIGHT := 40.0
 const NO_CELL := Vector2i(999999, 999999)  # not (0,0): that's a real cell
@@ -44,6 +45,7 @@ var new_cells: Array[Vector2i] = [] # health cells drawn in COLOR_NEW (tiles jus
 
 var _hover := NO_CELL
 var _origin := Vector2.ZERO
+var _hex := HEX_SIZE  # current hex radius
 var _info_cell := NO_CELL  # tile under the mouse, for the info panels (any grid, clickable or not)
 var _info_timer := 0.0
 var _info_box := InfoPanel.make_box()
@@ -70,16 +72,24 @@ func setup(_unit: CombatUnit, _clickable: bool) -> void:
 
 
 func refresh() -> void:
+	# Measure at hex size 1, then pick the size that fits MAX_GRID_SIZE.
 	var min_p := Vector2(INF, INF)
 	var max_p := Vector2(-INF, -INF)
 	for cell in unit.health.keys() + candidates:
-		var p := axial_to_pixel(cell)
+		var p := axial_to_pixel(cell, 1.0)
 		min_p = min_p.min(p)
 		max_p = max_p.max(p)
 	if min_p.x == INF:
 		min_p = Vector2.ZERO
 		max_p = Vector2.ZERO
-	var pad := Vector2(HEX_SIZE, HEX_SIZE)
+	var extent := max_p - min_p + Vector2(2.0, 2.0)  # plus one hex of padding each side
+	_hex = minf(HEX_SIZE, minf(MAX_GRID_SIZE.x / extent.x, MAX_GRID_SIZE.y / extent.y))
+	min_p *= _hex
+	max_p *= _hex
+	for key in _particles:  # rebuilt at the new size by _sync_particles
+		_particles[key].queue_free()
+	_particles.clear()
+	var pad := Vector2(_hex, _hex)
 	_origin = -min_p + pad + Vector2(0, NAME_HEIGHT)
 	custom_minimum_size = max_p - min_p + pad * 2 + Vector2(0, NAME_HEIGHT)
 	queue_redraw()
@@ -106,7 +116,7 @@ func _sync_particles() -> void:
 				if not _particles.has(key):
 					_particles[key] = _make_particles(effect)
 					add_child(_particles[key])
-				_particles[key].position = _origin + axial_to_pixel(cell)
+				_particles[key].position = cell_position(cell)
 	for key in _particles.keys():
 		if not wanted.has(key):
 			_particles[key].queue_free()
@@ -119,7 +129,7 @@ func _make_particles(effect: BaseTileEffect) -> CPUParticles2D:
 	particles.lifetime = PARTICLE_LIFETIME
 	particles.preprocess = PARTICLE_LIFETIME  # already drifting when it appears
 	particles.emission_shape = CPUParticles2D.EMISSION_SHAPE_SPHERE
-	particles.emission_sphere_radius = PARTICLE_SPREAD
+	particles.emission_sphere_radius = PARTICLE_SPREAD * _hex / HEX_SIZE
 	particles.direction = Vector2.UP
 	particles.spread = 20.0
 	particles.gravity = Vector2.ZERO
@@ -134,7 +144,7 @@ func _make_particles(effect: BaseTileEffect) -> CPUParticles2D:
 	var icon := effect.get_icon()
 	if icon:
 		particles.texture = icon
-		var scale_amount := PARTICLE_SIZE / icon.get_width()
+		var scale_amount := PARTICLE_SIZE * _hex / HEX_SIZE / icon.get_width()
 		particles.scale_amount_min = scale_amount * 0.8
 		particles.scale_amount_max = scale_amount
 	else:  # no icon: small dots in the effect's colour
@@ -175,15 +185,15 @@ func _draw() -> void:
 			color = COLOR_NEW
 		# if action_tile_dict.has(cell):
 		# 	color = color.lerp(COLOR_PREVIEW, 0.65)
-		var corners := hex_corners(_origin + axial_to_pixel(coord), HEX_SIZE - 2.5)
+		var corners := hex_corners(cell_position(coord), _hex - 2.5)
 		draw_colored_polygon(corners, color)
 		corners.append(corners[0])
 		draw_polyline(corners, COLOR_EDGE, 3.0)
 		if tile.hp >= Enum.HealthTileEnum.SHIELDED:
-			_draw_shield(_origin + axial_to_pixel(coord), SHIELD_ALPHA)
+			_draw_shield(cell_position(coord), SHIELD_ALPHA)
 
 	for cell in candidates:
-		var corners := hex_corners(_origin + axial_to_pixel(cell), HEX_SIZE - 2.5)
+		var corners := hex_corners(cell_position(cell), _hex - 2.5)
 		if cell == _hover:
 			draw_colored_polygon(corners, Color(COLOR_CANDIDATE, 0.35))
 		corners.append(corners[0])
@@ -231,11 +241,11 @@ func _show_info(cell: Vector2i) -> void:
 	if _info_box.get_child_count() == 0:
 		return
 	_info_box.reset_size()
-	var tile_center := get_global_transform() * (_origin + axial_to_pixel(cell))
-	var pos := tile_center + Vector2(HEX_SIZE + InfoPanel.GAP, -HEX_SIZE)
+	var tile_center := get_global_transform() * (_origin + cell_position(cell))
+	var pos := tile_center + Vector2(_hex + InfoPanel.GAP, -_hex)
 	var screen := get_viewport_rect().size
 	if pos.x + _info_box.size.x > screen.x:
-		pos.x = tile_center.x - HEX_SIZE - InfoPanel.GAP - _info_box.size.x
+		pos.x = tile_center.x - _hex - InfoPanel.GAP - _info_box.size.x
 	pos.y = clampf(pos.y, 0.0, maxf(0.0, screen.y - _info_box.size.y))
 	_info_box.position = pos
 	_info_box.show()
@@ -243,20 +253,20 @@ func _show_info(cell: Vector2i) -> void:
 
 ## What an action will do to a tile: its icon, a small shield hex, or (no icon) its colour.
 func _draw_action(t: BaseActionTile, cell: Vector2i, alpha: float) -> void:
-	var center := _origin + axial_to_pixel(cell)
+	var center := cell_position(cell)
 	if t is ShieldTile:
 		_draw_shield(center, alpha * SHIELD_ALPHA)
 		return
 	var icon := t.get_icon()
 	if icon:
-		var half := Vector2.ONE * ICON_SIZE / 2.0
+		var half := Vector2.ONE * ICON_SIZE * _hex / HEX_SIZE / 2.0
 		draw_texture_rect(icon, Rect2(center - half, half * 2.0), false, Color(1, 1, 1, alpha))
 	else:
-		draw_colored_polygon(hex_corners(center, HEX_SIZE - 2.5), Color(t.get_color(), alpha * 0.5))
+		draw_colored_polygon(hex_corners(center, _hex - 2.5), Color(t.get_color(), alpha * 0.5))
 
 
 func _draw_shield(center: Vector2, alpha: float) -> void:
-	draw_colored_polygon(hex_corners(center, HEX_SIZE * SHIELD_SCALE), Color(COLOR_SHIELDED, alpha))
+	draw_colored_polygon(hex_corners(center, _hex * SHIELD_SCALE), Color(COLOR_SHIELDED, alpha))
 
 
 func _gui_input(event: InputEvent) -> void:
@@ -282,13 +292,18 @@ func _gui_input(event: InputEvent) -> void:
 			cell_clicked.emit(unit, cell)
 
 
+## Centre of a cell in this grid's local coordinates.
+func cell_position(cell: Vector2i) -> Vector2:
+	return _origin + axial_to_pixel(cell, _hex)
+
+
 static func axial_to_pixel(c: Vector2i, hex_size := HEX_SIZE) -> Vector2:
 	return Vector2(hex_size * SQRT3 * (c.x + c.y / 2.0), hex_size * 1.5 * c.y)
 
 
 func _pixel_to_axial(p: Vector2) -> Vector2i:
-	var fq := (SQRT3 / 3.0 * p.x - p.y / 3.0) / HEX_SIZE
-	var fr := (2.0 / 3.0 * p.y) / HEX_SIZE
+	var fq := (SQRT3 / 3.0 * p.x - p.y / 3.0) / _hex
+	var fr := (2.0 / 3.0 * p.y) / _hex
 	var fs := -fq - fr
 	var q := roundf(fq)
 	var r := roundf(fr)
