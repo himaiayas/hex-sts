@@ -144,6 +144,7 @@
 
 ## Spotted Problems by Claude
 
+- ~~**Aiming at damaged tiles:**~~ Fixed: the player can't aim a grid action at a damaged tile (`GridAction.can_aim`, checked on click and in `play_card`), and there's no preview there. Rapid Fire can still pick a grid by any of its tiles. Enemies aren't restricted; their pattern scoring already avoids damaged tiles.
 - ~~**Hover sentinel collides with a real cell:**~~ Fixed: `NO_CELL` is now `Vector2i(999999, 999999)`.
 - ~~**Dead units still act (#3):**~~ Fixed by Mai in #3. Was: enemies now take turns (`BaseEnemy.take_turn`) even when every tile is damaged, and the player can reach 0 undamaged tiles with nothing happening. Needs `is_dead()` + checks in `CombatState.end_turn()`.
 - ~~**Target type ignored (see #4):**~~ Partly fixed: `BaseCard.target` (default ENEMY) decides which grid a card is played on; `ShieldEnemy` became `ShieldPlayer` and shields your own grid. `BaseAction.target` is only used by `RandomTileAction`.

@@ -22,6 +22,10 @@ func execute(combat: CombatState, unit: CombatUnit, cell: Vector2i, rotation := 
 	hits.append_array(StrengthPower.spread(combat, landed))
 	return hits
 
+## Whether the player can aim this action at cell: it has to be on the grid and not damaged.
+func can_aim(unit: CombatUnit, cell: Vector2i)->bool:
+	return unit.health.has(cell) and unit.health[cell].hp != Enum.HealthTileEnum.DAMAGED
+
 ## New dict of offset from the clicked cell -> tile, turned 60° clockwise per step. Never changes tiles itself.
 func rotated(steps: int)->Dictionary[Vector2i, BaseActionTile]:
 	var pattern: Dictionary[Vector2i, BaseActionTile] = {}

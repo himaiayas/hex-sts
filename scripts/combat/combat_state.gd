@@ -85,6 +85,9 @@ func can_play(card: BaseCard) -> bool:
 func play_card(card: BaseCard, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int]) -> bool:
 	if not can_play(card):
 		return false
+	for i in card.grid_actions.size():
+		if not card.grid_actions[i].can_aim(units[i], cells[i]):
+			return false
 	energy -= card.cost
 	hand.erase(card)
 	card.execute(self, units, cells, rotations)

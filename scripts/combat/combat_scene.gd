@@ -126,6 +126,9 @@ func _on_cell_clicked(unit: CombatUnit, cell: Vector2i) -> void:
 	if (unit == combat.player) != _targets_player():
 		_hint_label.text = "This card targets %s." % ("your grid" if _targets_player() else "an enemy")
 		return
+	if not _next_grid_action().can_aim(unit, cell):
+		_hint_label.text = "Aim at a tile that isn't damaged."
+		return
 	_units.append(unit)
 	_cells.append(cell)
 	_rotations.append(_rotation)

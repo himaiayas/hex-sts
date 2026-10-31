@@ -26,6 +26,10 @@ func execute(combat: CombatState, unit: CombatUnit, _cell: Vector2i, _rotation :
 		hits.append_array(StrengthPower.spread(combat, picks.map(func(c: Vector2i) -> Array: return [unit, c])))
 	return hits
 
+## Clicking only picks the grid, so any cell on it will do, damaged or not.
+func can_aim(unit: CombatUnit, cell: Vector2i)->bool:
+	return unit.health.has(cell)
+
 ## No pattern to preview; the grid view highlights the whole grid instead.
 func rotated(_steps: int)->Dictionary[Vector2i, BaseActionTile]:
 	return {}

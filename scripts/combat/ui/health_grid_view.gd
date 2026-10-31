@@ -224,10 +224,12 @@ func _draw() -> void:
 			if random_target.can_inflict(unit, cell):
 				draw_colored_polygon(hex_corners(_origin + axial_to_pixel(cell), HEX_SIZE - 2.5), Color(random_target.get_color(), alpha * 0.5))
 
-	for offset in preview:
-		var cell := _hover + offset
-		if unit.health.has(cell):
-			_draw_action(preview[offset], cell, PREVIEW_ALPHA)
+	# No preview on a cell the pattern can't be aimed at (GridAction.can_aim).
+	if unit.health.has(_hover) and unit.health[_hover].hp != Enum.HealthTileEnum.DAMAGED:
+		for offset in preview:
+			var cell := _hover + offset
+			if unit.health.has(cell):
+				_draw_action(preview[offset], cell, PREVIEW_ALPHA)
 
 	var font := ThemeDB.fallback_font
 	var title := "%s  %d/%d" % [unit.display_name, alive, coords.size()]

@@ -182,6 +182,22 @@ func _initialize() -> void:
 	_play(ArrowRain.new(), [], [])
 	_check(_alive(_combat.enemies[0]) + _alive(_combat.enemies[1]) == 0, "Arrow Rain didn't spread")
 
+	# A grid action can't be aimed at a damaged tile; shielded or undamaged is fine.
+	_reset(HEX)
+	_combat.enemies[0].health[Vector2i.ZERO].hp = DAMAGED
+	_combat.enemies[0].health[Vector2i(1, 0)].hp = SHIELDED
+	_check(not _try(Strike.new(), [_combat.enemies[0]], [Vector2i.ZERO]), "played Strike on a damaged anchor")
+	_check(_combat.energy == 1 and _combat.hand.size() == 1, "a refused play still cost energy or left the hand")
+	_check(_try(Strike.new(), [_combat.enemies[0]], [Vector2i(1, 0)]), "couldn't play Strike on a shielded anchor")
+	_reset(HEX)
+	_check(_try(Strike.new(), [_combat.enemies[0]], [Vector2i(0, 1)]), "couldn't play Strike on an undamaged anchor")
+	_reset(HEX)
+	_combat.enemies[0].health[Vector2i(1, 0)].hp = DAMAGED
+	_check(not _try(WomboCombo.new(), [_combat.enemies[0], _combat.enemies[0]], [Vector2i.ZERO, Vector2i(1, 0)]), "played Wombo Combo with a damaged second anchor")
+	_reset(HEX)
+	_combat.enemies[0].health[Vector2i.ZERO].hp = DAMAGED
+	_check(_try(RapidFire.new(), [_combat.enemies[0]], [Vector2i.ZERO]), "Rapid Fire couldn't pick a grid by a damaged tile")
+
 	_run.free()
 	print("action_check: %s" % ("OK" if _failures == 0 else "%d failure(s)" % _failures))
 	quit(_failures)
@@ -213,6 +229,17 @@ func _play(card: BaseCard, units: Array[CombatUnit], cells: Array[Vector2i]) -> 
 	for i in cells.size():
 		rotations.append(0)
 	_check(_combat.play_card(card, units, cells, rotations), "%s couldn't be played" % card.card_name)
+
+
+## Puts card in hand with exactly its cost in energy and tries to play it.
+func _try(card: BaseCard, units: Array[CombatUnit], cells: Array[Vector2i]) -> bool:
+	_combat.hand.clear()
+	_combat.hand.append(card)
+	_combat.energy = card.cost
+	var rotations: Array[int] = []
+	for i in cells.size():
+		rotations.append(0)
+	return _combat.play_card(card, units, cells, rotations)
 
 
 func _hp_snapshot() -> Dictionary:
