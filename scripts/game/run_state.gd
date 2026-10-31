@@ -13,6 +13,8 @@ var xp :=0
 var dungeon_floor :=1
 
 const MAP_SCENE := "res://scenes/map.tscn"
+const COMBAT_SCENE := "res://scenes/combat.tscn"
+const MENU_SCENE := "res://scenes/mainmenu.tscn"
 
 ## EXP needed for each level-up: LEVEL_XP[0] takes level 0 to 1, ... LEVEL_XP[8] takes 8 to 9 (max).
 ## xp is the progress toward the next level; it resets (keeping the leftover) on level-up.

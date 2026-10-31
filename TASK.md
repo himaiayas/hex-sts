@@ -30,6 +30,7 @@
 
 - **Requirement/Prereq:** -
 - **Brief Description:** Implement `CombatUnit.is_dead()`, call `RunState.end_combat()`. Connect with post-combat reward.
+- [x] Done ✅: By Mai. `CombatState.is_won()` / `is_lost()` use `is_dead()`, and `combat_scene` calls `RunState.end_combat()` and shows the reward or defeat panel. Dead enemies skip their turn.
 
 ### 4. Rotating Pattern
 
@@ -142,7 +143,7 @@
 ## Spotted Problems by Claude
 
 - ~~**Hover sentinel collides with a real cell:**~~ Fixed: `NO_CELL` is now `Vector2i(999999, 999999)`.
-- **Dead units still act (#3):** enemies now take turns (`BaseEnemy.take_turn`) even when every tile is damaged, and the player can reach 0 undamaged tiles with nothing happening. Needs `is_dead()` + checks in `CombatState.end_turn()`.
+- ~~**Dead units still act (#3):**~~ Fixed by Mai in #3. Was: enemies now take turns (`BaseEnemy.take_turn`) even when every tile is damaged, and the player can reach 0 undamaged tiles with nothing happening. Needs `is_dead()` + checks in `CombatState.end_turn()`.
 - ~~**Target type ignored (see #4):**~~ Partly fixed: `BaseCard.target` (default ENEMY) decides which grid a card is played on; `ShieldEnemy` became `ShieldPlayer` and shields your own grid. `BaseAction.target` is still unused.
 - ~~**Mixed indentation:**~~ Fixed in `be87566`: all `.gd` files now use tabs (Godot's default, applied on save), and `.editorconfig` enforces it.
 - **Stale comments:** `HealthTile.hp` still says `-1 = empty`; `make_hex_health` says "hexagon of radius r in a (2r+1)x(2r+1) matrix" but takes a coord list and returns a Dictionary.

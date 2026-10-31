@@ -395,4 +395,8 @@ func _on_continue_pressed() -> void:
 
 func _on_new_run_pressed() -> void:
 	RunState.start_new_run()
-	get_tree().change_scene_to_file(RunState.MAP_SCENE)
+	get_tree().change_scene_to_file(RunState.COMBAT_SCENE)
+
+
+func _on_main_menu_pressed() -> void:
+	get_tree().change_scene_to_file(RunState.MENU_SCENE)
