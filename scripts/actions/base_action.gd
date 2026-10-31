@@ -8,4 +8,5 @@ func _init(_target: Enum.TargetType)->void:
 	target = _target
 
 ## unit = the unit whose grid is aimed at, cell = the cell on that grid.
-@abstract func execute(combat: CombatState, unit: CombatUnit, cell: Vector2i)->void
+## Returns the cells it changed (empty for actions that don't touch a grid).
+@abstract func execute(combat: CombatState, unit: CombatUnit, cell: Vector2i)->Array[Vector2i]

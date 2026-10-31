@@ -13,10 +13,13 @@ var grid_actions: Array[GridAction] = []  # each is its own pattern, drawn with 
 
 
 ## units[i], cells[i], rotations[i] = the grid, cell and rotation chosen for grid_actions[i], in order.
-## Runs every grid action at its own cell. Override and call super() to add other actions.
-func execute(combat: CombatState, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int])->void:
+## Runs every grid action at its own cell and returns hits[i], the cells grid_actions[i] changed.
+## Override and call super() to add other actions, e.g. one that depends on the hits.
+func execute(combat: CombatState, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int])->Array:
+	var hits := []
 	for i in grid_actions.size():
-		grid_actions[i].execute(combat, units[i], cells[i], rotations[i])
+		hits.append(grid_actions[i].execute(combat, units[i], cells[i], rotations[i]))
+	return hits
 
 
 func get_description() -> String:

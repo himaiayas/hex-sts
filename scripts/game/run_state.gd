@@ -13,6 +13,8 @@ var xp :=0
 var dungeon_floor :=1
 
 const MAP_SCENE := "res://scenes/map.tscn"
+const COMBAT_SCENE := "res://scenes/combat.tscn"
+const MENU_SCENE := "res://scenes/mainmenu.tscn"
 
 ## EXP needed for each level-up: LEVEL_XP[0] takes level 0 to 1, ... LEVEL_XP[8] takes 8 to 9 (max).
 ## xp is the progress toward the next level; it resets (keeping the leftover) on level-up.
@@ -53,6 +55,11 @@ func start_new_run() -> void:
 		deck.append(ShieldPlayer.new())
 	for i in 2:
 		deck.append(WomboCombo.new())
+	# One of each #9 example card, for testing.
+	deck.append(Thrust.new())
+	deck.append(DivineMercy.new())
+	deck.append(RapidFire.new())
+	deck.append(ArrowRain.new())
 	map = MapState.new()
 	map.start()
 	current_room = null

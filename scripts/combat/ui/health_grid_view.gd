@@ -39,6 +39,7 @@ var clickable := false
 var preview: Dictionary[Vector2i, BaseActionTile] = {} # next grid action of the selected card, rotated: offset from cursor -> tile
 var intents: Array = [] # enemy attacks aimed at this grid: [{cell: Vector2i, tiles: Array[BaseActionTile]}]
 var placed: Array = [] # selected card's grid actions already clicked on this grid: [{cell: Vector2i, tiles: Dictionary[Vector2i, BaseActionTile]}]
+var random_target: BaseActionTile = null # selected card's next grid action hits random tiles of a grid: this whole grid flickers
 var candidates: Array[Vector2i] = [] # empty cells drawn as outlines and clickable (level-up tile placement)
 var new_cells: Array[Vector2i] = [] # health cells drawn in COLOR_NEW (tiles just placed)
 
@@ -86,7 +87,7 @@ func refresh() -> void:
 
 
 func _process(delta: float) -> void:
-	if not intents.is_empty() or not placed.is_empty():
+	if not intents.is_empty() or not placed.is_empty() or random_target:
 		queue_redraw()  # keep the intent pulse and placed flicker animating
 	if _info_cell != NO_CELL and not _info_box.visible:
 		_info_timer -= delta
@@ -204,6 +205,13 @@ func _draw() -> void:
 			var cell: Vector2i = p.cell + offset
 			if unit.health.has(cell):
 				_draw_action(p.tiles[offset], cell, flicker)
+
+	if random_target:
+		# Steady while hovered, flickering otherwise, on every tile it could hit.
+		var alpha := PREVIEW_ALPHA if unit.health.has(_hover) else flicker
+		for cell in unit.health:
+			if random_target.can_inflict(unit, cell):
+				draw_colored_polygon(hex_corners(_origin + axial_to_pixel(cell), HEX_SIZE - 2.5), Color(random_target.get_color(), alpha * 0.5))
 
 	for offset in preview:
 		var cell := _hover + offset

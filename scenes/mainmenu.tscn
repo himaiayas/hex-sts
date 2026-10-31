@@ -1,5 +1,7 @@
 [gd_scene format=3 uid="uid://btyojp6k3f0lu"]
 
+[ext_resource type="Script" uid="uid://qbvexqmrx3mo" path="res://scripts/main.gd" id="1_main"]
+
 [node name="Control" type="Control" unique_id=693228342]
 layout_mode = 3
 anchors_preset = 15
@@ -7,6 +9,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("1_main")
 
 [node name="MarginContainer" type="MarginContainer" parent="." unique_id=1702423745]
 layout_mode = 0
@@ -22,4 +25,6 @@ size_flags_vertical = 4
 
 [node name="Button" type="Button" parent="MarginContainer/VBoxContainer" unique_id=591269104]
 layout_mode = 2
-text = "Yo"
+text = "Start"
+
+[connection signal="pressed" from="MarginContainer/VBoxContainer/Button" to="." method="_on_start_pressed"]

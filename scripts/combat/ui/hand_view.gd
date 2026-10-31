@@ -5,8 +5,10 @@ extends Control
 ## Hovering a card straightens and enlarges it and pushes its neighbours aside.
 ## The selected card gets a blue border and bobs up and down.
 ## Keyword panels show beside the hovered (or else selected) card after a short delay.
+## A playable card with no grid actions can be dragged; dropping it in PLAY_ZONE casts it.
 
 signal card_clicked(card: BaseCard)
+signal card_cast(card: BaseCard)
 
 const RenderCard := preload("res://scripts/cards/render_card.gd")
 const CARD_SIZE := RenderCard.CARD_SIZE
@@ -23,6 +25,9 @@ const KEYWORD_DELAY := InfoPanel.DELAY  # seconds before keyword panels show
 const KEYWORD_WIDTH := InfoPanel.WIDTH
 const KEYWORD_GAP := InfoPanel.GAP
 
+## Middle of the screen, between the grids and above the hand, as fractions of the viewport.
+const PLAY_ZONE := Rect2(0.25, 0.15, 0.5, 0.55)
+
 const COLOR_SELECTED := Color("#4fa8ff")
 const COLOR_UNPLAYABLE := Color(0.55, 0.55, 0.55)
 
@@ -30,6 +35,8 @@ var _cards: Array[BaseCard] = []
 var _holders: Dictionary[BaseCard, Node2D] = {}  # pivot at the card's bottom centre
 var _selected: BaseCard = null
 var _hovered := -1
+var _dragged: BaseCard = null
+var _can_play: Callable
 
 var _keyword_box := VBoxContainer.new()
 var _keyword_card: BaseCard = null  # card the panels are counting down for or showing
@@ -66,6 +73,9 @@ func set_hand(cards: Array[BaseCard], selected: BaseCard, can_play: Callable) ->
 
 	_cards = cards.duplicate()
 	_selected = selected
+	_can_play = can_play
+	if _dragged not in cards:
+		_dragged = null
 	_hovered = -1
 	_update_order()
 
@@ -89,11 +99,35 @@ func _process(delta: float) -> void:
 
 ## Uses _input because an enlarged card sticks out above this control.
 func _input(event: InputEvent) -> void:
+	if _dragged:
+		if event is InputEventMouseMotion:
+			_set_border(_dragged, _in_play_zone())
+		elif event is InputEventMouseButton and not event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+			get_viewport().set_input_as_handled()
+			var card := _dragged
+			_dragged = null
+			_set_border(card, false)
+			if _in_play_zone():
+				card_cast.emit(card)
+			else:
+				card_clicked.emit(card)  # dropped short: the scene hints how to play it
+		return
 	if _hovered == -1:
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		get_viewport().set_input_as_handled()
-		card_clicked.emit(_cards[_hovered])
+		var card := _cards[_hovered]
+		if card.grid_actions.is_empty() and _can_play.call(card):
+			_dragged = card
+			_update_order()
+		else:
+			card_clicked.emit(card)
+
+
+func _in_play_zone() -> bool:
+	var screen := get_viewport_rect().size
+	var zone := Rect2(PLAY_ZONE.position * screen, PLAY_ZONE.size * screen)
+	return zone.has_point(get_viewport().get_mouse_position())
 
 
 func _target_for(i: int) -> Transform2D:
@@ -104,6 +138,9 @@ func _target_for(i: int) -> Transform2D:
 	var pos := Vector2(size.x / 2 + FAN_RADIUS * sin(angle), size.y + FAN_RADIUS * (cos(edge_angle) - cos(angle)))
 	var card_scale := 1.0
 	var bob := 0.0
+	if _cards[i] == _dragged:  # upright and enlarged, centred on the mouse
+		var mouse := get_local_mouse_position() + Vector2(0, CARD_SIZE.y * HOVER_SCALE / 2)
+		return Transform2D(0.0, Vector2.ONE * HOVER_SCALE, 0.0, mouse)
 	if _cards[i] == _selected:
 		bob = BOB_HEIGHT * sin(TAU * Time.get_ticks_msec() / 1000.0 / BOB_PERIOD)
 
@@ -158,6 +195,8 @@ func _update_order() -> void:
 		move_child(_holders[_selected], -1)
 	if _hovered != -1:
 		move_child(_holders[_cards[_hovered]], -1)
+	if _dragged:
+		move_child(_holders[_dragged], -1)
 	move_child(_keyword_box, -1)
 
 
