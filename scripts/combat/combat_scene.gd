@@ -18,6 +18,7 @@ var _enemy_views: Array[HealthGridView] = []
 var _intent_labels: Array[Label] = []
 
 @onready var _top_bar: TopBar = %TopBar
+@onready var _floor_background: TextureRect = %FloorBackground
 @onready var _status_label: Label = %StatusLabel
 @onready var _hint_label: Label = %HintLabel
 @onready var _player_view: HealthGridView = %PlayerGrid
@@ -46,6 +47,7 @@ var _over := false  # won or lost: ignore combat input
 func _ready() -> void:
 	if RunState.deck.is_empty():
 		RunState.start_new_run()
+	_floor_background.texture = RunState.combat_background()
 	combat = RunState.start_combat()
 	for enemy in _enemies_for(_room_type()):
 		combat.enemies.append(enemy)
