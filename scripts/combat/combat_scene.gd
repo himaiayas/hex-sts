@@ -200,7 +200,10 @@ func _refresh() -> void:
 		var step := ""
 		if selected.grid_actions.size() > 1:
 			step = " (pattern %d/%d)" % [_cells.size() + 1, selected.grid_actions.size()]
-		_hint_label.text = "Click a cell on %s%s. Q/E or scroll to rotate. Right-click to cancel." % ["your grid" if _targets_player() else "the enemy", step]
+		if _next_grid_action() is RandomGridAction:
+			_hint_label.text = "Click %s%s. Right-click to cancel." % ["your grid" if _targets_player() else "an enemy", step]
+		else:
+			_hint_label.text = "Click a cell on %s%s. Q/E or scroll to rotate. Right-click to cancel." % ["your grid" if _targets_player() else "the enemy", step]
 	else:
 		_hint_label.text = "Click a card to select it."
 
@@ -208,14 +211,19 @@ func _refresh() -> void:
 
 	# Only the grid action the next click places is previewed.
 	var pattern: Dictionary[Vector2i, BaseActionTile] = {}
-	if selected and _cells.size() < selected.grid_actions.size():
-		pattern = selected.grid_actions[_cells.size()].rotated(_rotation)
+	var next := _next_grid_action()
+	if next:
+		pattern = next.rotated(_rotation)
 	var none: Dictionary[Vector2i, BaseActionTile] = {}
 	var on_player := selected != null and _targets_player()
+	# A random grid action has no pattern: every grid it can go on flickers instead.
+	var random_tile: BaseActionTile = next.tiles[0] if next is RandomGridAction else null
 	for view in _enemy_views:
 		view.preview = none if on_player else pattern
+		view.random_target = null if on_player else random_tile
 		view.refresh()
 	_player_view.preview = pattern if on_player else none
+	_player_view.random_target = random_tile if on_player else null
 
 	# Grid actions already clicked flicker where they will land.
 	for view in _enemy_views:
@@ -242,6 +250,13 @@ func _refresh() -> void:
 		_enemy_views[i].refresh()
 	_player_view.intents = player_intents
 	_player_view.refresh()
+
+
+## The selected card's grid action the next click places, or null.
+func _next_grid_action() -> GridAction:
+	if selected and _cells.size() < selected.grid_actions.size():
+		return selected.grid_actions[_cells.size()]
+	return null
 
 
 func _view_for(unit: CombatUnit) -> HealthGridView:
