@@ -14,3 +14,6 @@ func get_color()->Color:
 
 func get_icon() -> Texture2D:
 	return preload("res://assets/grid_effects/damage.png")
+
+func display_name() -> String:
+	return "Damage"

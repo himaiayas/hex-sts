@@ -1,0 +1,171 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/ui/augment_modal.gd" id="1_modal"]
+[ext_resource type="Script" path="res://scripts/augments/pattern_editor.gd" id="2_editor"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_modal"]
+content_margin_left = 40.0
+content_margin_top = 32.0
+content_margin_right = 40.0
+content_margin_bottom = 32.0
+bg_color = Color(0.0784314, 0.0862745, 0.109804, 1)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.231373, 0.254902, 0.321569, 1)
+corner_radius_top_left = 12
+corner_radius_top_right = 12
+corner_radius_bottom_right = 12
+corner_radius_bottom_left = 12
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_editor"]
+bg_color = Color(0.0588235, 0.0627451, 0.0823529, 1)
+corner_radius_top_left = 8
+corner_radius_top_right = 8
+corner_radius_bottom_right = 8
+corner_radius_bottom_left = 8
+
+[node name="AugmentModal" type="CanvasLayer"]
+layer = 20
+visible = false
+script = ExtResource("1_modal")
+
+[node name="Dim" type="ColorRect" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.75)
+
+[node name="Center" type="CenterContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="Center"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_modal")
+
+[node name="Box" type="VBoxContainer" parent="Center/Panel"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Header" type="HBoxContainer" parent="Center/Panel/Box"]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="AugmentIcon" type="TextureRect" parent="Center/Panel/Box/Header"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(56, 56)
+layout_mode = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Title" type="Label" parent="Center/Panel/Box/Header"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_font_sizes/font_size = 40
+text = "Augment"
+
+[node name="Hint" type="Label" parent="Center/Panel/Box"]
+unique_name_in_owner = true
+modulate = Color(0.552941, 0.576471, 0.647059, 1)
+custom_minimum_size = Vector2(1000, 0)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Choose a card."
+horizontal_alignment = 1
+autowrap_mode = 3
+
+[node name="CardPage" type="ScrollContainer" parent="Center/Panel/Box"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(1300, 640)
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="Pad" type="MarginContainer" parent="Center/Panel/Box/CardPage"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 30
+theme_override_constants/margin_top = 40
+theme_override_constants/margin_right = 10
+
+[node name="CardGrid" type="GridContainer" parent="Center/Panel/Box/CardPage/Pad"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/h_separation = 20
+theme_override_constants/v_separation = 50
+columns = 5
+
+[node name="EditPage" type="HBoxContainer" parent="Center/Panel/Box"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(1300, 640)
+layout_mode = 2
+theme_override_constants/separation = 60
+alignment = 1
+
+[node name="Left" type="VBoxContainer" parent="Center/Panel/Box/EditPage"]
+layout_mode = 2
+theme_override_constants/separation = 16
+alignment = 1
+
+[node name="PatternButtons" type="HBoxContainer" parent="Center/Panel/Box/EditPage/Left"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="EditorFrame" type="PanelContainer" parent="Center/Panel/Box/EditPage/Left"]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_editor")
+
+[node name="Editor" type="Control" parent="Center/Panel/Box/EditPage/Left/EditorFrame"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(560, 420)
+layout_mode = 2
+script = ExtResource("2_editor")
+
+[node name="TileOptions" type="HBoxContainer" parent="Center/Panel/Box/EditPage/Left"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="Preview" type="Control" parent="Center/Panel/Box/EditPage"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(370, 510)
+layout_mode = 2
+size_flags_vertical = 4
+mouse_filter = 2
+
+[node name="Buttons" type="HBoxContainer" parent="Center/Panel/Box"]
+layout_mode = 2
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="BackButton" type="Button" parent="Center/Panel/Box/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(240, 56)
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Back"
+
+[node name="ConfirmButton" type="Button" parent="Center/Panel/Box/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(240, 56)
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+disabled = true
+text = "Confirm"
+
+[connection signal="cell_clicked" from="Center/Panel/Box/EditPage/Left/EditorFrame/Editor" to="." method="_on_editor_cell_clicked"]
+[connection signal="pressed" from="Center/Panel/Box/Buttons/BackButton" to="." method="_on_back_pressed"]
+[connection signal="pressed" from="Center/Panel/Box/Buttons/ConfirmButton" to="." method="_on_confirm_pressed"]

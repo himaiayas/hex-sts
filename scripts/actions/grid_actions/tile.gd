@@ -20,3 +20,15 @@ func get_color()->Color
 ## Drawn on targeted health tiles (intents, previews). Null: draw get_color() instead.
 func get_icon() -> Texture2D:
 	return null
+
+## Shown when choosing between tiles (e.g. Expansion Augment).
+@abstract
+func display_name() -> String
+
+## Same action at other coords (Expansion Augment copies a neighbour this way).
+func copy_at(at: Vector2i) -> BaseActionTile:
+	return get_script().new(at)
+
+## Tiles with the same kind do the same thing.
+func kind() -> String:
+	return get_script().resource_path

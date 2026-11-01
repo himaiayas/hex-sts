@@ -367,8 +367,13 @@ static func axial_to_pixel(c: Vector2i, hex_size := HEX_SIZE) -> Vector2:
 
 
 func _pixel_to_axial(p: Vector2) -> Vector2i:
-	var fq := (SQRT3 / 3.0 * p.x - p.y / 3.0) / _hex
-	var fr := (2.0 / 3.0 * p.y) / _hex
+	return pixel_to_axial(p, _hex)
+
+
+## Inverse of axial_to_pixel: the cell whose hex contains p.
+static func pixel_to_axial(p: Vector2, hex_size: float) -> Vector2i:
+	var fq := (SQRT3 / 3.0 * p.x - p.y / 3.0) / hex_size
+	var fr := (2.0 / 3.0 * p.y) / hex_size
 	var fs := -fq - fr
 	var q := roundf(fq)
 	var r := roundf(fr)

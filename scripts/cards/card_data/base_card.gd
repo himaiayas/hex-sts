@@ -10,6 +10,8 @@ var image: Texture2D
 var description: String
 var rarity: Enum.CardRarity = Enum.CardRarity.COMMON
 var grid_actions: Array[GridAction] = []  # each is its own pattern, drawn with {render:N}
+var augments: Array[BaseAugment] = []  # applied upgrades, shown as icons above the card
+var max_augments := 1  # raise for cards that say they hold more
 
 
 ## units[i], cells[i], rotations[i] = the grid, cell and rotation chosen for grid_actions[i], in order.
