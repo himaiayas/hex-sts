@@ -54,6 +54,14 @@ func add_power(power: BaseEffect) -> void:
 	_add_or_stack(statuses, power)
 
 
+## Stacks of the power with this script, 0 if the unit doesn't have it.
+func power_amount(script: Script) -> int:
+	for power in statuses:
+		if power.get_script() == script and power is BasePower:
+			return power.amount
+	return 0
+
+
 func on_turn_start(combat: CombatState) -> void:
 	in_turn = true
 	fire(Enum.Trigger.TURN_START, combat)

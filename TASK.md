@@ -56,6 +56,7 @@
 
 - **Requirement/Prereq:** -
 - **Brief Description:** Implement `BaseStatus`
+- [x] Done ✅: Named `BasePower` (an `amount` of stacks; applying it again adds them) to match `add_power` / `ApplyPowerAction`. `StrengthPower`: each attack also damages that many random tiles next to the cells its damage tiles landed on (per action, not per tile; not on cells it already landed on; a shield absorbs an extra as usual; only on the other side's grids), from every `GridAction` / `RandomGridAction` / `RandomTileAction` (extras don't spread again, and count as hits). It uses the Strength of `CombatState.acting_unit()`, so enemies can have it too. Powers show as badges with their stacks under the grid, with a tooltip on hover (`icon.svg` placeholder until they get art). New power card Enhance (Gain 1 Strength); power cards go to no pile after they're played. Check: `action_check.gd`.
 
 ### 8 Event
 

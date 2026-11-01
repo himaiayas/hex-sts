@@ -25,7 +25,10 @@ func execute(combat: CombatState, _unit: CombatUnit, _cell: Vector2i)->Array[Vec
 				pool.append([unit, cell])
 	pool.shuffle()
 	var hits: Array[Vector2i] = []
-	for pick in pool.slice(0, amount):
+	var picks := pool.slice(0, amount)
+	for pick in picks:
 		if tile.inflict(combat, pick[0], pick[1]):
 			hits.append(pick[1])
+	if tile is DamageTile:
+		hits.append_array(StrengthPower.spread(combat, picks))
 	return hits

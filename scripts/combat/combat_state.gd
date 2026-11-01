@@ -81,14 +81,26 @@ func can_play(card: BaseCard) -> bool:
 
 
 ## Pays the cost, runs each grid action on units[i] at cells[i], then discards the card.
+## Power cards go to no pile: they stay in play for the rest of the fight.
 func play_card(card: BaseCard, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int]) -> bool:
 	if not can_play(card):
 		return false
 	energy -= card.cost
 	hand.erase(card)
 	card.execute(self, units, cells, rotations)
-	discard_pile.append(card)
+	if card.type != Enum.CardType.POWER:
+		discard_pile.append(card)
 	return true
+
+
+## The unit whose turn it is: the player, or the enemy taking its turn. Null between turns.
+func acting_unit() -> CombatUnit:
+	if player.in_turn:
+		return player
+	for enemy in enemies:
+		if enemy.in_turn:
+			return enemy
+	return null
 
 
 func is_won() -> bool:
