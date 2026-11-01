@@ -10,7 +10,7 @@ const SCENES := {
 	Enum.RoomType.BOSS_COMBAT: "res://scenes/combat.tscn",
 	Enum.RoomType.CAMPFIRE: "res://scenes/rooms/campfire.tscn",
 	Enum.RoomType.CARD_SHOP: "res://scenes/rooms/shop.tscn",
-	Enum.RoomType.AUGMENT_SHOP: "res://scenes/rooms/shop.tscn",
+	Enum.RoomType.BLACKSMITH: "res://scenes/rooms/blacksmith.tscn",
 	Enum.RoomType.TREASURE: "res://scenes/rooms/treasure.tscn",
 	Enum.RoomType.EVENT: "res://scenes/rooms/event.tscn",
 }
@@ -22,7 +22,7 @@ const NAMES := {
 	Enum.RoomType.BOSS_COMBAT: "Boss",
 	Enum.RoomType.CAMPFIRE: "Campfire",
 	Enum.RoomType.CARD_SHOP: "Card Shop",
-	Enum.RoomType.AUGMENT_SHOP: "Augment Shop",
+	Enum.RoomType.BLACKSMITH: "Blacksmith",
 	Enum.RoomType.TREASURE: "Treasure",
 	Enum.RoomType.EVENT: "Event",
 }

@@ -1,7 +1,5 @@
 extends Control
 
-## Test scene: get an Expansion Augment, apply it to a deck card, see the deck. Run with F6.
-
 const RenderCard := preload("res://scripts/cards/render_card.gd")
 
 @onready var _grid: GridContainer = %Grid

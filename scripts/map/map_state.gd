@@ -11,14 +11,14 @@ const OPTION_COUNT := 3
 
 
 const ROOM_WEIGHTS := {
-	Enum.RoomType.NORMAL_COMBAT: 40,
+	Enum.RoomType.NORMAL_COMBAT: 30,
 	Enum.RoomType.ELITE_COMBAT: 10,
 	Enum.RoomType.BOSS_COMBAT: 0, # not drafted; reserved for the end of the floor
-	Enum.RoomType.CAMPFIRE: 12,
-	Enum.RoomType.CARD_SHOP: 8,
-	Enum.RoomType.AUGMENT_SHOP: 5,
+	Enum.RoomType.CAMPFIRE: 10,
+	Enum.RoomType.CARD_SHOP: 10,
+	Enum.RoomType.BLACKSMITH: 10,
 	Enum.RoomType.TREASURE: 10,
-	Enum.RoomType.EVENT: 15,
+	Enum.RoomType.EVENT: 20,
 }
 
 const DIRS: Array[Vector2i] = [

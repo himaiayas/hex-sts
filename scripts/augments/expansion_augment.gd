@@ -13,6 +13,7 @@ func _init() -> void:
 	super("Expansion Augment",
 		"Add 1 tile next to one of this card's patterns. It copies the action of a tile beside it.",
 		preload("res://assets/augments/expansion.png"))
+	price = 60
 
 
 func can_apply(card: BaseCard) -> bool:
