@@ -17,3 +17,6 @@ func can_inflict(unit: CombatUnit, cell: Vector2i)->bool:
 
 func get_color()->Color:
 	return Color("#a0e5f6")
+
+func display_name() -> String:
+	return "Shield"

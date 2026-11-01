@@ -15,6 +15,17 @@ var dungeon_floor :=1
 const MAP_SCENE := "res://scenes/map.tscn"
 const COMBAT_SCENE := "res://scenes/combat.tscn"
 const MENU_SCENE := "res://scenes/mainmenu.tscn"
+const BOSS_INTRO := preload("res://scenes/ui/boss_intro.tscn")
+
+## Boss of each floor: FLOOR_BOSSES[0] is floor 1. Floors past the end reuse the last one.
+static var FLOOR_BOSSES: Array = [TheDragon]
+
+## Combat room background of each floor: [0] is floor 1. All the same for now.
+const FLOOR_COMBAT_BACKGROUNDS: Array[Texture2D] = [
+	preload("res://assets/rooms/bg_medieval.jpg"),
+	preload("res://assets/rooms/bg_medieval.jpg"),
+	preload("res://assets/rooms/bg_medieval.jpg"),
+]
 
 ## EXP needed for each level-up: LEVEL_XP[0] takes level 0 to 1, ... LEVEL_XP[8] takes 8 to 9 (max).
 ## xp is the progress toward the next level; it resets (keeping the leftover) on level-up.
@@ -76,9 +87,36 @@ func enter_room(room: MapRoom) -> void:
 
 
 ## Called by a room's scene when the player is done there.
+## Leaving the boss room (after winning) goes to the next floor.
 func leave_room() -> void:
+	var beat_boss := current_room != null and current_room.type == Enum.RoomType.BOSS_COMBAT
 	current_room = null
+	if beat_boss:
+		_next_floor()
 	get_tree().change_scene_to_file(MAP_SCENE)
+
+
+func combat_background() -> Texture2D:
+	return FLOOR_COMBAT_BACKGROUNDS[clampi(dungeon_floor, 1, FLOOR_COMBAT_BACKGROUNDS.size()) - 1]
+
+
+## A new instance of this floor's boss.
+func floor_boss() -> BaseEnemy:
+	return FLOOR_BOSSES[mini(dungeon_floor, FLOOR_BOSSES.size()) - 1].new()
+
+
+## Out of steps: fade to black, show the boss's name, then fight it where the player stands.
+func start_boss() -> void:
+	current_room = MapRoom.new(map.current, Enum.RoomType.BOSS_COMBAT, [])
+	var intro := BOSS_INTRO.instantiate()
+	get_tree().root.add_child(intro)
+	intro.play(floor_boss().display_name, current_room.scene_path())
+
+
+func _next_floor() -> void:
+	dungeon_floor += 1
+	map = MapState.new()
+	map.start()
 
 
 func add_xp(amount: int) -> void:

@@ -18,3 +18,13 @@ func get_color()->Color:
 
 func get_icon() -> Texture2D:
 	return effect.get_icon()
+
+func display_name() -> String:
+	return effect.name
+
+func copy_at(at: Vector2i) -> BaseActionTile:
+	return ApplyEffectTile.new(at, effect.copy() as BaseTileEffect)
+
+## One kind per effect: Poison and Plate tiles differ.
+func kind() -> String:
+	return super() + "|" + effect.get_script().resource_path

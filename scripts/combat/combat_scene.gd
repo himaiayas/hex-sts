@@ -19,6 +19,7 @@ var _enemy_views: Array[HealthGridView] = []
 var _intent_labels: Array[Label] = []
 
 @onready var _top_bar: TopBar = %TopBar
+@onready var _floor_background: TextureRect = %FloorBackground
 @onready var _status_label: Label = %StatusLabel
 @onready var _hint_label: Label = %HintLabel
 @onready var _player_view: HealthGridView = %PlayerGrid
@@ -47,6 +48,7 @@ var _over := false  # won or lost: ignore combat input
 func _ready() -> void:
 	if RunState.deck.is_empty():
 		RunState.start_new_run()
+	_floor_background.texture = RunState.combat_background()
 	combat = RunState.start_combat()
 	for enemy in _enemies_for(_room_type()):
 		combat.enemies.append(enemy)
@@ -339,13 +341,11 @@ func _room_type() -> Enum.RoomType:
 
 ## Placeholder line-ups until there are more enemies.
 func _enemies_for(room_type: Enum.RoomType) -> Array[CombatUnit]:
-	var count := 1
-	match room_type:
-		Enum.RoomType.ELITE_COMBAT:
-			count = 2
-		Enum.RoomType.BOSS_COMBAT:
-			count = 3
 	var enemies: Array[CombatUnit] = []
+	if room_type == Enum.RoomType.BOSS_COMBAT:
+		enemies.append(RunState.floor_boss())
+		return enemies
+	var count := 2 if room_type == Enum.RoomType.ELITE_COMBAT else 1
 	for i in count:
 		enemies.append(Slime.new())
 	return enemies

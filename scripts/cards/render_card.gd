@@ -11,6 +11,9 @@ const COST_RECT := Rect2(-25, -35, 90, 96)  # cost frame, upper-left (may stick 
 const STAR_SIZE := 22.0
 const STAR_SPACING := 1  # between stars
 const STAR_MARGIN := Vector2(6, 1)  # from the card's top-right corner
+const AUGMENT_SIZE := 44.0  # augment icons, centred at the top of the card
+const AUGMENT_SPACING := 4
+const AUGMENT_OFFSET := 18.0  # how far the icons stick out above the card frame
 const NAME_FONT_SIZE := 22
 const COST_FONT_SIZE := 30
 const INLINE_PATTERN_HEIGHT := PatternView.BOX_SIZE.y  # a {render:N} sharing its line with text; same size as a full-line one
@@ -109,6 +112,21 @@ static func create_card(data: BaseCard) -> Node2D:
 		stars.add_child(star)
 	var stars_width := (data.rarity + 1) * STAR_SIZE + data.rarity * STAR_SPACING
 	_place(stars, Rect2(CARD_SIZE.x - STAR_MARGIN.x - stars_width, STAR_MARGIN.y, stars_width, STAR_SIZE))
+
+	# Augment icons, centred at the top and poking out above the frame.
+	var augments: HBoxContainer = card.get_node("%Augments")
+	augments.add_theme_constant_override("separation", AUGMENT_SPACING)
+	for augment in data.augments:
+		var icon := TextureRect.new()
+		icon.texture = augment.icon
+		icon.tooltip_text = augment.name
+		icon.custom_minimum_size = Vector2(AUGMENT_SIZE, AUGMENT_SIZE)
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		augments.add_child(icon)
+	var augments_width := data.augments.size() * (AUGMENT_SIZE + AUGMENT_SPACING) - AUGMENT_SPACING
+	_place(augments, Rect2((CARD_SIZE.x - augments_width) / 2, -AUGMENT_OFFSET, augments_width, AUGMENT_SIZE))
 	return card
 
 

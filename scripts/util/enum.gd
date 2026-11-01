@@ -34,7 +34,7 @@ enum RoomType {
 	BOSS_COMBAT,
 	CAMPFIRE,
 	CARD_SHOP, # cards and artifacts
-	AUGMENT_SHOP,
+	BLACKSMITH, # sells augments
 	TREASURE,
 	EVENT,
 }
