@@ -16,7 +16,7 @@ func _init(_name: String, _health: Dictionary[Vector2i, HealthTile], _is_player 
 	is_player = _is_player
 
 
-## hexagon of radius r in a (2r+1)x(2r+1) matrix
+## One undamaged tile per coord, keyed by axial (q, r).
 static func make_hex_health(coords: Array[Vector2i]) -> Dictionary[Vector2i, HealthTile]:
 	var health_dict: Dictionary[Vector2i, HealthTile] = {}
 	for coord in coords:
@@ -31,7 +31,8 @@ func shield_health_tile(coords:Vector2i)->void:
 	
 
 ## Shield absorbs the hit first (ON_BLOCK); otherwise the tile is damaged (ON_HIT).
-func damage_health_tile(combat: CombatState, coords: Vector2i)->void:
+## Returns true if the tile was damaged.
+func damage_health_tile(combat: CombatState, coords: Vector2i)->bool:
 	var tile: HealthTile = health[coords]
 	if tile.hp == Enum.HealthTileEnum.SHIELDED:
 		tile.hp = Enum.HealthTileEnum.UNDAMAGED
@@ -39,6 +40,8 @@ func damage_health_tile(combat: CombatState, coords: Vector2i)->void:
 	elif tile.hp == Enum.HealthTileEnum.UNDAMAGED:
 		tile.hp = Enum.HealthTileEnum.DAMAGED
 		fire_at(Enum.Trigger.ON_HIT, combat, coords)
+		return true
+	return false
 
 
 func apply_effect_health_tile(coords:Vector2i, effect:BaseTileEffect)->void:
@@ -49,6 +52,14 @@ func apply_effect_health_tile(coords:Vector2i, effect:BaseTileEffect)->void:
 
 func add_power(power: BaseEffect) -> void:
 	_add_or_stack(statuses, power)
+
+
+## Stacks of the power with this script, 0 if the unit doesn't have it.
+func power_amount(script: Script) -> int:
+	for power in statuses:
+		if power.get_script() == script and power is BasePower:
+			return power.amount
+	return 0
 
 
 func on_turn_start(combat: CombatState) -> void:

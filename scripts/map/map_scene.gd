@@ -96,8 +96,7 @@ func _on_leave_pressed() -> void:
 
 
 func _on_restart_pressed() -> void:
-	RunState.start_new_run()
-	_start()
+	get_tree().change_scene_to_file(RunState.MENU_SCENE)
 
 
 func _check_out_of_steps() -> void:

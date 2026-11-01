@@ -2,6 +2,7 @@ extends Control
 
 ## Combat screen: hand, piles, energy, end turn, and health grids.
 ## Click a card to select it, then click a cell for each of its grid actions to play it.
+## A card with no grid actions is played by dragging it to the middle of the screen.
 
 const RenderCard := preload("res://scripts/cards/render_card.gd")
 const CARD_SIZE := HandView.CARD_SIZE
@@ -53,6 +54,7 @@ func _ready() -> void:
 		combat.enemies.append(enemy)
 
 	_hand.card_clicked.connect(_on_card_clicked)
+	_hand.card_cast.connect(_on_card_cast)
 	_player_view.setup(combat.player, true)
 	_player_view.cell_clicked.connect(_on_cell_clicked)
 	for enemy in combat.enemies:
@@ -92,12 +94,29 @@ func _on_card_clicked(card: BaseCard) -> void:
 		return
 	if selected == card:
 		_select(null)
-	elif combat.can_play(card):
-		_select(card)
-	else:
+	elif not combat.can_play(card):
 		_hint_label.text = "Not enough energy."
 		return
+	elif card.grid_actions.is_empty():
+		_hint_label.text = "Drag it to the middle of the screen to play."
+		return
+	else:
+		_select(card)
 	_refresh()
+
+
+## A card with no grid actions, dropped in the middle of the screen.
+func _on_card_cast(card: BaseCard) -> void:
+	if _over:
+		return
+	var units: Array[CombatUnit] = []
+	var cells: Array[Vector2i] = []
+	var rotations: Array[int] = []
+	_select(null)
+	if not combat.play_card(card, units, cells, rotations):
+		_hint_label.text = "Not enough energy."
+	_refresh()
+	_check_combat_end()
 
 
 func _on_cell_clicked(unit: CombatUnit, cell: Vector2i) -> void:
@@ -202,7 +221,10 @@ func _refresh() -> void:
 		var step := ""
 		if selected.grid_actions.size() > 1:
 			step = " (pattern %d/%d)" % [_cells.size() + 1, selected.grid_actions.size()]
-		_hint_label.text = "Click a cell on %s%s. Q/E or scroll to rotate. Right-click to cancel." % ["your grid" if _targets_player() else "the enemy", step]
+		if _next_grid_action() is RandomGridAction:
+			_hint_label.text = "Click %s%s. Right-click to cancel." % ["your grid" if _targets_player() else "an enemy", step]
+		else:
+			_hint_label.text = "Click a cell on %s%s. Q/E or scroll to rotate. Right-click to cancel." % ["your grid" if _targets_player() else "the enemy", step]
 	else:
 		_hint_label.text = "Click a card to select it."
 
@@ -210,14 +232,19 @@ func _refresh() -> void:
 
 	# Only the grid action the next click places is previewed.
 	var pattern: Dictionary[Vector2i, BaseActionTile] = {}
-	if selected and _cells.size() < selected.grid_actions.size():
-		pattern = selected.grid_actions[_cells.size()].rotated(_rotation)
+	var next := _next_grid_action()
+	if next:
+		pattern = next.rotated(_rotation)
 	var none: Dictionary[Vector2i, BaseActionTile] = {}
 	var on_player := selected != null and _targets_player()
+	# A random grid action has no pattern: every grid it can go on flickers instead.
+	var random_tile: BaseActionTile = next.tiles[0] if next is RandomGridAction else null
 	for view in _enemy_views:
 		view.preview = none if on_player else pattern
+		view.random_target = null if on_player else random_tile
 		view.refresh()
 	_player_view.preview = pattern if on_player else none
+	_player_view.random_target = random_tile if on_player else null
 
 	# Grid actions already clicked flicker where they will land.
 	for view in _enemy_views:
@@ -244,6 +271,13 @@ func _refresh() -> void:
 		_enemy_views[i].refresh()
 	_player_view.intents = player_intents
 	_player_view.refresh()
+
+
+## The selected card's grid action the next click places, or null.
+func _next_grid_action() -> GridAction:
+	if selected and _cells.size() < selected.grid_actions.size():
+		return selected.grid_actions[_cells.size()]
+	return null
 
 
 func _view_for(unit: CombatUnit) -> HealthGridView:
@@ -395,4 +429,8 @@ func _on_continue_pressed() -> void:
 
 func _on_new_run_pressed() -> void:
 	RunState.start_new_run()
-	get_tree().change_scene_to_file(RunState.MAP_SCENE)
+	get_tree().change_scene_to_file(RunState.COMBAT_SCENE)
+
+
+func _on_main_menu_pressed() -> void:
+	get_tree().change_scene_to_file(RunState.MENU_SCENE)

@@ -13,6 +13,8 @@ var xp :=0
 var dungeon_floor :=1
 
 const MAP_SCENE := "res://scenes/map.tscn"
+const COMBAT_SCENE := "res://scenes/combat.tscn"
+const MENU_SCENE := "res://scenes/mainmenu.tscn"
 const BOSS_INTRO := preload("res://scenes/ui/boss_intro.tscn")
 
 ## Boss of each floor: FLOOR_BOSSES[0] is floor 1. Floors past the end reuse the last one.
@@ -64,6 +66,12 @@ func start_new_run() -> void:
 		deck.append(ShieldPlayer.new())
 	for i in 2:
 		deck.append(WomboCombo.new())
+	# One of each #9 and #7 example card, for testing.
+	deck.append(Thrust.new())
+	deck.append(DivineMercy.new())
+	deck.append(RapidFire.new())
+	deck.append(ArrowRain.new())
+	deck.append(Enhance.new())
 	map = MapState.new()
 	map.start()
 	current_room = null

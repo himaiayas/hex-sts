@@ -7,5 +7,6 @@ func _init(_target: Enum.TargetType = Enum.TargetType.PLAYER, _amount := 1)->voi
 	super(_target)
 	amount = _amount
 
-func execute(combat: CombatState, _unit: CombatUnit, _cell: Vector2i)->void:
+func execute(combat: CombatState, _unit: CombatUnit, _cell: Vector2i)->Array[Vector2i]:
 	combat.draw(amount)
+	return []

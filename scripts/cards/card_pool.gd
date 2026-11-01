@@ -5,6 +5,11 @@ static var CARDS: Array = [
 	StatusStrike,
 	ShieldPlayer,
 	WomboCombo,
+	Thrust,
+	DivineMercy,
+	RapidFire,
+	ArrowRain,
+	Enhance,
 ]
 
 static func random_cards(count: int) -> Array[BaseCard]:
