@@ -7,7 +7,9 @@ extends Control
 signal cell_clicked(unit: CombatUnit, coords: Vector2i)
 
 const HEX_SIZE := 36.0  # largest hex radius; big grids shrink below it
-const MAX_GRID_SIZE := Vector2(360, 330)  # hexes shrink so the grid (without its name) fits in this
+const MAX_GRID_SIZE := Vector2(460, 420)  # hexes shrink so the grid (without its name) fits in this
+const GAP := 2.5  # space between hexes at full size; scales with the hex
+const EDGE_WIDTH := 3.0  # tile outline at full size; scales with the hex
 const SQRT3 := 1.7320508
 const NAME_HEIGHT := 40.0
 const NO_CELL := Vector2i(999999, 999999)  # not (0,0): that's a real cell
@@ -197,19 +199,19 @@ func _draw() -> void:
 			color = COLOR_NEW
 		# if action_tile_dict.has(cell):
 		# 	color = color.lerp(COLOR_PREVIEW, 0.65)
-		var corners := hex_corners(cell_position(coord), _hex - 2.5)
+		var corners := hex_corners(cell_position(coord), _hex - _gap())
 		draw_colored_polygon(corners, color)
 		corners.append(corners[0])
-		draw_polyline(corners, COLOR_EDGE, 3.0)
+		draw_polyline(corners, COLOR_EDGE, EDGE_WIDTH * _hex / HEX_SIZE)
 		if tile.hp >= Enum.HealthTileEnum.SHIELDED:
 			_draw_shield(cell_position(coord), SHIELD_ALPHA)
 
 	for cell in candidates:
-		var corners := hex_corners(cell_position(cell), _hex - 2.5)
+		var corners := hex_corners(cell_position(cell), _hex - _gap())
 		if cell == _hover:
 			draw_colored_polygon(corners, Color(COLOR_CANDIDATE, 0.35))
 		corners.append(corners[0])
-		draw_polyline(corners, Color(COLOR_CANDIDATE, 0.8), 2.0)
+		draw_polyline(corners, Color(COLOR_CANDIDATE, 0.8), maxf(1.0, 2.0 * _hex / HEX_SIZE))
 
 	var wave := 0.5 + 0.5 * sin(TAU * Time.get_ticks_msec() / 1000.0 / INTENT_PERIOD)
 	var pulse := lerpf(ICON_ALPHA_MIN, ICON_ALPHA_MAX, wave)
@@ -232,7 +234,7 @@ func _draw() -> void:
 		var alpha := PREVIEW_ALPHA if unit.health.has(_hover) else flicker
 		for cell in unit.health:
 			if random_target.can_inflict(unit, cell):
-				draw_colored_polygon(hex_corners(_origin + axial_to_pixel(cell), HEX_SIZE - 2.5), Color(random_target.get_color(), alpha * 0.5))
+				draw_colored_polygon(hex_corners(cell_position(cell), _hex - _gap()), Color(random_target.get_color(), alpha * 0.5))
 
 	for offset in preview:
 		var cell := _hover + offset
@@ -325,7 +327,7 @@ func _draw_action(t: BaseActionTile, cell: Vector2i, alpha: float) -> void:
 		var half := Vector2.ONE * ICON_SIZE * _hex / HEX_SIZE / 2.0
 		draw_texture_rect(icon, Rect2(center - half, half * 2.0), false, Color(1, 1, 1, alpha))
 	else:
-		draw_colored_polygon(hex_corners(center, _hex - 2.5), Color(t.get_color(), alpha * 0.5))
+		draw_colored_polygon(hex_corners(center, _hex - _gap()), Color(t.get_color(), alpha * 0.5))
 
 
 func _draw_shield(center: Vector2, alpha: float) -> void:
@@ -355,6 +357,10 @@ func _gui_input(event: InputEvent) -> void:
 		if unit.health.has(cell) or candidates.has(cell):
 			accept_event()
 			cell_clicked.emit(unit, cell)
+
+
+func _gap() -> float:
+	return GAP * _hex / HEX_SIZE
 
 
 ## Centre of a cell in this grid's local coordinates.
