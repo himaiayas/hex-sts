@@ -213,6 +213,16 @@ func _initialize() -> void:
 	_combat.discard_hand()
 	_check(_combat.hand == [steady], "Steady Guard wasn't retained")
 
+	# Cinder Strike hits 2 more random tiles once a card was exhausted this turn.
+	_reset(HEX)
+	await _play(CinderStrike.new(), [_combat.enemies[0]], [Vector2i.ZERO])
+	_check(_alive(_combat.enemies[0]) == 4, "Cinder Strike hit extra tiles with nothing exhausted")
+	_combat.exhaust(Strike.new())
+	await _play(CinderStrike.new(), [_combat.enemies[0]], [Vector2i(0, 1)])
+	_check(_alive(_combat.enemies[0]) == 0, "Cinder Strike didn't hit extra tiles after an exhaust")
+	await _combat.start_turn()
+	_check(_combat.exhausted_this_turn == 0, "the exhaust count didn't reset at turn start")
+
 	_run.free()
 	print("action_check: %s" % ("OK" if _failures == 0 else "%d failure(s)" % _failures))
 	quit(_failures)

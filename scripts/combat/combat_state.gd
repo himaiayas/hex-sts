@@ -19,6 +19,7 @@ var _changes: Array[Dictionary] = []  # recorded since the last flush
 var max_energy := 3
 var energy := 0
 var turn := 0
+var exhausted_this_turn := 0  # cards exhausted since the player's turn started
 
 
 func _init(run: Node) -> void:
@@ -66,6 +67,7 @@ func discard_hand() -> void:
 
 func start_turn() -> void:
 	turn += 1
+	exhausted_this_turn = 0
 	energy = max_energy
 	if turn == 1:
 		await player.fire(Enum.Trigger.COMBAT_START, self)
@@ -108,14 +110,20 @@ func play_card(card: BaseCard, units: Array[CombatUnit], cells: Array[Vector2i],
 	energy -= card.cost
 	hand.erase(card)
 	for pick in picks:
-		hand.erase(pick)
-		exhaust_pile.append(pick)
+		exhaust(pick)
 	await card.execute(self, units, cells, rotations)
 	if card.exhaust:
-		exhaust_pile.append(card)
+		exhaust(card)
 	elif card.type != Enum.CardType.POWER:
 		discard_pile.append(card)
 	return true
+
+
+## Moves card from wherever it is to the exhaust pile, and counts it for this turn.
+func exhaust(card: BaseCard) -> void:
+	hand.erase(card)
+	exhaust_pile.append(card)
+	exhausted_this_turn += 1
 
 
 ## The unit whose turn it is: the player, or the enemy taking its turn. Null between turns.
