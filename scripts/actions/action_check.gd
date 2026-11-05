@@ -1,6 +1,7 @@
 extends SceneTree
 
-## Headless check for hit reporting, random tile actions, Strength, the example cards, and the exhaust, retain and discard piles.
+## Headless check for hit reporting, random tile actions, Strength, the example cards, the exhaust, retain
+## and discard piles, and Heal.
 ## Exit code = number of failures.
 ## godot --headless --path . -s res://scripts/actions/action_check.gd
 
@@ -222,6 +223,20 @@ func _initialize() -> void:
 	_check(_alive(_combat.enemies[0]) == 0, "Cinder Strike didn't hit extra tiles after an exhaust")
 	await _combat.start_turn()
 	_check(_combat.exhausted_this_turn == 0, "the exhaust count didn't reset at turn start")
+
+	# Mend heals the picked tiles before it's exhausted.
+	_reset()
+	var mend := Mend.new()
+	var hurt: Array[Vector2i] = []
+	hurt.assign(_combat.player.health.keys().slice(0, 2))
+	for cell in hurt:
+		_combat.player.health[cell].hp = DAMAGED
+	var no_picks: Array[BaseCard] = []
+	_combat.hand.append(mend)
+	_combat.energy = 1
+	await _combat.play_card(mend, no_units, no_cells, no_rotations, no_picks, hurt)
+	_check(hurt.all(func(c: Vector2i) -> bool: return _combat.player.health[c].hp == UNDAMAGED), "Mend didn't heal the picked tiles")
+	_check(mend in _combat.exhaust_pile, "Mend wasn't exhausted")
 
 	_run.free()
 	print("action_check: %s" % ("OK" if _failures == 0 else "%d failure(s)" % _failures))

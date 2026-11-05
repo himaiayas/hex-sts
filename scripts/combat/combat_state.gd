@@ -104,13 +104,17 @@ func can_play(card: BaseCard) -> bool:
 ## Pays the cost, runs each grid action on units[i] at cells[i], then discards the card.
 ## Exhaust cards go to the exhaust pile instead. Power cards go to no pile: they stay in play for the rest of the fight.
 ## picks = the cards in hand chosen to exhaust (card.exhaust_from_hand), exhausted before the card's effect.
-func play_card(card: BaseCard, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int], picks: Array[BaseCard] = []) -> bool:
+## tile_picks = the player's tiles chosen for card.pick_tile, inflicted before the card's effect too.
+func play_card(card: BaseCard, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int], picks: Array[BaseCard] = [], tile_picks: Array[Vector2i] = []) -> bool:
 	if not can_play(card):
 		return false
 	energy -= card.cost
 	hand.erase(card)
 	for pick in picks:
 		exhaust(pick)
+	for cell in tile_picks:
+		card.pick_tile.inflict(self, player, cell)
+	await flush()
 	await card.execute(self, units, cells, rotations)
 	if card.exhaust:
 		exhaust(card)

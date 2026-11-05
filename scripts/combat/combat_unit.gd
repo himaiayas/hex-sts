@@ -50,6 +50,15 @@ func damage_health_tile(combat: CombatState, coords: Vector2i)->bool:
 	return false
 
 
+## Returns true if the tile was damaged and is now healed.
+func heal_health_tile(combat: CombatState, coords: Vector2i) -> bool:
+	if health[coords].hp != Enum.HealthTileEnum.DAMAGED:
+		return false
+	health[coords].hp = Enum.HealthTileEnum.UNDAMAGED
+	combat.record(self, coords, Enum.Change.HEAL)
+	return true
+
+
 func apply_effect_health_tile(combat: CombatState, coords:Vector2i, effect:BaseTileEffect)->void:
 	var tile: HealthTile = health[coords]
 	if tile and tile.hp > Enum.HealthTileEnum.DAMAGED:
