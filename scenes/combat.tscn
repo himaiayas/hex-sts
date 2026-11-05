@@ -5,6 +5,7 @@
 [ext_resource type="Script" uid="uid://e17p874bkot" path="res://scripts/combat/ui/hand_view.gd" id="3_hand"]
 [ext_resource type="PackedScene" path="res://scenes/ui/top_bar.tscn" id="9_topbar"]
 [ext_resource type="Texture2D" path="res://assets/characters/char_idle1.png" id="10_player"]
+[ext_resource type="Script" path="res://scripts/combat/ui/player_image.gd" id="11_player_image"]
 
 [node name="Combat" type="Control" unique_id=1963554734]
 layout_mode = 3
@@ -98,6 +99,7 @@ mouse_filter = 2
 script = ExtResource("2_grid")
 
 [node name="PlayerImage" type="TextureRect" parent="Margin/Layout/Arena/Player"]
+unique_name_in_owner = true
 custom_minimum_size = Vector2(300, 300)
 layout_mode = 2
 size_flags_vertical = 4
@@ -105,6 +107,7 @@ mouse_filter = 2
 texture = ExtResource("10_player")
 expand_mode = 1
 stretch_mode = 5
+script = ExtResource("11_player_image")
 
 [node name="Enemies" type="HBoxContainer" parent="Margin/Layout/Arena" unique_id=975986018]
 unique_name_in_owner = true

@@ -102,6 +102,7 @@
   - Idle loops `char_idle1` → `char_idle2` → `char_idle3` (`assets/characters/`).
   - Show `char_attack` while the player attacks. Lunge is optional.
   - Show `char_guard` when an enemy attack hits fewer player hexes than it targets (some or all blocked).
+- [x] Done ✅: `PlayerImage` (`scripts/combat/ui/player_image.gd`) on the `PlayerImage` node loops the idle frames, 0.25s each. `show_pose()` swaps in another sprite for 0.5s. Attack cards show `char_attack` once they're played. `CombatUnit.blocked` fires when a Shield absorbs a hit, and the player's guard shows on it outside the player's own turn, so their own Poison doesn't count. No lunge yet (#23). Turns resolve all at once until #22, so the pose shows after the enemy turn rather than during each hit.
 
 ## Enemies
 

@@ -23,6 +23,7 @@ var _intent_labels: Array[Label] = []
 @onready var _status_label: Label = %StatusLabel
 @onready var _hint_label: Label = %HintLabel
 @onready var _player_view: HealthGridView = %PlayerGrid
+@onready var _player_image: PlayerImage = %PlayerImage
 @onready var _enemies_box: HBoxContainer = %Enemies
 @onready var _hand: HandView = %Hand
 @onready var _deck_button: Button = %DeckButton
@@ -57,6 +58,7 @@ func _ready() -> void:
 	_hand.card_cast.connect(_on_card_cast)
 	_player_view.setup(combat.player, true)
 	_player_view.cell_clicked.connect(_on_cell_clicked)
+	combat.player.blocked.connect(_on_player_blocked)
 	for enemy in combat.enemies:
 		var view := HealthGridView.new()
 		view.setup(enemy, true)
@@ -115,6 +117,8 @@ func _on_card_cast(card: BaseCard) -> void:
 	_select(null)
 	if not combat.play_card(card, units, cells, rotations):
 		_hint_label.text = "Not enough energy."
+	elif card.type == Enum.CardType.ATTACK:
+		_player_image.show_pose(PlayerImage.ATTACK)
 	_refresh()
 	_check_combat_end()
 
@@ -134,7 +138,8 @@ func _on_cell_clicked(unit: CombatUnit, cell: Vector2i) -> void:
 	if _cells.size() < selected.grid_actions.size(): #store intents in _cells, when all grid has been chosen, this condition reeturn false
 		_refresh()
 		return
-	combat.play_card(selected, _units, _cells, _rotations)
+	if combat.play_card(selected, _units, _cells, _rotations) and selected.type == Enum.CardType.ATTACK:
+		_player_image.show_pose(PlayerImage.ATTACK)
 	_select(null)
 	_refresh()
 	_check_combat_end()
@@ -147,6 +152,12 @@ func _on_end_turn_pressed() -> void:
 	combat.end_turn()
 	_refresh()
 	_check_combat_end()
+
+
+## Only enemy hits count, not the player's own Poison at turn start.
+func _on_player_blocked(_coords: Vector2i) -> void:
+	if not combat.player.in_turn:
+		_player_image.show_pose(PlayerImage.GUARD)
 
 
 func _on_deck_pressed() -> void:

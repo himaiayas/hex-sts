@@ -1,6 +1,7 @@
 class_name CombatUnit
 extends RefCounted
 
+signal blocked(coords: Vector2i)  # a Shield absorbed a hit on this tile
 
 var display_name: String
 var health: Dictionary[Vector2i, HealthTile]  #Matrix with element as HealthTile
@@ -37,6 +38,7 @@ func damage_health_tile(combat: CombatState, coords: Vector2i)->bool:
 	if tile.hp == Enum.HealthTileEnum.SHIELDED:
 		tile.hp = Enum.HealthTileEnum.UNDAMAGED
 		fire_at(Enum.Trigger.ON_BLOCK, combat, coords)
+		blocked.emit(coords)
 	elif tile.hp == Enum.HealthTileEnum.UNDAMAGED:
 		tile.hp = Enum.HealthTileEnum.DAMAGED
 		fire_at(Enum.Trigger.ON_HIT, combat, coords)
