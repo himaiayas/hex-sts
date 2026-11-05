@@ -58,9 +58,10 @@ func draw(amount: int) -> void:
 		hand.append(draw_pile.pop_back())
 
 
+## Retain cards stay in hand.
 func discard_hand() -> void:
-	discard_pile.append_array(hand)
-	hand.clear()
+	discard_pile.append_array(hand.filter(func(c: BaseCard) -> bool: return not c.retain))
+	hand.assign(hand.filter(func(c: BaseCard) -> bool: return c.retain))
 
 
 func start_turn() -> void:
