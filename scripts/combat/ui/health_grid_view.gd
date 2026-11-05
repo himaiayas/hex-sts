@@ -244,7 +244,7 @@ func _draw() -> void:
 		var alpha := PREVIEW_ALPHA if unit.health.has(_hover) else flicker
 		for cell in unit.health:
 			if random_target.can_inflict(unit, cell):
-				draw_colored_polygon(hex_corners(_origin + axial_to_pixel(cell), HEX_SIZE - 2.5), Color(random_target.get_color(), alpha * 0.5))
+				draw_colored_polygon(hex_corners(cell_position(cell), _hex - 2.5), Color(random_target.get_color(), alpha * 0.5))
 
 	for offset in preview:
 		var cell := _hover + offset
