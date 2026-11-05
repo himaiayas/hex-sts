@@ -13,6 +13,8 @@ var draw_pile: Array[BaseCard] = []
 var hand: Array[BaseCard] = []
 var discard_pile: Array[BaseCard] = []
 var exhaust_pile: Array[BaseCard] = []
+var animator: Callable  # set by the combat scene: plays one batch of changes, awaited by flush()
+var _changes: Array[Dictionary] = []  # recorded since the last flush
 
 var max_energy := 3
 var energy := 0
@@ -25,6 +27,22 @@ func _init(run: Node) -> void:
 	for card in run.deck:
 		draw_pile.append(card.duplicate())
 	draw_pile.shuffle()
+
+
+## Called by CombatUnit whenever a tile or a power changes. effect = the tile effect or power, if any.
+func record(unit: CombatUnit, cell: Vector2i, kind: Enum.Change, effect: BaseEffect = null) -> void:
+	_changes.append({unit = unit, cell = cell, kind = kind, effect = effect})
+
+
+## Plays the changes recorded since the last flush, and returns once they're done.
+## Without an animator (headless checks) nothing waits.
+func flush() -> void:
+	if _changes.is_empty():
+		return
+	var batch := _changes
+	_changes = []
+	if animator.is_valid():
+		await animator.call(batch)
 
 
 func draw(amount: int) -> void:
@@ -49,8 +67,8 @@ func start_turn() -> void:
 	turn += 1
 	energy = max_energy
 	if turn == 1:
-		player.fire(Enum.Trigger.COMBAT_START, self)
-	player.on_turn_start(self)
+		await player.fire(Enum.Trigger.COMBAT_START, self)
+	await player.on_turn_start(self)
 	draw(DRAW_PER_TURN)
 	for e in enemies:
 		var enemy := e as BaseEnemy
@@ -60,20 +78,20 @@ func start_turn() -> void:
 
 func end_turn() -> void:
 	discard_hand()
-	player.on_turn_end(self)
+	await player.on_turn_end(self)
 	for e in enemies:
 		if is_lost():
 			return  # the fight is lost; don't start another turn
 		var enemy := e as BaseEnemy
 		if enemy == null or enemy.is_dead():
 			continue
-		enemy.on_turn_start(self)
+		await enemy.on_turn_start(self)
 		if not enemy.is_dead():  # its own effects may have finished it
-			enemy.take_turn(self)
-		enemy.on_turn_end(self)
+			await enemy.take_turn(self)
+		await enemy.on_turn_end(self)
 	if is_lost() or is_won():
 		return
-	start_turn()
+	await start_turn()
 
 
 func can_play(card: BaseCard) -> bool:
@@ -87,7 +105,7 @@ func play_card(card: BaseCard, units: Array[CombatUnit], cells: Array[Vector2i],
 		return false
 	energy -= card.cost
 	hand.erase(card)
-	card.execute(self, units, cells, rotations)
+	await card.execute(self, units, cells, rotations)
 	if card.type != Enum.CardType.POWER:
 		discard_pile.append(card)
 	return true

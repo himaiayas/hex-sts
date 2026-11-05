@@ -44,6 +44,7 @@ var _intent_labels: Array[Label] = []
 
 var _rewards: CombatRewards
 var _over := false  # won or lost: ignore combat input
+var _busy := false  # a card or a turn is playing out: ignore combat input until it's done
 
 
 func _ready() -> void:
@@ -85,14 +86,17 @@ func _ready() -> void:
 		_enemy_views.append(view)
 		_intent_labels.append(intent_label)
 
-	combat.start_turn()
+	combat.animator = _animate
+	_busy = true
+	await combat.start_turn()
+	_busy = false
 	_refresh()
 
 
 # --- Input -------------------------------------------------------------------
 
 func _on_card_clicked(card: BaseCard) -> void:
-	if _over:
+	if _over or _busy:
 		return
 	if selected == card:
 		_select(null)
@@ -109,22 +113,27 @@ func _on_card_clicked(card: BaseCard) -> void:
 
 ## A card with no grid actions, dropped in the middle of the screen.
 func _on_card_cast(card: BaseCard) -> void:
-	if _over:
+	if _over or _busy:
 		return
 	var units: Array[CombatUnit] = []
 	var cells: Array[Vector2i] = []
 	var rotations: Array[int] = []
 	_select(null)
-	if not combat.play_card(card, units, cells, rotations):
+	if not combat.can_play(card):
 		_hint_label.text = "Not enough energy."
-	elif card.type == Enum.CardType.ATTACK:
+		_refresh()
+		return
+	if card.type == Enum.CardType.ATTACK:
 		_player_image.show_pose(PlayerImage.ATTACK)
+	_busy = true
+	await combat.play_card(card, units, cells, rotations)
+	_busy = false
 	_refresh()
 	_check_combat_end()
 
 
 func _on_cell_clicked(unit: CombatUnit, cell: Vector2i) -> void:
-	if _over:
+	if _over or _busy:
 		return
 	if selected == null:
 		_hint_label.text = "Select a card first."
@@ -138,18 +147,30 @@ func _on_cell_clicked(unit: CombatUnit, cell: Vector2i) -> void:
 	if _cells.size() < selected.grid_actions.size(): #store intents in _cells, when all grid has been chosen, this condition reeturn false
 		_refresh()
 		return
-	if combat.play_card(selected, _units, _cells, _rotations) and selected.type == Enum.CardType.ATTACK:
-		_player_image.show_pose(PlayerImage.ATTACK)
+	# Deselect first so the preview is gone while the card plays out.
+	var card := selected
+	var units := _units.duplicate()
+	var cells := _cells.duplicate()
+	var rotations := _rotations.duplicate()
 	_select(null)
+	_refresh()
+	_busy = true
+	if card.type == Enum.CardType.ATTACK:
+		_player_image.show_pose(PlayerImage.ATTACK)
+	await combat.play_card(card, units, cells, rotations)
+	_busy = false
 	_refresh()
 	_check_combat_end()
 
 
 func _on_end_turn_pressed() -> void:
-	if _over:
+	if _over or _busy:
 		return
 	_select(null)
-	combat.end_turn()
+	_refresh()
+	_busy = true
+	await combat.end_turn()
+	_busy = false
 	_refresh()
 	_check_combat_end()
 
@@ -189,7 +210,7 @@ func _on_win_combat_pressed()->void:
 
 ## _input, not _unhandled_input: the grids and this root stop mouse events, so right-clicks never arrive unhandled.
 func _input(event: InputEvent) -> void:
-	if _over or _top_bar.is_modal_open():
+	if _over or _busy or _top_bar.is_modal_open():
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
 		if _pile_viewer.visible:
@@ -221,6 +242,14 @@ func _rotation_step(event: InputEvent) -> int:
 
 
 # --- Refresh -----------------------------------------------------------------
+
+## combat.animator: shows the new state, flashes every change in the batch at once, and waits for it.
+func _animate(batch: Array[Dictionary]) -> void:
+	_refresh()
+	for change in batch:
+		_view_for(change.unit).flash(change.cell, change.kind, change.effect)
+	await get_tree().create_timer(HealthGridView.FLASH_TIME).timeout
+
 
 func _refresh() -> void:
 	_top_bar.refresh()

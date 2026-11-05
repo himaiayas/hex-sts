@@ -20,7 +20,7 @@ var max_augments := 1  # raise for cards that say they hold more
 func execute(combat: CombatState, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int])->Array:
 	var hits := []
 	for i in grid_actions.size():
-		hits.append(grid_actions[i].execute(combat, units[i], cells[i], rotations[i]))
+		hits.append(await grid_actions[i].execute(combat, units[i], cells[i], rotations[i]))
 	return hits
 
 

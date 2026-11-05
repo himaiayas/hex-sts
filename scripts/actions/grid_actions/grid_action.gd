@@ -19,7 +19,9 @@ func execute(combat: CombatState, unit: CombatUnit, cell: Vector2i, rotation := 
 			landed.append([unit, cell + offset])
 		if pattern[offset].inflict(combat, unit, cell + offset):
 			hits.append(cell + offset)
+	await combat.flush()
 	hits.append_array(StrengthPower.spread(combat, landed))
+	await combat.flush()  # Strength's extras play after the pattern
 	return hits
 
 ## New dict of offset from the clicked cell -> tile, turned 60° clockwise per step. Never changes tiles itself.

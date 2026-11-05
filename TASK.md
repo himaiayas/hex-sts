@@ -87,6 +87,7 @@
   - `GridAction.execute`, `BaseCard.execute` and `CombatState.end_turn` become coroutines that `await` each animation, so the state matches what's on screen. The headless checks `await` too.
   - Input is blocked while animations play. No skip button.
   - One hook per kind, so real VFX can replace the placeholder later.
+- [x] Done ✅: `CombatUnit`'s tile and power changes call `CombatState.record()` (`shield_health_tile`, `apply_effect_health_tile` and `add_power` now take `combat`). `CombatState.flush()` hands the batch to the scene's `animator` and awaits it. Flushes happen after a pattern, again after Strength's extras, after each random/power action, and after each artifact, power or tile effect in `fire()`. ON_HIT / ON_BLOCK reactions play with the hit, so `inflict`, `on_trigger` and artifacts stay synchronous. `HealthGridView.flash()` fades and pops the hex or power badge for 0.3s (`FLASH_TIME`), with one `match` branch per `Enum.Change` for future VFX. `_busy` blocks combat input while anything plays. Without an animator nothing waits, so the checks run as before. Check: `action_check.gd` (Strength = pattern then extra) and `effect_check.gd` (Poison then Plate at turn start).
 
 ### 23. Attack / hit shake
 

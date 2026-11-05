@@ -10,6 +10,6 @@ func _init() -> void:
 
 
 func execute(combat: CombatState, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int])->Array:
-	var hits := super(combat, units, cells, rotations)
-	RandomTileAction.new(Enum.TargetType.ENEMY, DamageTile.new(Vector2i.ZERO), 5).execute(combat, null, Vector2i.ZERO)
+	var hits: Array = await super(combat, units, cells, rotations)
+	await RandomTileAction.new(Enum.TargetType.ENEMY, DamageTile.new(Vector2i.ZERO), 5).execute(combat, null, Vector2i.ZERO)
 	return hits
