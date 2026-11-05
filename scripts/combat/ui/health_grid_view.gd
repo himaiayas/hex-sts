@@ -47,6 +47,10 @@ var placed: Array = [] # selected card's grid actions already clicked on this gr
 var random_target: BaseActionTile = null # selected card's next grid action hits random tiles of a grid: this whole grid flickers
 var candidates: Array[Vector2i] = [] # empty cells drawn as outlines and clickable (level-up tile placement)
 var new_cells: Array[Vector2i] = [] # health cells drawn in COLOR_NEW (tiles just placed)
+var shake := Vector2.ZERO: # offset everything is drawn at while the grid shakes (set by the combat scene)
+	set(value):
+		shake = value
+		queue_redraw()
 
 var _hover := NO_CELL
 var _origin := Vector2.ZERO
@@ -176,6 +180,7 @@ func _make_particles(effect: BaseTileEffect) -> CPUParticles2D:
 func _draw() -> void:
 	if unit == null:
 		return
+	draw_set_transform(shake)
 	var alive := 0
 	var coords := unit.health.keys()
 	#var action_tile_dict := {} # Dict Vector2i->BaseActionTile

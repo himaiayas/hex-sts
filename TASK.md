@@ -94,6 +94,7 @@
 - **Owner:** Pakkapao
 - **Requirement/Prereq:** 22
 - **Brief Description:** The attacker does a short lunge toward its target. When an enemy is hit, only its sprite shakes. When the player is hit, the player's grid shakes. No screen shake. May touch Mai's UI files.
+- [x] Done ✅: In `combat_scene._animate`, a batch that hits or blocks on the other side of `combat.acting_unit()` makes the attacker's sprite lunge 40px at the target first (0.1s out, 0.15s back), and the flash plays on impact. Every unit with DAMAGE in the batch shakes: an enemy's sprite, or the player's grid (`HealthGridView.shake`, a draw offset). Self-damage such as Poison shakes without a lunge; a blocked hit lunges without a shake; Strength's extras lunge again as a follow-up jab. Sprites sit in plain `Control` slots (`PlayerSlot` in `combat.tscn`, built in code for enemies) so the HBoxes don't snap them back mid-tween.
 
 ### 24. Player sprite
 

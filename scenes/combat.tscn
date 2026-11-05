@@ -98,11 +98,20 @@ size_flags_vertical = 4
 mouse_filter = 2
 script = ExtResource("2_grid")
 
-[node name="PlayerImage" type="TextureRect" parent="Margin/Layout/Arena/Player"]
-unique_name_in_owner = true
+[node name="PlayerSlot" type="Control" parent="Margin/Layout/Arena/Player"]
 custom_minimum_size = Vector2(300, 300)
 layout_mode = 2
 size_flags_vertical = 4
+mouse_filter = 2
+
+[node name="PlayerImage" type="TextureRect" parent="Margin/Layout/Arena/Player/PlayerSlot"]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 mouse_filter = 2
 texture = ExtResource("10_player")
 expand_mode = 1
