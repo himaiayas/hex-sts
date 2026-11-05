@@ -74,6 +74,7 @@ func start_new_run() -> void:
 	deck.append(Enhance.new())
 	deck.append(LastLight.new())
 	deck.append(SteadyGuard.new())
+	deck.append(Kindling.new())
 	map = MapState.new()
 	map.start()
 	current_room = null

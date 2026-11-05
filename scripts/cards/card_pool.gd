@@ -12,6 +12,7 @@ static var CARDS: Array = [
 	Enhance,
 	LastLight,
 	SteadyGuard,
+	Kindling,
 ]
 
 static func random_cards(count: int) -> Array[BaseCard]:

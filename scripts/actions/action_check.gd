@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Headless check for hit reporting, random tile actions, Strength and the example cards.
+## Headless check for hit reporting, random tile actions, Strength, the example cards, and the exhaust, retain and discard piles.
 ## Exit code = number of failures.
 ## godot --headless --path . -s res://scripts/actions/action_check.gd
 
@@ -191,6 +191,27 @@ func _initialize() -> void:
 	_strengthen(_combat.player, 1)
 	await _play(ArrowRain.new(), [], [])
 	_check(_alive(_combat.enemies[0]) + _alive(_combat.enemies[1]) == 0, "Arrow Rain didn't spread")
+
+	# Picked cards and Exhaust cards go to the exhaust pile, and Retain cards stay in hand.
+	_reset()
+	var fuel := Strike.new()
+	var kindling := Kindling.new()
+	var no_units: Array[CombatUnit] = []
+	var no_cells: Array[Vector2i] = []
+	var no_rotations: Array[int] = []
+	var picks: Array[BaseCard] = [fuel]
+	_combat.hand.assign([fuel, kindling])
+	_combat.energy = 1
+	await _combat.play_card(kindling, no_units, no_cells, no_rotations, picks)
+	_check(_combat.exhaust_pile == picks, "Kindling didn't exhaust the picked card")
+	_check(kindling in _combat.discard_pile and _combat.hand.size() == 2, "Kindling didn't discard itself and draw 2")
+	var last_light := LastLight.new()
+	await _play(last_light, [_combat.enemies[0]], [Vector2i.ZERO])
+	_check(last_light in _combat.exhaust_pile, "Last Light wasn't exhausted")
+	var steady := SteadyGuard.new()
+	_combat.hand.assign([steady, Strike.new()])
+	_combat.discard_hand()
+	_check(_combat.hand == [steady], "Steady Guard wasn't retained")
 
 	_run.free()
 	print("action_check: %s" % ("OK" if _failures == 0 else "%d failure(s)" % _failures))

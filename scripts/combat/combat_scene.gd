@@ -3,6 +3,7 @@ extends Control
 ## Combat screen: hand, piles, energy, end turn, and health grids.
 ## Click a card to select it, then click a cell for each of its grid actions to play it.
 ## A card with no grid actions is played by dragging it to the middle of the screen.
+## A card that exhausts cards from hand then waits for the player to pick them and press Confirm.
 
 const RenderCard := preload("res://scripts/cards/render_card.gd")
 const CARD_SIZE := HandView.CARD_SIZE
@@ -20,6 +21,8 @@ var _units: Array[CombatUnit] = []  # grid and cell clicked for each grid action
 var _cells: Array[Vector2i] = []
 var _rotations: Array[int] = []  # rotation chosen for each of those clicks
 var _rotation := 0  # 60° clockwise steps for the next grid action, kept between clicks
+var _picking := false  # every grid action is placed; picking cards in hand until Confirm
+var _picks: Array[BaseCard] = []  # cards in hand picked to exhaust
 
 var _enemy_views: Array[HealthGridView] = []
 var _enemy_images: Array[TextureRect] = []  # one per enemy, same order as _enemy_views
@@ -37,6 +40,8 @@ var _intent_labels: Array[Label] = []
 @onready var _draw_button: Button = %DrawPileButton
 @onready var _exhaust_button: Button = %ExhaustButton
 @onready var _discard_button: Button = %DiscardButton
+@onready var _pick_buttons: Control = %PickButtons
+@onready var _confirm_button: Button = %ConfirmButton
 
 @onready var _pile_viewer: ColorRect = %PileViewer
 @onready var _pile_title: Label = %PileTitle
@@ -112,6 +117,9 @@ func _ready() -> void:
 func _on_card_clicked(card: BaseCard) -> void:
 	if _over or _busy:
 		return
+	if _picking:
+		_toggle_pick(card)
+		return
 	if selected == card:
 		_select(null)
 	elif not combat.can_play(card):
@@ -129,25 +137,17 @@ func _on_card_clicked(card: BaseCard) -> void:
 func _on_card_cast(card: BaseCard) -> void:
 	if _over or _busy:
 		return
-	var units: Array[CombatUnit] = []
-	var cells: Array[Vector2i] = []
-	var rotations: Array[int] = []
 	_select(null)
 	if not combat.can_play(card):
 		_hint_label.text = "Not enough energy."
 		_refresh()
 		return
-	if card.type == Enum.CardType.ATTACK:
-		_player_image.show_pose(PlayerImage.ATTACK)
-	_busy = true
-	await combat.play_card(card, units, cells, rotations)
-	_busy = false
-	_refresh()
-	_check_combat_end()
+	_select(card)
+	_play_selected()
 
 
 func _on_cell_clicked(unit: CombatUnit, cell: Vector2i) -> void:
-	if _over or _busy:
+	if _over or _busy or _picking:
 		return
 	if selected == null:
 		_hint_label.text = "Select a card first."
@@ -161,20 +161,57 @@ func _on_cell_clicked(unit: CombatUnit, cell: Vector2i) -> void:
 	if _cells.size() < selected.grid_actions.size(): #store intents in _cells, when all grid has been chosen, this condition reeturn false
 		_refresh()
 		return
+	_play_selected()
+
+
+func _on_confirm_pressed() -> void:
+	if _over or _busy:
+		return
+	_play_selected()
+
+
+func _on_cancel_pressed() -> void:
+	_select(null)
+	_refresh()
+
+
+func _toggle_pick(card: BaseCard) -> void:
+	if card == selected:
+		return
+	if card in _picks:
+		_picks.erase(card)
+	elif _picks.size() < _pick_count():
+		_picks.append(card)
+	_refresh()
+
+
+## Plays the selected card at the cells clicked so far. A card that exhausts cards from hand
+## goes to the pick step first, and plays when Confirm calls this again.
+func _play_selected() -> void:
+	if not _picking and _pick_count() > 0:
+		_picking = true
+		_refresh()
+		return
 	# Deselect first so the preview is gone while the card plays out.
 	var card := selected
 	var units := _units.duplicate()
 	var cells := _cells.duplicate()
 	var rotations := _rotations.duplicate()
+	var picks := _picks.duplicate()
 	_select(null)
 	_refresh()
 	_busy = true
 	if card.type == Enum.CardType.ATTACK:
 		_player_image.show_pose(PlayerImage.ATTACK)
-	await combat.play_card(card, units, cells, rotations)
+	await combat.play_card(card, units, cells, rotations, picks)
 	_busy = false
 	_refresh()
 	_check_combat_end()
+
+
+## Cards to pick: the selected card's exhaust_from_hand, or every other card in hand if there are fewer.
+func _pick_count() -> int:
+	return mini(selected.exhaust_from_hand, combat.hand.size() - 1)
 
 
 func _on_end_turn_pressed() -> void:
@@ -239,7 +276,7 @@ func _input(event: InputEvent) -> void:
 		else:
 			return
 		get_viewport().set_input_as_handled()
-	elif selected and not _pile_viewer.visible and _rotation_step(event) != 0:
+	elif selected and not _picking and not _pile_viewer.visible and _rotation_step(event) != 0:
 		_rotation = posmod(_rotation + _rotation_step(event), 6)
 		_refresh()
 		get_viewport().set_input_as_handled()
@@ -324,7 +361,12 @@ func _refresh() -> void:
 	_draw_button.text = "Draw pile (%d)" % combat.draw_pile.size()
 	_exhaust_button.text = "Exhausted (%d)" % combat.exhaust_pile.size()
 	_discard_button.text = "Discard (%d)" % combat.discard_pile.size()
-	if selected:
+	_pick_buttons.visible = _picking
+	if _picking:
+		var count := _pick_count()
+		_confirm_button.disabled = _picks.size() < count
+		_hint_label.text = "Pick %d card%s in your hand to exhaust. Right-click to cancel." % [count, "" if count == 1 else "s"]
+	elif selected:
 		var step := ""
 		if selected.grid_actions.size() > 1:
 			step = " (pattern %d/%d)" % [_cells.size() + 1, selected.grid_actions.size()]
@@ -335,7 +377,11 @@ func _refresh() -> void:
 	else:
 		_hint_label.text = "Click a card to select it."
 
-	_hand.set_hand(combat.hand, selected, combat.can_play)
+	_hand.picking = _picking
+	if _picking:
+		_hand.set_hand(combat.hand, selected, func(_card: BaseCard) -> bool: return true, _picks)
+	else:
+		_hand.set_hand(combat.hand, selected, combat.can_play)
 
 	# Only the grid action the next click places is previewed.
 	var pattern: Dictionary[Vector2i, BaseActionTile] = {}
@@ -399,6 +445,8 @@ func _select(card: BaseCard) -> void:
 	_cells.clear()
 	_rotations.clear()
 	_rotation = 0
+	_picking = false
+	_picks.clear()
 
 
 ## Whether the next click goes on the player's grid: the current grid action's target, or the card's.
