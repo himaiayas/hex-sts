@@ -195,7 +195,9 @@ func _toggle_tile_pick(unit: CombatUnit, cell: Vector2i) -> void:
 		return
 	if cell in _tile_picks:
 		_tile_picks.erase(cell)
-	elif _tile_picks.size() < _pick_count() and selected.pick_tile.can_inflict(unit, cell):
+		# e.g. a Plated tile can't stay picked for Sacrifice once an open tile is unpicked
+		_tile_picks.assign(_tile_picks.filter(func(c: Vector2i) -> bool: return selected.pick_tile.can_pick(unit, c, _tile_picks)))
+	elif _tile_picks.size() < _pick_count() and selected.pick_tile.can_pick(unit, cell, _tile_picks):
 		_tile_picks.append(cell)
 	_refresh()
 

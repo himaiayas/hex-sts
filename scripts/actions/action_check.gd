@@ -1,7 +1,7 @@
 extends SceneTree
 
 ## Headless check for hit reporting, random tile actions, Strength, the example cards, the exhaust, retain
-## and discard piles, and Heal.
+## and discard piles, Heal and Sacrifice.
 ## Exit code = number of failures.
 ## godot --headless --path . -s res://scripts/actions/action_check.gd
 
@@ -237,6 +237,30 @@ func _initialize() -> void:
 	await _combat.play_card(mend, no_units, no_cells, no_rotations, no_picks, hurt)
 	_check(hurt.all(func(c: Vector2i) -> bool: return _combat.player.health[c].hp == UNDAMAGED), "Mend didn't heal the picked tiles")
 	_check(mend in _combat.exhaust_pile, "Mend wasn't exhausted")
+
+	# Sacrifice goes through Shield, and a Plated tile can only be picked once no open tile is left.
+	_reset()
+	var player_cells := _combat.player.health.keys()
+	for cell in player_cells.slice(2):
+		_combat.player.health[cell].hp = DAMAGED
+	var open: Vector2i = player_cells[0]
+	var plated: Vector2i = player_cells[1]
+	_combat.player.health[open].hp = SHIELDED
+	_combat.player.health[plated].status_effects.append(PlateTileEffect.new())
+	var sacrifice := SacrificeTile.new(Vector2i.ZERO)
+	var none_picked: Array[Vector2i] = []
+	var open_picked: Array[Vector2i] = [open]
+	_check(not sacrifice.can_pick(_combat.player, plated, none_picked), "a Plated tile could be sacrificed while an open one was left")
+	_check(sacrifice.can_pick(_combat.player, plated, open_picked), "a Plated tile couldn't be sacrificed once the open one was picked")
+	var blood_price := BloodPrice.new()
+	_combat.hand.append(blood_price)
+	_combat.energy = 1
+	var enemy_units: Array[CombatUnit] = [_combat.enemies[0]]
+	var zero_cells: Array[Vector2i] = [Vector2i.ZERO]
+	var zero_rotations: Array[int] = [0]
+	await _combat.play_card(blood_price, enemy_units, zero_cells, zero_rotations, no_picks, open_picked)
+	_check(_combat.player.health[open].hp == DAMAGED, "Sacrifice didn't go through the Shield")
+	_check(_alive(_combat.enemies[0]) == 0, "Blood Price didn't hit after the Sacrifice")
 
 	_run.free()
 	print("action_check: %s" % ("OK" if _failures == 0 else "%d failure(s)" % _failures))

@@ -258,7 +258,7 @@ func _draw() -> void:
 	if pick_tile:
 		for cell in picked:
 			draw_colored_polygon(hex_corners(cell_position(cell), _hex - 2.5), pick_tile.get_color().lerp(COLOR_DAMAGED, PICKED_GREY))
-		if _hover not in picked and pick_tile.can_inflict(unit, _hover):
+		if _hover not in picked and pick_tile.can_pick(unit, _hover, picked):
 			_draw_action(pick_tile, _hover, PREVIEW_ALPHA)
 
 	var font := ThemeDB.fallback_font
