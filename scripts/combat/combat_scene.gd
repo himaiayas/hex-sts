@@ -35,6 +35,7 @@ var _intent_labels: Array[Label] = []
 @onready var _hand: HandView = %Hand
 @onready var _deck_button: Button = %DeckButton
 @onready var _draw_button: Button = %DrawPileButton
+@onready var _exhaust_button: Button = %ExhaustButton
 @onready var _discard_button: Button = %DiscardButton
 
 @onready var _pile_viewer: ColorRect = %PileViewer
@@ -206,6 +207,10 @@ func _on_discard_pressed() -> void:
 	_show_pile("Discard pile", combat.discard_pile)
 
 
+func _on_exhaust_pressed() -> void:
+	_show_pile("Exhausted", combat.exhaust_pile)
+
+
 func _on_close_pile_pressed() -> void:
 	_pile_viewer.hide()
 
@@ -317,6 +322,7 @@ func _refresh() -> void:
 	_status_label.text = "Turn %d    Energy %d/%d" % [combat.turn, combat.energy, combat.max_energy]
 	_deck_button.text = "Deck (%d)" % RunState.deck.size()
 	_draw_button.text = "Draw pile (%d)" % combat.draw_pile.size()
+	_exhaust_button.text = "Exhausted (%d)" % combat.exhaust_pile.size()
 	_discard_button.text = "Discard (%d)" % combat.discard_pile.size()
 	if selected:
 		var step := ""

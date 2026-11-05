@@ -128,19 +128,19 @@ theme_override_constants/separation = 67
 layout_mode = 2
 theme_override_constants/separation = 13
 
-[node name="DeckButton" type="Button" parent="Margin/Layout/BottomBar" unique_id=68551890]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(217, 60)
-layout_mode = 2
-size_flags_vertical = 8
-text = "Deck (0)"
-
 [node name="DrawPileButton" type="Button" parent="Margin/Layout/BottomBar" unique_id=1059927777]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(217, 60)
 layout_mode = 2
 size_flags_vertical = 8
 text = "Draw pile (0)"
+
+[node name="DeckButton" type="Button" parent="Margin/Layout/BottomBar" unique_id=68551890]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(217, 60)
+layout_mode = 2
+size_flags_vertical = 8
+text = "Deck (0)"
 
 [node name="HandArea" type="Control" parent="Margin/Layout/BottomBar" unique_id=1145192042]
 custom_minimum_size = Vector2(0, 133)
@@ -155,12 +155,21 @@ anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_left = 115.0
 offset_top = -132.0
+offset_right = 115.0
 offset_bottom = 184.0
 grow_horizontal = 2
 grow_vertical = 0
 mouse_filter = 1
 script = ExtResource("3_hand")
+
+[node name="ExhaustButton" type="Button" parent="Margin/Layout/BottomBar" unique_id=1874203519]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(217, 60)
+layout_mode = 2
+size_flags_vertical = 8
+text = "Exhausted (0)"
 
 [node name="DiscardButton" type="Button" parent="Margin/Layout/BottomBar" unique_id=1811883424]
 unique_name_in_owner = true
@@ -393,6 +402,7 @@ text = "Main Menu"
 [connection signal="pressed" from="Margin/Layout/StatusBar/WinCombatButton" to="." method="_on_win_combat_pressed"]
 [connection signal="pressed" from="Margin/Layout/BottomBar/DeckButton" to="." method="_on_deck_pressed"]
 [connection signal="pressed" from="Margin/Layout/BottomBar/DrawPileButton" to="." method="_on_draw_pile_pressed"]
+[connection signal="pressed" from="Margin/Layout/BottomBar/ExhaustButton" to="." method="_on_exhaust_pressed"]
 [connection signal="pressed" from="Margin/Layout/BottomBar/DiscardButton" to="." method="_on_discard_pressed"]
 [connection signal="pressed" from="Margin/Layout/BottomBar/EndTurnButton" to="." method="_on_end_turn_pressed"]
 [connection signal="gui_input" from="PileViewer" to="." method="_on_pile_viewer_input"]

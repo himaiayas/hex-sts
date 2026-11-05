@@ -99,14 +99,16 @@ func can_play(card: BaseCard) -> bool:
 
 
 ## Pays the cost, runs each grid action on units[i] at cells[i], then discards the card.
-## Power cards go to no pile: they stay in play for the rest of the fight.
+## Exhaust cards go to the exhaust pile instead. Power cards go to no pile: they stay in play for the rest of the fight.
 func play_card(card: BaseCard, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int]) -> bool:
 	if not can_play(card):
 		return false
 	energy -= card.cost
 	hand.erase(card)
 	await card.execute(self, units, cells, rotations)
-	if card.type != Enum.CardType.POWER:
+	if card.exhaust:
+		exhaust_pile.append(card)
+	elif card.type != Enum.CardType.POWER:
 		discard_pile.append(card)
 	return true
 

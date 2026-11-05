@@ -66,12 +66,13 @@ func start_new_run() -> void:
 		deck.append(ShieldPlayer.new())
 	for i in 2:
 		deck.append(WomboCombo.new())
-	# One of each #9 and #7 example card, for testing.
+	# One of each #9, #7 and #19 example card, for testing.
 	deck.append(Thrust.new())
 	deck.append(DivineMercy.new())
 	deck.append(RapidFire.new())
 	deck.append(ArrowRain.new())
 	deck.append(Enhance.new())
+	deck.append(LastLight.new())
 	map = MapState.new()
 	map.start()
 	current_room = null
