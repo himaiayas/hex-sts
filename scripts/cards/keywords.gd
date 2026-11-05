@@ -11,6 +11,7 @@ const NOT_EFFECTS: Dictionary[String, String] = {
 	"Retain": "Not discarded at the end of your turn.",
 	"Sacrifice": "Destroy your own tiles as a cost. You choose which.",
 	"Heal": "Restore damaged tiles of yours. You choose which.",
+	"Pierce": "Goes through Shield and Plate.",
 }
 
 static var _descriptions: Dictionary[String, String] = {}

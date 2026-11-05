@@ -79,6 +79,7 @@ func start_new_run() -> void:
 	deck.append(Mend.new())
 	deck.append(BloodPrice.new())
 	deck.append(SpikedGuard.new())
+	deck.append(Lance.new())
 	map = MapState.new()
 	map.start()
 	current_room = null
