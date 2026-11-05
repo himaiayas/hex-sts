@@ -1,7 +1,7 @@
 extends SceneTree
 
 ## Headless check for hit reporting, random tile actions, Strength, the example cards, the exhaust, retain
-## and discard piles, Heal and Sacrifice.
+## and discard piles, Heal, Sacrifice and Retaliate.
 ## Exit code = number of failures.
 ## godot --headless --path . -s res://scripts/actions/action_check.gd
 
@@ -261,6 +261,21 @@ func _initialize() -> void:
 	await _combat.play_card(blood_price, enemy_units, zero_cells, zero_rotations, no_picks, open_picked)
 	_check(_combat.player.health[open].hp == DAMAGED, "Sacrifice didn't go through the Shield")
 	_check(_alive(_combat.enemies[0]) == 0, "Blood Price didn't hit after the Sacrifice")
+
+	# Retaliate hits the attacker back once per hit a Shield absorbs, and ends at the owner's next turn start.
+	_reset()
+	_combat.player.add_power(_combat, RetaliatePower.new(1))
+	var guarded: Vector2i = _combat.player.health.keys()[0]
+	var bare: Vector2i = _combat.player.health.keys()[1]
+	_combat.player.health[guarded].hp = SHIELDED
+	_combat.enemies[0].in_turn = true
+	_combat.player.damage_health_tile(_combat, guarded)
+	_check(_alive(_combat.enemies[0]) == 2, "Retaliate didn't hit back on a block")
+	_combat.player.damage_health_tile(_combat, bare)
+	_check(_alive(_combat.enemies[0]) == 2, "Retaliate hit back on an unshielded hit")
+	_combat.enemies[0].in_turn = false
+	await _combat.player.on_turn_start(_combat)
+	_check(_combat.player.power_amount(RetaliatePower) == 0, "Retaliate didn't end at the next turn start")
 
 	_run.free()
 	print("action_check: %s" % ("OK" if _failures == 0 else "%d failure(s)" % _failures))
