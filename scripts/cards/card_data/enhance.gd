@@ -11,6 +11,6 @@ func _init() -> void:
 
 
 func execute(combat: CombatState, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int])->Array:
-	var hits := super(combat, units, cells, rotations)
-	ApplyPowerAction.new(Enum.TargetType.PLAYER, StrengthPower.new(1)).execute(combat, combat.player, Vector2i.ZERO)
+	var hits: Array = await super(combat, units, cells, rotations)
+	await ApplyPowerAction.new(Enum.TargetType.PLAYER, StrengthPower.new(1)).execute(combat, combat.player, Vector2i.ZERO)
 	return hits

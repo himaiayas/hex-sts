@@ -47,3 +47,12 @@ enum Trigger {
 	ON_HIT,     # damage took a tile's health
 	ON_BLOCK,   # a shield absorbed damage
 }
+
+
+enum Change { # what CombatState.record() saw, so the views know what to animate
+	DAMAGE, # a tile lost its health
+	BLOCK,  # a shield absorbed a hit
+	SHIELD, # a tile got a shield
+	EFFECT, # a tile effect went on a tile
+	POWER,  # a unit gained a power
+}

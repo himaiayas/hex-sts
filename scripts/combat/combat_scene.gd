@@ -7,6 +7,12 @@ extends Control
 const RenderCard := preload("res://scripts/cards/render_card.gd")
 const CARD_SIZE := HandView.CARD_SIZE
 const ENEMY_IMAGE_SIZE := Vector2(300, 300)
+const LUNGE_DISTANCE := 40.0  # px toward the target
+const LUNGE_TIME := 0.1  # out to the target; the hit flashes when it gets there
+const LUNGE_BACK_TIME := 0.15
+const SHAKE_AMOUNT := 8.0  # px, the first jolt; later ones get smaller
+const SHAKE_STEPS := 6
+const SHAKE_TIME := 0.25
 
 var combat: CombatState
 var selected: BaseCard = null
@@ -16,6 +22,7 @@ var _rotations: Array[int] = []  # rotation chosen for each of those clicks
 var _rotation := 0  # 60° clockwise steps for the next grid action, kept between clicks
 
 var _enemy_views: Array[HealthGridView] = []
+var _enemy_images: Array[TextureRect] = []  # one per enemy, same order as _enemy_views
 var _intent_labels: Array[Label] = []
 
 @onready var _top_bar: TopBar = %TopBar
@@ -23,6 +30,7 @@ var _intent_labels: Array[Label] = []
 @onready var _status_label: Label = %StatusLabel
 @onready var _hint_label: Label = %HintLabel
 @onready var _player_view: HealthGridView = %PlayerGrid
+@onready var _player_image: PlayerImage = %PlayerImage
 @onready var _enemies_box: HBoxContainer = %Enemies
 @onready var _hand: HandView = %Hand
 @onready var _deck_button: Button = %DeckButton
@@ -43,6 +51,7 @@ var _intent_labels: Array[Label] = []
 
 var _rewards: CombatRewards
 var _over := false  # won or lost: ignore combat input
+var _busy := false  # a card or a turn is playing out: ignore combat input until it's done
 
 
 func _ready() -> void:
@@ -57,6 +66,7 @@ func _ready() -> void:
 	_hand.card_cast.connect(_on_card_cast)
 	_player_view.setup(combat.player, true)
 	_player_view.cell_clicked.connect(_on_cell_clicked)
+	combat.player.blocked.connect(_on_player_blocked)
 	for enemy in combat.enemies:
 		var view := HealthGridView.new()
 		view.setup(enemy, true)
@@ -70,27 +80,36 @@ func _ready() -> void:
 		# Enemy image on the left, its health grid on the right.
 		var side := HBoxContainer.new()
 		side.add_theme_constant_override("separation", 24)
+		# The image sits in a plain slot, so it can lunge and shake without the HBox putting it back.
+		var slot := Control.new()
+		slot.custom_minimum_size = ENEMY_IMAGE_SIZE
+		slot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var image := TextureRect.new()
 		image.texture = enemy.sprite
-		image.custom_minimum_size = ENEMY_IMAGE_SIZE
 		image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		image.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		image.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		side.add_child(image)
+		image.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		slot.add_child(image)
+		side.add_child(slot)
 		side.add_child(box)
 		_enemies_box.add_child(side)
 		_enemy_views.append(view)
+		_enemy_images.append(image)
 		_intent_labels.append(intent_label)
 
-	combat.start_turn()
+	combat.animator = _animate
+	_busy = true
+	await combat.start_turn()
+	_busy = false
 	_refresh()
 
 
 # --- Input -------------------------------------------------------------------
 
 func _on_card_clicked(card: BaseCard) -> void:
-	if _over:
+	if _over or _busy:
 		return
 	if selected == card:
 		_select(null)
@@ -107,20 +126,27 @@ func _on_card_clicked(card: BaseCard) -> void:
 
 ## A card with no grid actions, dropped in the middle of the screen.
 func _on_card_cast(card: BaseCard) -> void:
-	if _over:
+	if _over or _busy:
 		return
 	var units: Array[CombatUnit] = []
 	var cells: Array[Vector2i] = []
 	var rotations: Array[int] = []
 	_select(null)
-	if not combat.play_card(card, units, cells, rotations):
+	if not combat.can_play(card):
 		_hint_label.text = "Not enough energy."
+		_refresh()
+		return
+	if card.type == Enum.CardType.ATTACK:
+		_player_image.show_pose(PlayerImage.ATTACK)
+	_busy = true
+	await combat.play_card(card, units, cells, rotations)
+	_busy = false
 	_refresh()
 	_check_combat_end()
 
 
 func _on_cell_clicked(unit: CombatUnit, cell: Vector2i) -> void:
-	if _over:
+	if _over or _busy:
 		return
 	if selected == null:
 		_hint_label.text = "Select a card first."
@@ -134,19 +160,38 @@ func _on_cell_clicked(unit: CombatUnit, cell: Vector2i) -> void:
 	if _cells.size() < selected.grid_actions.size(): #store intents in _cells, when all grid has been chosen, this condition reeturn false
 		_refresh()
 		return
-	combat.play_card(selected, _units, _cells, _rotations)
+	# Deselect first so the preview is gone while the card plays out.
+	var card := selected
+	var units := _units.duplicate()
+	var cells := _cells.duplicate()
+	var rotations := _rotations.duplicate()
 	_select(null)
+	_refresh()
+	_busy = true
+	if card.type == Enum.CardType.ATTACK:
+		_player_image.show_pose(PlayerImage.ATTACK)
+	await combat.play_card(card, units, cells, rotations)
+	_busy = false
 	_refresh()
 	_check_combat_end()
 
 
 func _on_end_turn_pressed() -> void:
-	if _over:
+	if _over or _busy:
 		return
 	_select(null)
-	combat.end_turn()
+	_refresh()
+	_busy = true
+	await combat.end_turn()
+	_busy = false
 	_refresh()
 	_check_combat_end()
+
+
+## Only enemy hits count, not the player's own Poison at turn start.
+func _on_player_blocked(_coords: Vector2i) -> void:
+	if not combat.player.in_turn:
+		_player_image.show_pose(PlayerImage.GUARD)
 
 
 func _on_deck_pressed() -> void:
@@ -178,7 +223,7 @@ func _on_win_combat_pressed()->void:
 
 ## _input, not _unhandled_input: the grids and this root stop mouse events, so right-clicks never arrive unhandled.
 func _input(event: InputEvent) -> void:
-	if _over or _top_bar.is_modal_open():
+	if _over or _busy or _top_bar.is_modal_open():
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
 		if _pile_viewer.visible:
@@ -210,6 +255,62 @@ func _rotation_step(event: InputEvent) -> int:
 
 
 # --- Refresh -----------------------------------------------------------------
+
+## combat.animator: shows the new state, then plays the batch and waits for it. If the batch hits
+## the other side, the acting unit lunges at it first. On impact every change flashes at once,
+## and every unit that took damage shakes: an enemy's sprite, or the player's grid.
+func _animate(batch: Array[Dictionary]) -> void:
+	_refresh()
+	var attacker := combat.acting_unit()
+	var target: CombatUnit = null  # first unit on the other side that was hit or blocked a hit
+	var damaged: Array[CombatUnit] = []
+	for change in batch:
+		var unit: CombatUnit = change.unit
+		if change.kind == Enum.Change.DAMAGE and unit not in damaged:
+			damaged.append(unit)
+		if target == null and attacker and unit.is_player != attacker.is_player \
+				and change.kind in [Enum.Change.DAMAGE, Enum.Change.BLOCK]:
+			target = unit
+	if target:
+		var sprite := _sprite_for(attacker)
+		_lunge(sprite, _center(_sprite_for(target)) - _center(sprite))
+		await get_tree().create_timer(LUNGE_TIME).timeout
+	for change in batch:
+		_view_for(change.unit).flash(change.cell, change.kind, change.effect)
+	for unit in damaged:
+		if unit == combat.player:
+			_shake(_player_view, "shake")
+		else:
+			_shake(_sprite_for(unit), "position")
+	await get_tree().create_timer(HealthGridView.FLASH_TIME).timeout
+
+
+## Moves node LUNGE_DISTANCE toward a point, then back. node rests at ZERO inside its slot.
+func _lunge(node: Control, toward: Vector2) -> void:
+	var tween := create_tween().set_trans(Tween.TRANS_QUAD)
+	tween.tween_property(node, "position", toward.normalized() * LUNGE_DISTANCE, LUNGE_TIME).set_ease(Tween.EASE_OUT)
+	tween.tween_property(node, "position", Vector2.ZERO, LUNGE_BACK_TIME).set_ease(Tween.EASE_IN_OUT)
+
+
+## Jolts a Vector2 property that rests at ZERO in random directions, smaller each time, then back to ZERO.
+func _shake(node: Object, property: String) -> void:
+	var step := SHAKE_TIME / (SHAKE_STEPS + 1)
+	var tween := create_tween()
+	for i in SHAKE_STEPS:
+		var amount := SHAKE_AMOUNT * (1.0 - float(i) / SHAKE_STEPS)
+		tween.tween_property(node, property, Vector2.from_angle(randf() * TAU) * amount, step)
+	tween.tween_property(node, property, Vector2.ZERO, step)
+
+
+func _sprite_for(unit: CombatUnit) -> Control:
+	if unit == combat.player:
+		return _player_image
+	return _enemy_images[combat.enemies.find(unit)]
+
+
+func _center(control: Control) -> Vector2:
+	return control.global_position + control.size / 2.0
+
 
 func _refresh() -> void:
 	_top_bar.refresh()

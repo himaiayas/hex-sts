@@ -22,7 +22,7 @@ func plan(combat: CombatState, owner: CombatUnit) -> void:
         part.cell = pick_cell(part, target_of(part, combat, owner))
 
 
-## Called on the enemy's turn: run every part on the cells chosen in plan().
+## Called on the enemy's turn: run every part on the cells chosen in plan(). Await the grid actions.
 @abstract func execute(combat: CombatState, owner: CombatUnit) -> void
 
 func target_of(part: EnemyActionPart, combat: CombatState, owner: CombatUnit) -> CombatUnit:

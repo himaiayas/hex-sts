@@ -10,4 +10,4 @@ func _init(_probability: float) -> void:
 	]
 
 func execute(combat: CombatState, _owner: CombatUnit) -> void:
-	GridAction.new(Enum.TargetType.PLAYER, parts[0].tiles).execute(combat, combat.player, parts[0].cell)
+	await GridAction.new(Enum.TargetType.PLAYER, parts[0].tiles).execute(combat, combat.player, parts[0].cell)

@@ -26,6 +26,8 @@ const PARTICLE_SPEED := Vector2(8, 16)  # min/max px per second, drifting up
 const PARTICLE_SPREAD := 18.0  # px from the tile centre where they appear
 const POWER_SIZE := 36.0  # power badges, in a row under the grid
 const POWER_GAP := 8.0
+const FLASH_TIME := 0.3  # seconds per animated change
+const FLASH_POP := 0.15  # the flash grows this much bigger than its hex, then shrinks back
 
 const COLOR_ALIVE := Color("#ffffff")
 const COLOR_DAMAGED := Color("#454545")
@@ -45,6 +47,10 @@ var placed: Array = [] # selected card's grid actions already clicked on this gr
 var random_target: BaseActionTile = null # selected card's next grid action hits random tiles of a grid: this whole grid flickers
 var candidates: Array[Vector2i] = [] # empty cells drawn as outlines and clickable (level-up tile placement)
 var new_cells: Array[Vector2i] = [] # health cells drawn in COLOR_NEW (tiles just placed)
+var shake := Vector2.ZERO: # offset everything is drawn at while the grid shakes (set by the combat scene)
+	set(value):
+		shake = value
+		queue_redraw()
 
 var _hover := NO_CELL
 var _origin := Vector2.ZERO
@@ -55,6 +61,7 @@ var _info_timer := 0.0
 var _powers_y := 0.0  # top of the power badge row
 var _info_box := InfoPanel.make_box()
 var _particles: Dictionary[String, CPUParticles2D] = {}  # "cell|effect script" -> emitter
+var _flashes: Array[Dictionary] = []  # {cell, color, power (script or null), start} playing now
 
 
 func _ready() -> void:
@@ -107,6 +114,10 @@ func refresh() -> void:
 func _process(delta: float) -> void:
 	if not intents.is_empty() or not placed.is_empty() or random_target:
 		queue_redraw()  # keep the intent pulse and placed flicker animating
+	if not _flashes.is_empty():
+		var now := Time.get_ticks_msec() / 1000.0
+		_flashes.assign(_flashes.filter(func(f: Dictionary) -> bool: return now - f.start < FLASH_TIME))
+		queue_redraw()
 	if (_info_cell != NO_CELL or _info_power != -1) and not _info_box.visible:
 		_info_timer -= delta
 		if _info_timer <= 0.0:
@@ -169,6 +180,7 @@ func _make_particles(effect: BaseTileEffect) -> CPUParticles2D:
 func _draw() -> void:
 	if unit == null:
 		return
+	draw_set_transform(shake)
 	var alive := 0
 	var coords := unit.health.keys()
 	#var action_tile_dict := {} # Dict Vector2i->BaseActionTile
@@ -232,7 +244,7 @@ func _draw() -> void:
 		var alpha := PREVIEW_ALPHA if unit.health.has(_hover) else flicker
 		for cell in unit.health:
 			if random_target.can_inflict(unit, cell):
-				draw_colored_polygon(hex_corners(_origin + axial_to_pixel(cell), HEX_SIZE - 2.5), Color(random_target.get_color(), alpha * 0.5))
+				draw_colored_polygon(hex_corners(cell_position(cell), _hex - 2.5), Color(random_target.get_color(), alpha * 0.5))
 
 	for offset in preview:
 		var cell := _hover + offset
@@ -253,6 +265,35 @@ func _draw() -> void:
 		var corner := rect.end - Vector2(rect.size.x, 2)
 		draw_string_outline(font, corner, str(power.amount), HORIZONTAL_ALIGNMENT_RIGHT, rect.size.x, 20, 4, Color.BLACK)
 		draw_string(font, corner, str(power.amount), HORIZONTAL_ALIGNMENT_RIGHT, rect.size.x, 20, power.get_color())
+
+	# Changes being animated, on top of everything: fade out while popping up and back.
+	var now := Time.get_ticks_msec() / 1000.0
+	for f in _flashes:
+		var t := clampf((now - f.start) / FLASH_TIME, 0.0, 1.0)
+		var pop := 1.0 + FLASH_POP * sin(PI * t)
+		var color := Color(f.color, 1.0 - t)
+		if f.power:
+			var i := unit.statuses.find_custom(func(e: BaseEffect) -> bool: return e.get_script() == f.power)
+			if i != -1:
+				draw_rect(_power_rect(i).grow(POWER_SIZE * (pop - 1.0) / 2.0), color, false, 3.0)
+		else:
+			draw_colored_polygon(hex_corners(cell_position(f.cell), (_hex - 2.5) * pop), color)
+
+
+## Plays one change on this grid for FLASH_TIME: the cell, or the power's badge, flashes and pops.
+## One branch per kind, so a kind can get its own VFX later.
+func flash(cell: Vector2i, kind: Enum.Change, effect: BaseEffect) -> void:
+	var color := COLOR_ALIVE
+	match kind:
+		Enum.Change.DAMAGE:
+			color = COLOR_PREVIEW
+		Enum.Change.BLOCK, Enum.Change.SHIELD:
+			color = COLOR_SHIELDED
+		Enum.Change.EFFECT, Enum.Change.POWER:
+			color = effect.get_color()
+	var power: Script = effect.get_script() if kind == Enum.Change.POWER else null
+	_flashes.append({cell = cell, color = color, power = power, start = Time.get_ticks_msec() / 1000.0})
+	queue_redraw()
 
 
 ## Badge i in the row under the grid, centred.
