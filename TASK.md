@@ -72,6 +72,37 @@
   - Random tile actions: e.g. "shield a random tile on your grid". The target cell is picked at play time, so it can't be drawn with `{render}`.
 - [x] Done ✅: `inflict`, `GridAction.execute` and `BaseAction.execute` report the cells they changed (a shield block isn't a hit), and `BaseCard.execute` returns them per grid action, so a card checks `super()`'s result for conditions. New `GainEnergyAction` (not capped by `max_energy`), `RandomTileAction` (random tiles from one pool: your grid, or every living enemy) and `RandomGridAction` (random tiles on the grid you click; every grid it can go on flickers while selected). `can_inflict` keeps random picks off tiles they can't change. Cards with no grid actions are cast by dragging them to the middle of the screen. Example cards Thrust, Divine Mercy, Rapid Fire and Arrow Rain are in the pool and, for testing, the starting deck. Check: `action_check.gd` (headless).
 
+### 21. Keywords and mechanics
+
+- **Owner:** Pakkapao
+- **Requirement/Prereq:** -
+- **Brief Description:** Implement the keywords and mechanics from the sheet that the code doesn't have yet (Bind, which replaces Exhaust, plus Retaliate, Sacrifice, Retain, Heal, Pierce, etc.). The full list is in issue #19. Needed before the cards in #13.
+
+### 22. Action animations
+
+- **Owner:** Pakkapao
+- **Requirement/Prereq:** -
+- **Brief Description:** Animate every action from cast cards, tile effects and powers.
+  - Every change to a hex or a power plays a flash and pop on what it touches, in its own colour per kind (damage / shield / plate / poison / power gain), one after another. That includes turn-start triggers and the enemy's turn.
+  - `GridAction.execute`, `BaseCard.execute` and `CombatState.end_turn` become coroutines that `await` each animation, so the state matches what's on screen. The headless checks `await` too.
+  - Input is blocked while animations play. No skip button.
+  - One hook per kind, so real VFX can replace the placeholder later.
+
+### 23. Attack / hit shake
+
+- **Owner:** Pakkapao
+- **Requirement/Prereq:** 22
+- **Brief Description:** The attacker does a short lunge toward its target. When an enemy is hit, only its sprite shakes. When the player is hit, the player's grid shakes. No screen shake. May touch Mai's UI files.
+
+### 24. Player sprite
+
+- **Owner:** Pakkapao
+- **Requirement/Prereq:** -
+- **Brief Description:** Separate PR, no issue.
+  - Idle loops `char_idle1` → `char_idle2` → `char_idle3` (`assets/characters/`).
+  - Show `char_attack` while the player attacks. Lunge is optional.
+  - Show `char_guard` when an enemy attack hits fewer player hexes than it targets (some or all blocked).
+
 ## Enemies
 
 ### 10. Enemy Class
@@ -93,8 +124,9 @@
 
 ### 13. More cards
 
-- **Requirement/Prereq:** 8, 9
+- **Requirement/Prereq:** 8, 9, 21
 - **Brief Description:** Defend, draw cards, status cards, and multi-tile / row patterns (`LineGridAction`-style computed shapes).
+  - Implement every row with CONFIRM = TRUE in the sheet's Card tab, using the placeholder image, then tick its Implemented column. The scope grows as Mai confirms more rows. Tracked in issue #20. Card upgrades are out of scope.
 
 ### 14. Card descriptions
 
