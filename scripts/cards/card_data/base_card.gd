@@ -11,6 +11,7 @@ var description: String
 var rarity: Enum.CardRarity = Enum.CardRarity.COMMON
 var exhaust := false  # goes to the exhaust pile after it's played, gone until the next fight
 var retain := false  # stays in hand at the end of the turn
+var to_draw_top := false  # goes on top of the draw pile after it's played, instead of the discard pile
 var exhaust_from_hand := 0  # cards in hand the player picks to exhaust when playing it
 var pick_tiles := 0  # tiles of yours the player picks when playing it, and pick_tile is inflicted on each
 var pick_tile: BaseActionTile = null
