@@ -87,6 +87,7 @@ func start_new_run() -> void:
 	deck.append(DoubleTime.new())
 	deck.append(Foresight.new())
 	deck.append(Ward.new())
+	deck.append(Crack.new())
 	map = MapState.new()
 	map.start()
 	current_room = null

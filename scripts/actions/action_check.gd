@@ -1,7 +1,7 @@
 extends SceneTree
 
 ## Headless check for hit reporting, random tile actions, Strength, the example cards, the exhaust, retain
-## and discard piles, Heal, Sacrifice, Retaliate, Pierce, whole-line patterns, Jab and Recall putting cards on top of the draw pile, Strength this turn, Echo, Foresight and Ward.
+## and discard piles, Heal, Sacrifice, Retaliate, Pierce, whole-line patterns, Jab and Recall putting cards on top of the draw pile, Strength this turn, Echo, Foresight, Ward and Fracture.
 ## Exit code = number of failures.
 ## godot --headless --path . -s res://scripts/actions/action_check.gd
 
@@ -346,6 +346,15 @@ func _initialize() -> void:
 	await _play(Ward.new(), no_units, no_cells)
 	await _combat.player.on_turn_start(_combat)
 	_check(_shielded(_combat.player) == 1, "Ward didn't shield a tile at turn start")
+
+	# A damaged Fracture tile hits each neighbour once, and a Fracture hit doesn't set off another Fracture.
+	_reset(HEX)
+	await _play(Crack.new(), [_combat.enemies[0]], [Vector2i.ZERO])
+	_combat.enemies[0].health[Vector2i(-1, 1)].hp = SHIELDED  # next to both Fracture tiles: a chain would hit it twice
+	_combat.enemies[0].health[Vector2i(-1, 0)].status_effects.append(FractureTileEffect.new())
+	_combat.enemies[0].damage_health_tile(_combat, Vector2i.ZERO)
+	_check(_alive(_combat.enemies[0]) == 1, "Fracture didn't hit every neighbour once")
+	_check(_combat.enemies[0].health[Vector2i(-1, 1)].hp == UNDAMAGED, "Fracture chained, or a Shield didn't absorb its hit")
 
 	_run.free()
 	print("action_check: %s" % ("OK" if _failures == 0 else "%d failure(s)" % _failures))
