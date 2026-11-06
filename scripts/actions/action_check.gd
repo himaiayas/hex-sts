@@ -1,7 +1,7 @@
 extends SceneTree
 
 ## Headless check for hit reporting, random tile actions, Strength, the example cards, the exhaust, retain
-## and discard piles, Heal, Sacrifice, Retaliate, Pierce, whole-line patterns and Jab's return to the draw pile.
+## and discard piles, Heal, Sacrifice, Retaliate, Pierce, whole-line patterns, and Jab and Recall putting cards on top of the draw pile.
 ## Exit code = number of failures.
 ## godot --headless --path . -s res://scripts/actions/action_check.gd
 
@@ -300,6 +300,18 @@ func _initialize() -> void:
 	await _play(jab, [_combat.enemies[0]], [Vector2i.ZERO])
 	_combat.draw(1)
 	_check(_combat.hand.back() == jab and jab not in _combat.discard_pile, "Jab wasn't put on top of the draw pile")
+
+	# Recall puts the picked card from the discard pile on top of the draw pile.
+	_reset()
+	var recall := Recall.new()
+	var discarded := Strike.new()
+	_combat.discard_pile.append(discarded)
+	_combat.hand.append(recall)
+	_combat.energy = 1
+	var recalled: Array[BaseCard] = [discarded]
+	var recall_units: Array[CombatUnit] = [_combat.enemies[0]]
+	await _combat.play_card(recall, recall_units, zero_cells, zero_rotations, recalled)
+	_check(_combat.draw_pile.back() == discarded and discarded not in _combat.discard_pile, "Recall didn't move the picked card to the top of the draw pile")
 
 	_run.free()
 	print("action_check: %s" % ("OK" if _failures == 0 else "%d failure(s)" % _failures))

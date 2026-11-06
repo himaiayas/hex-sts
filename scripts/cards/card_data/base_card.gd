@@ -13,6 +13,7 @@ var exhaust := false  # goes to the exhaust pile after it's played, gone until t
 var retain := false  # stays in hand at the end of the turn
 var to_draw_top := false  # goes on top of the draw pile after it's played, instead of the discard pile
 var exhaust_from_hand := 0  # cards in hand the player picks to exhaust when playing it
+var pick_from_discard := 0  # cards in the discard pile the player picks to put on top of the draw pile
 var pick_tiles := 0  # tiles of yours the player picks when playing it, and pick_tile is inflicted on each
 var pick_tile: BaseActionTile = null
 var grid_actions: Array[GridAction] = []  # each is its own pattern, drawn with {render:N}

@@ -3,8 +3,8 @@ extends Control
 ## Combat screen: hand, piles, energy, end turn, and health grids.
 ## Click a card to select it, then click a cell for each of its grid actions to play it.
 ## A card with no grid actions is played by dragging it to the middle of the screen.
-## A card that exhausts cards from hand, or picks tiles of yours (e.g. Heal), then waits for
-## the player to pick them and press Confirm.
+## A card that picks cards (from hand or the discard pile) or tiles of yours (e.g. Heal) then waits for
+## the player to pick them and press Confirm. Picking from the discard pile happens in the pile viewer.
 
 const RenderCard := preload("res://scripts/cards/render_card.gd")
 const CARD_SIZE := HandView.CARD_SIZE
@@ -23,7 +23,8 @@ var _cells: Array[Vector2i] = []
 var _rotations: Array[int] = []  # rotation chosen for each of those clicks
 var _rotation := 0  # 60° clockwise steps for the next grid action, kept between clicks
 var _picking := false  # every grid action is placed; picking cards in hand or tiles of yours until Confirm
-var _picks: Array[BaseCard] = []  # cards in hand picked to exhaust
+var _picks: Array[BaseCard] = []  # cards picked, from hand or the discard pile
+var _pile_picking := false  # the pile viewer is open for picking from the discard pile
 var _tile_picks: Array[Vector2i] = []  # tiles of yours picked for selected.pick_tile
 
 var _enemy_views: Array[HealthGridView] = []
@@ -48,6 +49,8 @@ var _intent_labels: Array[Label] = []
 @onready var _pile_viewer: ColorRect = %PileViewer
 @onready var _pile_title: Label = %PileTitle
 @onready var _pile_grid: GridContainer = %PileGrid
+@onready var _pile_confirm_button: Button = %PileConfirmButton
+@onready var _close_pile_button: Button = %CloseButton
 
 @onready var _reward_panel: Control = %RewardPanel
 @onready var _gold_button: Button = %GoldButton
@@ -181,7 +184,7 @@ func _on_cancel_pressed() -> void:
 
 
 func _toggle_pick(card: BaseCard) -> void:
-	if card == selected or selected.exhaust_from_hand == 0:
+	if card not in _pick_pool():
 		return
 	if card in _picks:
 		_picks.erase(card)
@@ -227,13 +230,23 @@ func _play_selected() -> void:
 	_check_combat_end()
 
 
-## Cards or tiles to pick: the selected card's exhaust_from_hand or pick_tiles,
+## Cards or tiles to pick: the selected card's pick_tiles, pick_from_discard or exhaust_from_hand,
 ## or every one there is if there are fewer.
 func _pick_count() -> int:
 	if selected.pick_tiles > 0:
 		var open := combat.player.health.keys().filter(func(c: Vector2i) -> bool: return selected.pick_tile.can_inflict(combat.player, c))
 		return mini(selected.pick_tiles, open.size())
-	return mini(selected.exhaust_from_hand, combat.hand.size() - 1)
+	var wanted := selected.pick_from_discard if selected.pick_from_discard > 0 else selected.exhaust_from_hand
+	return mini(wanted, _pick_pool().size())
+
+
+## Cards the selected card can pick from: the discard pile, or the rest of the hand.
+func _pick_pool() -> Array:
+	if selected.pick_from_discard > 0:
+		return combat.discard_pile
+	if selected.exhaust_from_hand > 0:
+		return combat.hand.filter(func(c: BaseCard) -> bool: return c != selected)
+	return []
 
 
 func _picked_count() -> int:
@@ -275,13 +288,21 @@ func _on_exhaust_pressed() -> void:
 
 
 func _on_close_pile_pressed() -> void:
+	_close_pile()
+
+
+## Closing the viewer while picking from the discard pile cancels the card.
+func _close_pile() -> void:
 	_pile_viewer.hide()
+	if _pile_picking:
+		_select(null)
+		_refresh()
 
 
 ## Clicking the dark background outside the panel closes the viewer.
 func _on_pile_viewer_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed:
-		_pile_viewer.hide()
+		_close_pile()
 
 func _on_win_combat_pressed()->void:
 	_end_combat()
@@ -295,7 +316,7 @@ func _input(event: InputEvent) -> void:
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
 		if _pile_viewer.visible:
-			_pile_viewer.hide()
+			_close_pile()
 		elif selected:
 			_select(null)
 			_refresh()
@@ -387,12 +408,15 @@ func _refresh() -> void:
 	_draw_button.text = "Draw pile (%d)" % combat.draw_pile.size()
 	_exhaust_button.text = "Exhausted (%d)" % combat.exhaust_pile.size()
 	_discard_button.text = "Discard (%d)" % combat.discard_pile.size()
-	_pick_buttons.visible = _picking
+	var discard_picking := _picking and selected.pick_from_discard > 0
+	_pick_buttons.visible = _picking and not discard_picking
 	if _picking:
 		var count := _pick_count()
 		_confirm_button.disabled = _picked_count() < count
 		if selected.pick_tiles > 0:
 			_hint_label.text = "Pick %d tile%s of yours to %s. Right-click to cancel." % [count, "" if count == 1 else "s", selected.pick_tile.display_name().to_lower()]
+		elif discard_picking:
+			_hint_label.text = "Pick %d card%s from your discard pile. Right-click to cancel." % [count, "" if count == 1 else "s"]
 		else:
 			_hint_label.text = "Pick %d card%s in your hand to exhaust. Right-click to cancel." % [count, "" if count == 1 else "s"]
 	elif selected:
@@ -405,6 +429,13 @@ func _refresh() -> void:
 			_hint_label.text = "Click a cell on %s%s. Q/E or scroll to rotate. Right-click to cancel." % ["your grid" if _targets_player() else "the enemy", step]
 	else:
 		_hint_label.text = "Click a card to select it."
+
+	if discard_picking:
+		var count := _pick_count()
+		_show_pile("Pick %d card%s to put on top of your draw pile" % [count, "" if count == 1 else "s"], combat.discard_pile, false, true)
+	elif _pile_picking:
+		_pile_viewer.hide()
+	_pile_picking = discard_picking
 
 	_hand.picking = _picking
 	if _picking:
@@ -500,8 +531,12 @@ func _card_slot(card: BaseCard) -> Control:
 
 # --- Pile viewer -------------------------------------------------------------
 
-func _show_pile(title: String, cards: Array[BaseCard], hide_order := false) -> void:
+## picking: clicking a card picks it for the selected card, and Close becomes Cancel.
+func _show_pile(title: String, cards: Array[BaseCard], hide_order := false, picking := false) -> void:
 	_pile_title.text = "%s (%d)" % [title, cards.size()]
+	_pile_confirm_button.visible = picking
+	_pile_confirm_button.disabled = picking and _picks.size() < _pick_count()
+	_close_pile_button.text = "Cancel" if picking else "Close"
 	for child in _pile_grid.get_children():
 		child.queue_free()
 	var shown := cards.duplicate()
@@ -509,13 +544,26 @@ func _show_pile(title: String, cards: Array[BaseCard], hide_order := false) -> v
 		shown.sort_custom(func(a: BaseCard, b: BaseCard) -> bool: return a.card_name < b.card_name)
 	for card in shown:
 		var slot := _card_slot(card)
-		slot.get_child(0).get_node("Panel").mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var panel: Panel = slot.get_child(0).get_node("Panel")
+		panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		if picking:
+			slot.mouse_filter = Control.MOUSE_FILTER_STOP
+			slot.gui_input.connect(_on_pile_card_input.bind(card))
+			if card in _picks:
+				var style: StyleBoxFlat = panel.get_theme_stylebox("panel")
+				style.border_color = HandView.COLOR_PICKED
+				style.set_border_width_all(6)
 		_pile_grid.add_child(slot)
 	if shown.is_empty():
 		var empty := Label.new()
 		empty.text = "Empty"
 		_pile_grid.add_child(empty)
 	_pile_viewer.show()
+
+
+func _on_pile_card_input(event: InputEvent, card: BaseCard) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		_toggle_pick(card)
 
 
 # --- Room, end of combat and rewards ----------------------------------------

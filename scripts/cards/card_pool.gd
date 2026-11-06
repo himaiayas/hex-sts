@@ -20,6 +20,7 @@ static var CARDS: Array = [
 	Lance,
 	Sunder,
 	Jab,
+	Recall,
 ]
 
 static func random_cards(count: int) -> Array[BaseCard]:

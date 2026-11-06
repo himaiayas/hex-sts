@@ -260,6 +260,13 @@ theme_override_constants/h_separation = 13
 theme_override_constants/v_separation = 13
 columns = 5
 
+[node name="PileConfirmButton" type="Button" parent="PileViewer/Center/Panel/Box" unique_id=1702584319]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(217, 60)
+layout_mode = 2
+text = "Confirm"
+
 [node name="CloseButton" type="Button" parent="PileViewer/Center/Panel/Box" unique_id=1350744232]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(217, 60)
@@ -434,6 +441,7 @@ text = "Main Menu"
 [connection signal="pressed" from="PickButtons/Box/ConfirmButton" to="." method="_on_confirm_pressed"]
 [connection signal="pressed" from="PickButtons/Box/CancelButton" to="." method="_on_cancel_pressed"]
 [connection signal="gui_input" from="PileViewer" to="." method="_on_pile_viewer_input"]
+[connection signal="pressed" from="PileViewer/Center/Panel/Box/PileConfirmButton" to="." method="_on_confirm_pressed"]
 [connection signal="pressed" from="PileViewer/Center/Panel/Box/CloseButton" to="." method="_on_close_pile_pressed"]
 [connection signal="pressed" from="RewardPanel/Center/Panel/Box/GoldButton" to="." method="_on_gold_reward_pressed"]
 [connection signal="pressed" from="RewardPanel/Center/Panel/Box/ExpButton" to="." method="_on_exp_reward_pressed"]
