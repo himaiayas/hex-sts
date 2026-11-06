@@ -6,8 +6,33 @@ const DIRS: Array[Vector2i] = [
 	Vector2i(-1, 0), Vector2i(-1, 1), Vector2i(0, 1),
 ]
 
-func _init(_amount := 1) -> void:
+var this_turn := 0  # the part of amount that goes away at the end of the owner's turn
+
+
+## this_turn: the whole amount only lasts until the end of the owner's turn.
+func _init(_amount := 1, _this_turn := false) -> void:
 	super("Strength", "Each attack also damages 1 random tile next to the tiles it hit per Strength, if any are left.", _amount)
+	if _this_turn:
+		this_turn = _amount
+
+
+func on_trigger(trigger: Enum.Trigger, _combat: CombatState, unit: CombatUnit, _cell: Vector2i) -> void:
+	if trigger == Enum.Trigger.TURN_END and this_turn > 0:
+		amount -= this_turn
+		this_turn = 0
+		if amount <= 0:
+			unit.statuses.erase(self)
+
+
+func copy() -> BaseEffect:
+	var power := super() as StrengthPower
+	power.this_turn = this_turn
+	return power
+
+
+func stack(other: BaseEffect) -> void:
+	super(other)
+	this_turn += (other as StrengthPower).this_turn
 
 func get_color() -> Color:
 	return Color("#ff9a3c")

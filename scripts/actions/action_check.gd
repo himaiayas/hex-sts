@@ -1,7 +1,7 @@
 extends SceneTree
 
 ## Headless check for hit reporting, random tile actions, Strength, the example cards, the exhaust, retain
-## and discard piles, Heal, Sacrifice, Retaliate, Pierce, whole-line patterns, and Jab and Recall putting cards on top of the draw pile.
+## and discard piles, Heal, Sacrifice, Retaliate, Pierce, whole-line patterns, Jab and Recall putting cards on top of the draw pile, and Strength this turn.
 ## Exit code = number of failures.
 ## godot --headless --path . -s res://scripts/actions/action_check.gd
 
@@ -312,6 +312,18 @@ func _initialize() -> void:
 	var recall_units: Array[CombatUnit] = [_combat.enemies[0]]
 	await _combat.play_card(recall, recall_units, zero_cells, zero_rotations, recalled)
 	_check(_combat.draw_pile.back() == discarded and discarded not in _combat.discard_pile, "Recall didn't move the picked card to the top of the draw pile")
+
+	# Strength "this turn" goes away at the end of the turn, and the rest stays.
+	_reset()
+	_combat.player.add_power(_combat, StrengthPower.new(1))
+	await _play(Hone.new(), no_units, no_cells)
+	_check(_combat.player.power_amount(StrengthPower) == 3, "Hone didn't add 2 Strength")
+	await _combat.player.on_turn_end(_combat)
+	_check(_combat.player.power_amount(StrengthPower) == 1, "Hone's Strength didn't go away at turn end")
+	_reset()
+	await _play(Hone.new(), no_units, no_cells)
+	await _combat.player.on_turn_end(_combat)
+	_check(_combat.player.statuses.is_empty(), "Strength with nothing left wasn't removed")
 
 	_run.free()
 	print("action_check: %s" % ("OK" if _failures == 0 else "%d failure(s)" % _failures))
