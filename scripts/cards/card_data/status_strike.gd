@@ -6,7 +6,7 @@ func _init() -> void:
 	card_name = "StatusStrike"
 	cost = 3
 	type = Enum.CardType.ATTACK
-	description = "{render:0}\nDeal damage and apply {keyword:Poison}."
+	description = "{render:0}\nDeal damage and apply {keyword:Poison}. It explodes in 2 turns."
 	grid_actions = [
 		GridAction.new(Enum.TargetType.ENEMY, [
 			DamageTile.new(Vector2i(0,0)),

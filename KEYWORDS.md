@@ -112,6 +112,14 @@ Agreed with Mai in issue #8, and for issue #19. Where this differs from the shee
 **Exhaust** (the sheet's Bind)
 - The sheet renamed Exhaust to Bind. We keep the name Exhaust.
 
+**Poison** (replaces the sheet's Poison X)
+- A tile effect (`PoisonTileEffect`). It explodes at the start of the victim's 2nd turn after it's applied, before Plate gives Shield.
+- The explosion damages its tile like Pierce (through Shield and Plate), and each of the 6 adjacent tiles takes 1 hit (a Shield there absorbs it).
+- It stays on its tile if the tile is damaged before it explodes, and it can be applied to a damaged tile.
+- It doesn't chain: a poisoned neighbour hit by the explosion keeps its own countdown.
+- Applying Poison to a tile that already has it does nothing.
+- Nothing counters it yet.
+
 **Retaliate X**
 - Each hit a Shield absorbs on your grid deals X damage back to the attacker (see Damage with no pattern).
 - It lasts until the start of your next turn, so it covers the enemy's turn.
@@ -141,10 +149,6 @@ Agreed with Mai in issue #8, and for issue #19. Where this differs from the shee
 
 ## Open
 Not decided yet.
-
-**Poison**
-- The sheet says it goes through Shield and Plate, and its stacks drop by 1 each turn.
-- The code does this for now: a tile effect where, at the start of its owner's turn, its tile takes 1 damage (a Shield on that tile absorbs it). Both the player and enemies can apply it. At TURN_START it fires before Plate gives Shield, so Plate on its own doesn't make a tile immune. Poison damage on the owner's own turn doesn't count as an attack for Plate.
 
 **Heroic**
 - New in the sheet (a tile effect). No card or monster uses it yet.

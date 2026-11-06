@@ -61,7 +61,7 @@ func heal_health_tile(combat: CombatState, coords: Vector2i) -> bool:
 
 func apply_effect_health_tile(combat: CombatState, coords:Vector2i, effect:BaseTileEffect)->void:
 	var tile: HealthTile = health[coords]
-	if tile and tile.hp > Enum.HealthTileEnum.DAMAGED:
+	if tile and (tile.hp > Enum.HealthTileEnum.DAMAGED or effect.allow_damaged):
 		_add_or_stack(tile.status_effects, effect)
 		combat.record(self, coords, Enum.Change.EFFECT, effect)
 

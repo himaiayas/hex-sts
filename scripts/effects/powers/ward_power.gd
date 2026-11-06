@@ -2,7 +2,8 @@ class_name WardPower
 extends BasePower
 
 ## At the start of the owner's turn, shields amount random undamaged, unshielded tiles. Lasts the whole fight.
-## Powers fire before tile effects, so a shield it puts on a Poisoned tile absorbs that Poison.
+## Powers fire before tile effects, so it shields before Poison explodes: a Poisoned tile is pierced anyway,
+## but a shielded neighbour absorbs the explosion's hit.
 
 
 func _init(_amount := 1) -> void:
