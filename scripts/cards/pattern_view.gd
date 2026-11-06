@@ -1,10 +1,12 @@
 class_name PatternView
 extends Control
 
-## Draws one of a card's grid actions as small hexes, shrunk to fit the box.
+## Draws one of a card's grid actions as small hexes. Tall patterns get a taller box (up to
+## MAX_HEIGHT) instead of shrinking into a fixed one; only very big patterns shrink.
 ## The (0,0) hex, where the cursor goes when you play the card, is outlined.
 
-const BOX_SIZE := Vector2(207, 47)
+const BOX_SIZE := Vector2(207, 47)  # full-line pattern: width, and smallest height
+const MAX_HEIGHT := 120.0  # tallest a pattern box gets (the description area is ~128)
 const MAX_HEX_SIZE := 17.0
 const COLOR_EDGE := Color("#151515")
 const COLOR_ORIGIN := Color("#ffffff")
@@ -12,14 +14,17 @@ const COLOR_ORIGIN := Color("#ffffff")
 var action: GridAction
 
 
-## height > 0: an inline pattern that height tall and just as wide as it needs.
-func _init(_action: GridAction, height := 0.0) -> void:
+## max_height > 0: an inline pattern, at most that tall and just as big as it needs.
+## Otherwise a full-line pattern, BOX_SIZE.x wide and as tall as the pattern (up to MAX_HEIGHT).
+func _init(_action: GridAction, max_height := 0.0) -> void:
 	action = _action
-	custom_minimum_size = BOX_SIZE
-	if height > 0:
-		var extent: Vector2 = _extent()[2]
-		var hex := minf(MAX_HEX_SIZE, height / extent.y)
-		custom_minimum_size = Vector2(ceilf(extent.x * hex), height)
+	var extent: Vector2 = _extent()[2]
+	if max_height > 0:
+		var hex := minf(MAX_HEX_SIZE, max_height / extent.y)
+		custom_minimum_size = (extent * hex).ceil()
+	else:
+		var hex := minf(MAX_HEX_SIZE, minf(BOX_SIZE.x / extent.x, MAX_HEIGHT / extent.y))
+		custom_minimum_size = Vector2(BOX_SIZE.x, maxf(BOX_SIZE.y, ceilf(extent.y * hex)))
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 
 
