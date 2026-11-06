@@ -13,6 +13,10 @@ func inflict(combat: CombatState, unit: CombatUnit, cell: Vector2i)->bool:
 	unit.apply_effect_health_tile(combat, cell, effect.copy() as BaseTileEffect)
 	return true
 
+## Most effects only go on undamaged tiles; allow_damaged ones (Poison) go on any tile.
+func can_inflict(unit: CombatUnit, cell: Vector2i)->bool:
+	return unit.health.has(cell) and (unit.health[cell].hp != Enum.HealthTileEnum.DAMAGED or (effect as BaseTileEffect).allow_damaged)
+
 func get_color()->Color:
 	return effect.get_color()
 

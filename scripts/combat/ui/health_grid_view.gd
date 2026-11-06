@@ -12,7 +12,9 @@ const SQRT3 := 1.7320508
 const NAME_HEIGHT := 40.0
 const NO_CELL := Vector2i(999999, 999999)  # not (0,0): that's a real cell
 const INTENT_PERIOD := 1.4  # seconds per pulse
-const PLACED_PERIOD := 0.4  # faster than intents so the two read differently
+const FLICKER_PERIOD := 0.4  # random targets: faster than intents so the two read differently
+const PLACED_PERIOD := 1.2  # grid actions already clicked: a slow flash of the whole tile
+const PLACED_FILL := 0.6  # strongest fill of that flash
 const ICON_SIZE := 40.0  # action icons on targeted tiles (a hex is ~62 wide)
 const ICON_ALPHA_MIN := 0.35  # icons blink between these; brighter than the old colour fill
 const ICON_ALPHA_MAX := 1.0
@@ -36,6 +38,8 @@ const COLOR_EDGE := Color("#151515")
 const COLOR_TEXT := Color("#e8e0c8")
 const COLOR_SHIELDED := Color("#a0e5f6")
 const COLOR_PLATE := Color("#8a96a3")
+const COLOR_HEAL := Color("#7ee08a")
+const PICKED_GREY := 0.45  # how far picked tiles fade from pick_tile's colour toward COLOR_DAMAGED
 const COLOR_CANDIDATE := Color("#ffd45a")
 const COLOR_NEW := Color("#ffe9a8")
 
@@ -45,6 +49,8 @@ var preview: Dictionary[Vector2i, BaseActionTile] = {} # next grid action of the
 var intents: Array = [] # enemy attacks aimed at this grid: [{cell: Vector2i, tiles: Array[BaseActionTile]}]
 var placed: Array = [] # selected card's grid actions already clicked on this grid: [{cell: Vector2i, tiles: Dictionary[Vector2i, BaseActionTile]}]
 var random_target: BaseActionTile = null # selected card's next grid action hits random tiles of a grid: this whole grid flickers
+var pick_tile: BaseActionTile = null # pick step (e.g. Heal): previewed under the mouse on tiles it can go on
+var picked: Array[Vector2i] = [] # tiles picked in the pick step, drawn in pick_tile's colour, greyed
 var candidates: Array[Vector2i] = [] # empty cells drawn as outlines and clickable (level-up tile placement)
 var new_cells: Array[Vector2i] = [] # health cells drawn in COLOR_NEW (tiles just placed)
 var shake := Vector2.ZERO: # offset everything is drawn at while the grid shakes (set by the combat scene)
@@ -113,7 +119,7 @@ func refresh() -> void:
 
 func _process(delta: float) -> void:
 	if not intents.is_empty() or not placed.is_empty() or random_target:
-		queue_redraw()  # keep the intent pulse and placed flicker animating
+		queue_redraw()  # keep the intent pulse, placed flash and random-target flicker animating
 	if not _flashes.is_empty():
 		var now := Time.get_ticks_msec() / 1000.0
 		_flashes.assign(_flashes.filter(func(f: Dictionary) -> bool: return now - f.start < FLASH_TIME))
@@ -231,13 +237,17 @@ func _draw() -> void:
 			if unit.health.has(cell):
 				_draw_action(t, cell, pulse)
 
-	var flicker_wave := 0.5 + 0.5 * sin(TAU * Time.get_ticks_msec() / 1000.0 / PLACED_PERIOD)
-	var flicker := lerpf(ICON_ALPHA_MIN, ICON_ALPHA_MAX, flicker_wave)
+	var flash := 0.5 + 0.5 * sin(TAU * Time.get_ticks_msec() / 1000.0 / PLACED_PERIOD)
 	for p in placed:
 		for offset: Vector2i in p.tiles:
 			var cell: Vector2i = p.cell + offset
 			if unit.health.has(cell):
-				_draw_action(p.tiles[offset], cell, flicker)
+				var t: BaseActionTile = p.tiles[offset]
+				draw_colored_polygon(hex_corners(cell_position(cell), _hex - 2.5), Color(t.get_color(), flash * PLACED_FILL))
+				_draw_action(t, cell, lerpf(ICON_ALPHA_MIN, ICON_ALPHA_MAX, flash))
+
+	var flicker_wave := 0.5 + 0.5 * sin(TAU * Time.get_ticks_msec() / 1000.0 / FLICKER_PERIOD)
+	var flicker := lerpf(ICON_ALPHA_MIN, ICON_ALPHA_MAX, flicker_wave)
 
 	if random_target:
 		# Steady while hovered, flickering otherwise, on every tile it could hit.
@@ -250,6 +260,12 @@ func _draw() -> void:
 		var cell := _hover + offset
 		if unit.health.has(cell):
 			_draw_action(preview[offset], cell, PREVIEW_ALPHA)
+
+	if pick_tile:
+		for cell in picked:
+			draw_colored_polygon(hex_corners(cell_position(cell), _hex - 2.5), pick_tile.get_color().lerp(COLOR_DAMAGED, PICKED_GREY))
+		if _hover not in picked and pick_tile.can_pick(unit, _hover, picked):
+			_draw_action(pick_tile, _hover, PREVIEW_ALPHA)
 
 	var font := ThemeDB.fallback_font
 	var title := "%s  %d/%d" % [unit.display_name, alive, coords.size()]
@@ -291,6 +307,8 @@ func flash(cell: Vector2i, kind: Enum.Change, effect: BaseEffect) -> void:
 			color = COLOR_SHIELDED
 		Enum.Change.EFFECT, Enum.Change.POWER:
 			color = effect.get_color()
+		Enum.Change.HEAL:
+			color = COLOR_HEAL
 	var power: Script = effect.get_script() if kind == Enum.Change.POWER else null
 	_flashes.append({cell = cell, color = color, power = power, start = Time.get_ticks_msec() / 1000.0})
 	queue_redraw()

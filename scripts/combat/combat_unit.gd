@@ -33,16 +33,16 @@ func shield_health_tile(combat: CombatState, coords:Vector2i)->void:
 		tile.hp = Enum.HealthTileEnum.SHIELDED
 	
 
-## Shield absorbs the hit first (ON_BLOCK); otherwise the tile is damaged (ON_HIT).
+## Shield absorbs the hit first (ON_BLOCK), unless it pierces; otherwise the tile is damaged (ON_HIT).
 ## Returns true if the tile was damaged.
-func damage_health_tile(combat: CombatState, coords: Vector2i)->bool:
+func damage_health_tile(combat: CombatState, coords: Vector2i, pierce := false)->bool:
 	var tile: HealthTile = health[coords]
-	if tile.hp == Enum.HealthTileEnum.SHIELDED:
+	if tile.hp == Enum.HealthTileEnum.SHIELDED and not pierce:
 		tile.hp = Enum.HealthTileEnum.UNDAMAGED
 		combat.record(self, coords, Enum.Change.BLOCK)
 		fire_at(Enum.Trigger.ON_BLOCK, combat, coords)
 		blocked.emit(coords)
-	elif tile.hp == Enum.HealthTileEnum.UNDAMAGED:
+	elif tile.hp > Enum.HealthTileEnum.DAMAGED:
 		tile.hp = Enum.HealthTileEnum.DAMAGED
 		combat.record(self, coords, Enum.Change.DAMAGE)
 		fire_at(Enum.Trigger.ON_HIT, combat, coords)
@@ -50,9 +50,18 @@ func damage_health_tile(combat: CombatState, coords: Vector2i)->bool:
 	return false
 
 
+## Returns true if the tile was damaged and is now healed.
+func heal_health_tile(combat: CombatState, coords: Vector2i) -> bool:
+	if health[coords].hp != Enum.HealthTileEnum.DAMAGED:
+		return false
+	health[coords].hp = Enum.HealthTileEnum.UNDAMAGED
+	combat.record(self, coords, Enum.Change.HEAL)
+	return true
+
+
 func apply_effect_health_tile(combat: CombatState, coords:Vector2i, effect:BaseTileEffect)->void:
 	var tile: HealthTile = health[coords]
-	if tile and tile.hp > Enum.HealthTileEnum.DAMAGED:
+	if tile and (tile.hp > Enum.HealthTileEnum.DAMAGED or effect.allow_damaged):
 		_add_or_stack(tile.status_effects, effect)
 		combat.record(self, coords, Enum.Change.EFFECT, effect)
 

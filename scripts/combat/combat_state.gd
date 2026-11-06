@@ -19,6 +19,7 @@ var _changes: Array[Dictionary] = []  # recorded since the last flush
 var max_energy := 3
 var energy := 0
 var turn := 0
+var exhausted_this_turn := 0  # cards exhausted since the player's turn started
 
 
 func _init(run: Node) -> void:
@@ -58,13 +59,15 @@ func draw(amount: int) -> void:
 		hand.append(draw_pile.pop_back())
 
 
+## Retain cards stay in hand.
 func discard_hand() -> void:
-	discard_pile.append_array(hand)
-	hand.clear()
+	discard_pile.append_array(hand.filter(func(c: BaseCard) -> bool: return not c.retain))
+	hand.assign(hand.filter(func(c: BaseCard) -> bool: return c.retain))
 
 
 func start_turn() -> void:
 	turn += 1
+	exhausted_this_turn = 0
 	energy = max_energy
 	if turn == 1:
 		await player.fire(Enum.Trigger.COMBAT_START, self)
@@ -95,20 +98,46 @@ func end_turn() -> void:
 
 
 func can_play(card: BaseCard) -> bool:
-	return card in hand and card.cost <= energy
+	return card in hand and (card.x_cost or card.cost <= energy)
 
 
 ## Pays the cost, runs each grid action on units[i] at cells[i], then discards the card.
-## Power cards go to no pile: they stay in play for the rest of the fight.
-func play_card(card: BaseCard, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int]) -> bool:
+## Exhaust cards go to the exhaust pile instead, and to_draw_top cards on top of the draw pile.
+## Power cards go to no pile: they stay in play for the rest of the fight. With Echo, an Attack runs twice.
+## picks = the cards chosen to exhaust from hand (card.exhaust_from_hand), or to put on top of the draw pile
+## from the discard pile (card.pick_from_discard). Moved before the card's effect.
+## tile_picks = the player's tiles chosen for card.pick_tile, inflicted before the card's effect too.
+func play_card(card: BaseCard, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int], picks: Array[BaseCard] = [], tile_picks: Array[Vector2i] = []) -> bool:
 	if not can_play(card):
 		return false
-	energy -= card.cost
+	energy -= energy if card.x_cost else card.cost
 	hand.erase(card)
+	for pick in picks:
+		if card.pick_from_discard > 0:
+			discard_pile.erase(pick)
+			draw_pile.append(pick)  # draw() takes from the back
+		else:
+			exhaust(pick)
+	for cell in tile_picks:
+		card.pick_tile.inflict(self, player, cell)
+	await flush()
 	await card.execute(self, units, cells, rotations)
-	if card.type != Enum.CardType.POWER:
+	if card.type == Enum.CardType.ATTACK and EchoPower.use(player):
+		await card.execute(self, units, cells, rotations)
+	if card.exhaust:
+		exhaust(card)
+	elif card.to_draw_top:
+		draw_pile.append(card)  # draw() takes from the back
+	elif card.type != Enum.CardType.POWER:
 		discard_pile.append(card)
 	return true
+
+
+## Moves card from wherever it is to the exhaust pile, and counts it for this turn.
+func exhaust(card: BaseCard) -> void:
+	hand.erase(card)
+	exhaust_pile.append(card)
+	exhausted_this_turn += 1
 
 
 ## The unit whose turn it is: the player, or the enemy taking its turn. Null between turns.

@@ -1,6 +1,7 @@
 extends SceneTree
 
-## Headless check for hit reporting, random tile actions, Strength and the example cards.
+## Headless check for hit reporting, random tile actions, Strength, the example cards, the exhaust, retain
+## and discard piles, Heal, Sacrifice, Retaliate, Pierce, whole-line patterns, Jab and Recall putting cards on top of the draw pile, Strength this turn, Echo, Foresight, Ward, Fracture and X costs.
 ## Exit code = number of failures.
 ## godot --headless --path . -s res://scripts/actions/action_check.gd
 
@@ -191,6 +192,179 @@ func _initialize() -> void:
 	_strengthen(_combat.player, 1)
 	await _play(ArrowRain.new(), [], [])
 	_check(_alive(_combat.enemies[0]) + _alive(_combat.enemies[1]) == 0, "Arrow Rain didn't spread")
+
+	# Picked cards and Exhaust cards go to the exhaust pile, and Retain cards stay in hand.
+	_reset()
+	var fuel := Strike.new()
+	var kindling := Kindling.new()
+	var no_units: Array[CombatUnit] = []
+	var no_cells: Array[Vector2i] = []
+	var no_rotations: Array[int] = []
+	var picks: Array[BaseCard] = [fuel]
+	_combat.hand.assign([fuel, kindling])
+	_combat.energy = 1
+	await _combat.play_card(kindling, no_units, no_cells, no_rotations, picks)
+	_check(_combat.exhaust_pile == picks, "Kindling didn't exhaust the picked card")
+	_check(kindling in _combat.discard_pile and _combat.hand.size() == 2, "Kindling didn't discard itself and draw 2")
+	var last_light := LastLight.new()
+	await _play(last_light, [_combat.enemies[0]], [Vector2i.ZERO])
+	_check(last_light in _combat.exhaust_pile, "Last Light wasn't exhausted")
+	var steady := SteadyGuard.new()
+	_combat.hand.assign([steady, Strike.new()])
+	_combat.discard_hand()
+	_check(_combat.hand == [steady], "Steady Guard wasn't retained")
+
+	# Cinder Strike hits 2 more random tiles once a card was exhausted this turn.
+	_reset(HEX)
+	await _play(CinderStrike.new(), [_combat.enemies[0]], [Vector2i.ZERO])
+	_check(_alive(_combat.enemies[0]) == 4, "Cinder Strike hit extra tiles with nothing exhausted")
+	_combat.exhaust(Strike.new())
+	await _play(CinderStrike.new(), [_combat.enemies[0]], [Vector2i(0, 1)])
+	_check(_alive(_combat.enemies[0]) == 0, "Cinder Strike didn't hit extra tiles after an exhaust")
+	await _combat.start_turn()
+	_check(_combat.exhausted_this_turn == 0, "the exhaust count didn't reset at turn start")
+
+	# Mend heals the picked tiles before it's exhausted.
+	_reset()
+	var mend := Mend.new()
+	var hurt: Array[Vector2i] = []
+	hurt.assign(_combat.player.health.keys().slice(0, 2))
+	for cell in hurt:
+		_combat.player.health[cell].hp = DAMAGED
+	var no_picks: Array[BaseCard] = []
+	_combat.hand.append(mend)
+	_combat.energy = 1
+	await _combat.play_card(mend, no_units, no_cells, no_rotations, no_picks, hurt)
+	_check(hurt.all(func(c: Vector2i) -> bool: return _combat.player.health[c].hp == UNDAMAGED), "Mend didn't heal the picked tiles")
+	_check(mend in _combat.exhaust_pile, "Mend wasn't exhausted")
+
+	# Sacrifice goes through Shield, and a Plated tile can only be picked once no open tile is left.
+	_reset()
+	var player_cells := _combat.player.health.keys()
+	for cell in player_cells.slice(2):
+		_combat.player.health[cell].hp = DAMAGED
+	var open: Vector2i = player_cells[0]
+	var plated: Vector2i = player_cells[1]
+	_combat.player.health[open].hp = SHIELDED
+	_combat.player.health[plated].status_effects.append(PlateTileEffect.new())
+	var sacrifice := SacrificeTile.new(Vector2i.ZERO)
+	var none_picked: Array[Vector2i] = []
+	var open_picked: Array[Vector2i] = [open]
+	_check(not sacrifice.can_pick(_combat.player, plated, none_picked), "a Plated tile could be sacrificed while an open one was left")
+	_check(sacrifice.can_pick(_combat.player, plated, open_picked), "a Plated tile couldn't be sacrificed once the open one was picked")
+	var blood_price := BloodPrice.new()
+	_combat.hand.append(blood_price)
+	_combat.energy = 1
+	var enemy_units: Array[CombatUnit] = [_combat.enemies[0]]
+	var zero_cells: Array[Vector2i] = [Vector2i.ZERO]
+	var zero_rotations: Array[int] = [0]
+	await _combat.play_card(blood_price, enemy_units, zero_cells, zero_rotations, no_picks, open_picked)
+	_check(_combat.player.health[open].hp == DAMAGED, "Sacrifice didn't go through the Shield")
+	_check(_alive(_combat.enemies[0]) == 0, "Blood Price didn't hit after the Sacrifice")
+
+	# Retaliate hits the attacker back once per hit a Shield absorbs, and ends at the owner's next turn start.
+	_reset()
+	_combat.player.add_power(_combat, RetaliatePower.new(1))
+	var guarded: Vector2i = _combat.player.health.keys()[0]
+	var bare: Vector2i = _combat.player.health.keys()[1]
+	_combat.player.health[guarded].hp = SHIELDED
+	_combat.enemies[0].in_turn = true
+	_combat.player.damage_health_tile(_combat, guarded)
+	_check(_alive(_combat.enemies[0]) == 2, "Retaliate didn't hit back on a block")
+	_combat.player.damage_health_tile(_combat, bare)
+	_check(_alive(_combat.enemies[0]) == 2, "Retaliate hit back on an unshielded hit")
+	_combat.enemies[0].in_turn = false
+	await _combat.player.on_turn_start(_combat)
+	_check(_combat.player.power_amount(RetaliatePower) == 0, "Retaliate didn't end at the next turn start")
+
+	# Pierce damages a shielded tile and removes its Plate.
+	_reset()
+	_combat.enemies[0].health[LINE[0]].hp = SHIELDED
+	_combat.enemies[0].health[LINE[0]].status_effects.append(PlateTileEffect.new())
+	await _play(Lance.new(), [_combat.enemies[0]], [LINE[0]])
+	_check(_combat.enemies[0].health[LINE[0]].hp == DAMAGED, "Pierce didn't go through the Shield")
+	_check(not _combat.enemies[0].health[LINE[0]].has_effect(PlateTileEffect), "Pierce didn't remove the Plate")
+	_check(_alive(_combat.enemies[0]) == 1, "Lance didn't damage 2 tiles")
+
+	# Sunder pierces the whole line through the clicked cell, and rotating turns the line.
+	_reset(HEX)
+	_combat.enemies[0].health[Vector2i(1, 0)].hp = SHIELDED
+	await _play(Sunder.new(), [_combat.enemies[0]], [Vector2i.ZERO])
+	_check(_alive(_combat.enemies[0]) == 4, "Sunder didn't pierce the whole row")
+	await Sunder.new().grid_actions[0].execute(_combat, _combat.enemies[0], Vector2i.ZERO, 1)
+	_check(_alive(_combat.enemies[0]) == 2, "a rotated Sunder didn't hit the turned line")
+
+	# Jab goes on top of the draw pile, so it's the next card drawn.
+	_reset()
+	var jab := Jab.new()
+	await _play(jab, [_combat.enemies[0]], [Vector2i.ZERO])
+	_combat.draw(1)
+	_check(_combat.hand.back() == jab and jab not in _combat.discard_pile, "Jab wasn't put on top of the draw pile")
+
+	# Recall puts the picked card from the discard pile on top of the draw pile.
+	_reset()
+	var recall := Recall.new()
+	var discarded := Strike.new()
+	_combat.discard_pile.append(discarded)
+	_combat.hand.append(recall)
+	_combat.energy = 1
+	var recalled: Array[BaseCard] = [discarded]
+	var recall_units: Array[CombatUnit] = [_combat.enemies[0]]
+	await _combat.play_card(recall, recall_units, zero_cells, zero_rotations, recalled)
+	_check(_combat.draw_pile.back() == discarded and discarded not in _combat.discard_pile, "Recall didn't move the picked card to the top of the draw pile")
+
+	# Strength "this turn" goes away at the end of the turn, and the rest stays.
+	_reset()
+	_combat.player.add_power(_combat, StrengthPower.new(1))
+	await _play(Hone.new(), no_units, no_cells)
+	_check(_combat.player.power_amount(StrengthPower) == 3, "Hone didn't add 2 Strength")
+	await _combat.player.on_turn_end(_combat)
+	_check(_combat.player.power_amount(StrengthPower) == 1, "Hone's Strength didn't go away at turn end")
+	_reset()
+	await _play(Hone.new(), no_units, no_cells)
+	await _combat.player.on_turn_end(_combat)
+	_check(_combat.player.statuses.is_empty(), "Strength with nothing left wasn't removed")
+
+	# Echo plays the next Attack twice on the same cells, then it's used up.
+	_reset()
+	for cell in LINE:
+		_combat.enemies[0].health[cell].hp = SHIELDED
+	await _play(DoubleTime.new(), no_units, no_cells)
+	await _play(Strike.new(), [_combat.enemies[0]], [LINE[1]])
+	_check(_alive(_combat.enemies[0]) == 0, "Echo didn't play the Attack twice")
+	_check(_combat.player.power_amount(EchoPower) == 0, "Echo wasn't used up")
+
+	# Foresight draws 1 more card at the start of each turn.
+	_reset()
+	await _play(Foresight.new(), no_units, no_cells)
+	_combat.hand.clear()
+	await _combat.start_turn()
+	_check(_combat.hand.size() == CombatState.DRAW_PER_TURN + 1, "Foresight didn't draw an extra card")
+
+	# Ward shields 1 random tile at the start of each turn.
+	_reset()
+	await _play(Ward.new(), no_units, no_cells)
+	await _combat.player.on_turn_start(_combat)
+	_check(_shielded(_combat.player) == 1, "Ward didn't shield a tile at turn start")
+
+	# A damaged Fracture tile hits each neighbour once, and a Fracture hit doesn't set off another Fracture.
+	_reset(HEX)
+	await _play(Crack.new(), [_combat.enemies[0]], [Vector2i.ZERO])
+	_combat.enemies[0].health[Vector2i(-1, 1)].hp = SHIELDED  # next to both Fracture tiles: a chain would hit it twice
+	_combat.enemies[0].health[Vector2i(-1, 0)].status_effects.append(FractureTileEffect.new())
+	_combat.enemies[0].damage_health_tile(_combat, Vector2i.ZERO)
+	_check(_alive(_combat.enemies[0]) == 1, "Fracture didn't hit every neighbour once")
+	_check(_combat.enemies[0].health[Vector2i(-1, 1)].hp == UNDAMAGED, "Fracture chained, or a Shield didn't absorb its hit")
+
+	# An X-cost card spends all the energy and places its pattern once per energy.
+	_reset(HEX)
+	_combat.energy = 3
+	var target := _combat.enemies[0]
+	await _play(Flurry.new(), [target, target, target], [Vector2i(-1, 0), Vector2i(-1, 1), Vector2i(0, -1)])
+	_check(_combat.energy == 0, "Flurry didn't spend all the energy")
+	_check(_alive(target) == 1, "Flurry didn't place its pattern 3 times")
+	await _play(Flurry.new(), no_units, no_cells)
+	_check(_alive(target) == 1, "Flurry with 0 energy did something")
 
 	_run.free()
 	print("action_check: %s" % ("OK" if _failures == 0 else "%d failure(s)" % _failures))
