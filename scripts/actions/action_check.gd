@@ -1,7 +1,7 @@
 extends SceneTree
 
 ## Headless check for hit reporting, random tile actions, Strength, the example cards, the exhaust, retain
-## and discard piles, Heal, Sacrifice, Retaliate and Pierce.
+## and discard piles, Heal, Sacrifice, Retaliate, Pierce and whole-line patterns.
 ## Exit code = number of failures.
 ## godot --headless --path . -s res://scripts/actions/action_check.gd
 
@@ -285,6 +285,14 @@ func _initialize() -> void:
 	_check(_combat.enemies[0].health[LINE[0]].hp == DAMAGED, "Pierce didn't go through the Shield")
 	_check(not _combat.enemies[0].health[LINE[0]].has_effect(PlateTileEffect), "Pierce didn't remove the Plate")
 	_check(_alive(_combat.enemies[0]) == 1, "Lance didn't damage 2 tiles")
+
+	# Sunder pierces the whole line through the clicked cell, and rotating turns the line.
+	_reset(HEX)
+	_combat.enemies[0].health[Vector2i(1, 0)].hp = SHIELDED
+	await _play(Sunder.new(), [_combat.enemies[0]], [Vector2i.ZERO])
+	_check(_alive(_combat.enemies[0]) == 4, "Sunder didn't pierce the whole row")
+	await Sunder.new().grid_actions[0].execute(_combat, _combat.enemies[0], Vector2i.ZERO, 1)
+	_check(_alive(_combat.enemies[0]) == 2, "a rotated Sunder didn't hit the turned line")
 
 	_run.free()
 	print("action_check: %s" % ("OK" if _failures == 0 else "%d failure(s)" % _failures))
