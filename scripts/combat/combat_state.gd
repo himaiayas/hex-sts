@@ -103,7 +103,7 @@ func can_play(card: BaseCard) -> bool:
 
 ## Pays the cost, runs each grid action on units[i] at cells[i], then discards the card.
 ## Exhaust cards go to the exhaust pile instead, and to_draw_top cards on top of the draw pile.
-## Power cards go to no pile: they stay in play for the rest of the fight.
+## Power cards go to no pile: they stay in play for the rest of the fight. With Echo, an Attack runs twice.
 ## picks = the cards chosen to exhaust from hand (card.exhaust_from_hand), or to put on top of the draw pile
 ## from the discard pile (card.pick_from_discard). Moved before the card's effect.
 ## tile_picks = the player's tiles chosen for card.pick_tile, inflicted before the card's effect too.
@@ -122,6 +122,8 @@ func play_card(card: BaseCard, units: Array[CombatUnit], cells: Array[Vector2i],
 		card.pick_tile.inflict(self, player, cell)
 	await flush()
 	await card.execute(self, units, cells, rotations)
+	if card.type == Enum.CardType.ATTACK and EchoPower.use(player):
+		await card.execute(self, units, cells, rotations)
 	if card.exhaust:
 		exhaust(card)
 	elif card.to_draw_top:
