@@ -3,10 +3,18 @@ extends Control
 ## Combat screen: hand, piles, energy, end turn, and health grids.
 ## Click a card to select it, then click a cell for each of its grid actions to play it.
 ## A card with no grid actions is played by dragging it to the middle of the screen.
+## A card that picks cards (from hand or the discard pile) or tiles of yours (e.g. Heal) then waits for
+## the player to pick them and press Confirm. Picking from the discard pile happens in the pile viewer.
 
 const RenderCard := preload("res://scripts/cards/render_card.gd")
 const CARD_SIZE := HandView.CARD_SIZE
 const ENEMY_IMAGE_SIZE := Vector2(300, 300)
+const LUNGE_DISTANCE := 40.0  # px toward the target
+const LUNGE_TIME := 0.1  # out to the target; the hit flashes when it gets there
+const LUNGE_BACK_TIME := 0.15
+const SHAKE_AMOUNT := 8.0  # px, the first jolt; later ones get smaller
+const SHAKE_STEPS := 6
+const SHAKE_TIME := 0.25
 
 var combat: CombatState
 var selected: BaseCard = null
@@ -14,8 +22,13 @@ var _units: Array[CombatUnit] = []  # grid and cell clicked for each grid action
 var _cells: Array[Vector2i] = []
 var _rotations: Array[int] = []  # rotation chosen for each of those clicks
 var _rotation := 0  # 60° clockwise steps for the next grid action, kept between clicks
+var _picking := false  # every grid action is placed; picking cards in hand or tiles of yours until Confirm
+var _picks: Array[BaseCard] = []  # cards picked, from hand or the discard pile
+var _pile_picking := false  # the pile viewer is open for picking from the discard pile
+var _tile_picks: Array[Vector2i] = []  # tiles of yours picked for selected.pick_tile
 
 var _enemy_views: Array[HealthGridView] = []
+var _enemy_images: Array[TextureRect] = []  # one per enemy, same order as _enemy_views
 var _intent_labels: Array[Label] = []
 
 @onready var _top_bar: TopBar = %TopBar
@@ -23,15 +36,21 @@ var _intent_labels: Array[Label] = []
 @onready var _status_label: Label = %StatusLabel
 @onready var _hint_label: Label = %HintLabel
 @onready var _player_view: HealthGridView = %PlayerGrid
+@onready var _player_image: PlayerImage = %PlayerImage
 @onready var _enemies_box: HBoxContainer = %Enemies
 @onready var _hand: HandView = %Hand
 @onready var _deck_button: Button = %DeckButton
 @onready var _draw_button: Button = %DrawPileButton
+@onready var _exhaust_button: Button = %ExhaustButton
 @onready var _discard_button: Button = %DiscardButton
+@onready var _pick_buttons: Control = %PickButtons
+@onready var _confirm_button: Button = %ConfirmButton
 
 @onready var _pile_viewer: ColorRect = %PileViewer
 @onready var _pile_title: Label = %PileTitle
 @onready var _pile_grid: GridContainer = %PileGrid
+@onready var _pile_confirm_button: Button = %PileConfirmButton
+@onready var _close_pile_button: Button = %CloseButton
 
 @onready var _reward_panel: Control = %RewardPanel
 @onready var _gold_button: Button = %GoldButton
@@ -43,6 +62,7 @@ var _intent_labels: Array[Label] = []
 
 var _rewards: CombatRewards
 var _over := false  # won or lost: ignore combat input
+var _busy := false  # a card or a turn is playing out: ignore combat input until it's done
 
 
 func _ready() -> void:
@@ -57,6 +77,7 @@ func _ready() -> void:
 	_hand.card_cast.connect(_on_card_cast)
 	_player_view.setup(combat.player, true)
 	_player_view.cell_clicked.connect(_on_cell_clicked)
+	combat.player.blocked.connect(_on_player_blocked)
 	for enemy in combat.enemies:
 		var view := HealthGridView.new()
 		view.setup(enemy, true)
@@ -70,27 +91,39 @@ func _ready() -> void:
 		# Enemy image on the left, its health grid on the right.
 		var side := HBoxContainer.new()
 		side.add_theme_constant_override("separation", 24)
+		# The image sits in a plain slot, so it can lunge and shake without the HBox putting it back.
+		var slot := Control.new()
+		slot.custom_minimum_size = ENEMY_IMAGE_SIZE
+		slot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var image := TextureRect.new()
 		image.texture = enemy.sprite
-		image.custom_minimum_size = ENEMY_IMAGE_SIZE
 		image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		image.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		image.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		side.add_child(image)
+		image.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		slot.add_child(image)
+		side.add_child(slot)
 		side.add_child(box)
 		_enemies_box.add_child(side)
 		_enemy_views.append(view)
+		_enemy_images.append(image)
 		_intent_labels.append(intent_label)
 
-	combat.start_turn()
+	combat.animator = _animate
+	_busy = true
+	await combat.start_turn()
+	_busy = false
 	_refresh()
 
 
 # --- Input -------------------------------------------------------------------
 
 func _on_card_clicked(card: BaseCard) -> void:
-	if _over:
+	if _over or _busy:
+		return
+	if _picking:
+		_toggle_pick(card)
 		return
 	if selected == card:
 		_select(null)
@@ -102,25 +135,30 @@ func _on_card_clicked(card: BaseCard) -> void:
 		return
 	else:
 		_select(card)
+		if card.clicks(combat.energy) == 0:  # an X-cost card with no energy left
+			_play_selected()
+			return
 	_refresh()
 
 
 ## A card with no grid actions, dropped in the middle of the screen.
 func _on_card_cast(card: BaseCard) -> void:
-	if _over:
+	if _over or _busy:
 		return
-	var units: Array[CombatUnit] = []
-	var cells: Array[Vector2i] = []
-	var rotations: Array[int] = []
 	_select(null)
-	if not combat.play_card(card, units, cells, rotations):
+	if not combat.can_play(card):
 		_hint_label.text = "Not enough energy."
-	_refresh()
-	_check_combat_end()
+		_refresh()
+		return
+	_select(card)
+	_play_selected()
 
 
 func _on_cell_clicked(unit: CombatUnit, cell: Vector2i) -> void:
-	if _over:
+	if _over or _busy:
+		return
+	if _picking:
+		_toggle_tile_pick(unit, cell)
 		return
 	if selected == null:
 		_hint_label.text = "Select a card first."
@@ -131,22 +169,109 @@ func _on_cell_clicked(unit: CombatUnit, cell: Vector2i) -> void:
 	_units.append(unit)
 	_cells.append(cell)
 	_rotations.append(_rotation)
-	if _cells.size() < selected.grid_actions.size(): #store intents in _cells, when all grid has been chosen, this condition reeturn false
+	if _cells.size() < selected.clicks(combat.energy): #store intents in _cells, when all grid has been chosen, this condition reeturn false
 		_refresh()
 		return
-	combat.play_card(selected, _units, _cells, _rotations)
+	_play_selected()
+
+
+func _on_confirm_pressed() -> void:
+	if _over or _busy:
+		return
+	_play_selected()
+
+
+func _on_cancel_pressed() -> void:
 	_select(null)
 	_refresh()
+
+
+func _toggle_pick(card: BaseCard) -> void:
+	if card not in _pick_pool():
+		return
+	if card in _picks:
+		_picks.erase(card)
+	elif _picks.size() < _pick_count():
+		_picks.append(card)
+	_refresh()
+
+
+func _toggle_tile_pick(unit: CombatUnit, cell: Vector2i) -> void:
+	if selected.pick_tiles == 0 or unit != combat.player:
+		return
+	if cell in _tile_picks:
+		_tile_picks.erase(cell)
+		# e.g. a Plated tile can't stay picked for Sacrifice once an open tile is unpicked
+		_tile_picks.assign(_tile_picks.filter(func(c: Vector2i) -> bool: return selected.pick_tile.can_pick(unit, c, _tile_picks)))
+	elif _tile_picks.size() < _pick_count() and selected.pick_tile.can_pick(unit, cell, _tile_picks):
+		_tile_picks.append(cell)
+	_refresh()
+
+
+## Plays the selected card at the cells clicked so far. A card that exhausts cards from hand
+## goes to the pick step first, and plays when Confirm calls this again.
+func _play_selected() -> void:
+	if not _picking and _pick_count() > 0:
+		_picking = true
+		_refresh()
+		return
+	# Deselect first so the preview is gone while the card plays out.
+	var card := selected
+	var units := _units.duplicate()
+	var cells := _cells.duplicate()
+	var rotations := _rotations.duplicate()
+	var picks := _picks.duplicate()
+	var tile_picks := _tile_picks.duplicate()
+	_select(null)
+	_refresh()
+	_busy = true
+	if card.type == Enum.CardType.ATTACK:
+		_player_image.show_pose(PlayerImage.ATTACK)
+	await combat.play_card(card, units, cells, rotations, picks, tile_picks)
+	_busy = false
+	_refresh()
 	_check_combat_end()
+
+
+## Cards or tiles to pick: the selected card's pick_tiles, pick_from_discard or exhaust_from_hand,
+## or every one there is if there are fewer.
+func _pick_count() -> int:
+	if selected.pick_tiles > 0:
+		var open := combat.player.health.keys().filter(func(c: Vector2i) -> bool: return selected.pick_tile.can_inflict(combat.player, c))
+		return mini(selected.pick_tiles, open.size())
+	var wanted := selected.pick_from_discard if selected.pick_from_discard > 0 else selected.exhaust_from_hand
+	return mini(wanted, _pick_pool().size())
+
+
+## Cards the selected card can pick from: the discard pile, or the rest of the hand.
+func _pick_pool() -> Array:
+	if selected.pick_from_discard > 0:
+		return combat.discard_pile
+	if selected.exhaust_from_hand > 0:
+		return combat.hand.filter(func(c: BaseCard) -> bool: return c != selected)
+	return []
+
+
+func _picked_count() -> int:
+	return _tile_picks.size() if selected.pick_tiles > 0 else _picks.size()
 
 
 func _on_end_turn_pressed() -> void:
-	if _over:
+	if _over or _busy:
 		return
 	_select(null)
-	combat.end_turn()
+	_refresh()
+	_busy = true
+	await combat.end_turn()
+	_busy = false
 	_refresh()
 	_check_combat_end()
+
+
+## Only enemy hits count, not the player's own Poison at turn start.
+func _on_player_blocked(_coords: Vector2i) -> void:
+	if not combat.player.in_turn:
+		_player_image.show_pose(PlayerImage.GUARD)
 
 
 func _on_deck_pressed() -> void:
@@ -161,14 +286,26 @@ func _on_discard_pressed() -> void:
 	_show_pile("Discard pile", combat.discard_pile)
 
 
+func _on_exhaust_pressed() -> void:
+	_show_pile("Exhausted", combat.exhaust_pile)
+
+
 func _on_close_pile_pressed() -> void:
+	_close_pile()
+
+
+## Closing the viewer while picking from the discard pile cancels the card.
+func _close_pile() -> void:
 	_pile_viewer.hide()
+	if _pile_picking:
+		_select(null)
+		_refresh()
 
 
 ## Clicking the dark background outside the panel closes the viewer.
 func _on_pile_viewer_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed:
-		_pile_viewer.hide()
+		_close_pile()
 
 func _on_win_combat_pressed()->void:
 	_end_combat()
@@ -178,18 +315,18 @@ func _on_win_combat_pressed()->void:
 
 ## _input, not _unhandled_input: the grids and this root stop mouse events, so right-clicks never arrive unhandled.
 func _input(event: InputEvent) -> void:
-	if _over or _top_bar.is_modal_open():
+	if _over or _busy or _top_bar.is_modal_open():
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
 		if _pile_viewer.visible:
-			_pile_viewer.hide()
+			_close_pile()
 		elif selected:
 			_select(null)
 			_refresh()
 		else:
 			return
 		get_viewport().set_input_as_handled()
-	elif selected and not _pile_viewer.visible and _rotation_step(event) != 0:
+	elif selected and not _picking and not _pile_viewer.visible and _rotation_step(event) != 0:
 		_rotation = posmod(_rotation + _rotation_step(event), 6)
 		_refresh()
 		get_viewport().set_input_as_handled()
@@ -211,16 +348,84 @@ func _rotation_step(event: InputEvent) -> int:
 
 # --- Refresh -----------------------------------------------------------------
 
+## combat.animator: shows the new state, then plays the batch and waits for it. If the batch hits
+## the other side, the acting unit lunges at it first. On impact every change flashes at once,
+## and every unit that took damage shakes: an enemy's sprite, or the player's grid.
+func _animate(batch: Array[Dictionary]) -> void:
+	_refresh()
+	var attacker := combat.acting_unit()
+	var target: CombatUnit = null  # first unit on the other side that was hit or blocked a hit
+	var damaged: Array[CombatUnit] = []
+	for change in batch:
+		var unit: CombatUnit = change.unit
+		if change.kind == Enum.Change.DAMAGE and unit not in damaged:
+			damaged.append(unit)
+		if target == null and attacker and unit.is_player != attacker.is_player \
+				and change.kind in [Enum.Change.DAMAGE, Enum.Change.BLOCK]:
+			target = unit
+	if target:
+		var sprite := _sprite_for(attacker)
+		_lunge(sprite, _center(_sprite_for(target)) - _center(sprite))
+		await get_tree().create_timer(LUNGE_TIME).timeout
+	for change in batch:
+		_view_for(change.unit).flash(change.cell, change.kind, change.effect)
+	for unit in damaged:
+		if unit == combat.player:
+			_shake(_player_view, "shake")
+		else:
+			_shake(_sprite_for(unit), "position")
+	await get_tree().create_timer(HealthGridView.FLASH_TIME).timeout
+
+
+## Moves node LUNGE_DISTANCE toward a point, then back. node rests at ZERO inside its slot.
+func _lunge(node: Control, toward: Vector2) -> void:
+	var tween := create_tween().set_trans(Tween.TRANS_QUAD)
+	tween.tween_property(node, "position", toward.normalized() * LUNGE_DISTANCE, LUNGE_TIME).set_ease(Tween.EASE_OUT)
+	tween.tween_property(node, "position", Vector2.ZERO, LUNGE_BACK_TIME).set_ease(Tween.EASE_IN_OUT)
+
+
+## Jolts a Vector2 property that rests at ZERO in random directions, smaller each time, then back to ZERO.
+func _shake(node: Object, property: String) -> void:
+	var step := SHAKE_TIME / (SHAKE_STEPS + 1)
+	var tween := create_tween()
+	for i in SHAKE_STEPS:
+		var amount := SHAKE_AMOUNT * (1.0 - float(i) / SHAKE_STEPS)
+		tween.tween_property(node, property, Vector2.from_angle(randf() * TAU) * amount, step)
+	tween.tween_property(node, property, Vector2.ZERO, step)
+
+
+func _sprite_for(unit: CombatUnit) -> Control:
+	if unit == combat.player:
+		return _player_image
+	return _enemy_images[combat.enemies.find(unit)]
+
+
+func _center(control: Control) -> Vector2:
+	return control.global_position + control.size / 2.0
+
+
 func _refresh() -> void:
 	_top_bar.refresh()
 	_status_label.text = "Turn %d    Energy %d/%d" % [combat.turn, combat.energy, combat.max_energy]
 	_deck_button.text = "Deck (%d)" % RunState.deck.size()
 	_draw_button.text = "Draw pile (%d)" % combat.draw_pile.size()
+	_exhaust_button.text = "Exhausted (%d)" % combat.exhaust_pile.size()
 	_discard_button.text = "Discard (%d)" % combat.discard_pile.size()
-	if selected:
+	var discard_picking := _picking and selected.pick_from_discard > 0
+	_pick_buttons.visible = _picking and not discard_picking
+	if _picking:
+		var count := _pick_count()
+		_confirm_button.disabled = _picked_count() < count
+		if selected.pick_tiles > 0:
+			_hint_label.text = "Pick %d tile%s of yours to %s. Right-click to cancel." % [count, "" if count == 1 else "s", selected.pick_tile.display_name().to_lower()]
+		elif discard_picking:
+			_hint_label.text = "Pick %d card%s from your discard pile. Right-click to cancel." % [count, "" if count == 1 else "s"]
+		else:
+			_hint_label.text = "Pick %d card%s in your hand to exhaust. Right-click to cancel." % [count, "" if count == 1 else "s"]
+	elif selected:
 		var step := ""
-		if selected.grid_actions.size() > 1:
-			step = " (pattern %d/%d)" % [_cells.size() + 1, selected.grid_actions.size()]
+		if selected.clicks(combat.energy) > 1:
+			step = " (pattern %d/%d)" % [_cells.size() + 1, selected.clicks(combat.energy)]
 		if _next_grid_action() is RandomGridAction:
 			_hint_label.text = "Click %s%s. Right-click to cancel." % ["your grid" if _targets_player() else "an enemy", step]
 		else:
@@ -228,7 +433,18 @@ func _refresh() -> void:
 	else:
 		_hint_label.text = "Click a card to select it."
 
-	_hand.set_hand(combat.hand, selected, combat.can_play)
+	if discard_picking:
+		var count := _pick_count()
+		_show_pile("Pick %d card%s to put on top of your draw pile" % [count, "" if count == 1 else "s"], combat.discard_pile, false, true)
+	elif _pile_picking:
+		_pile_viewer.hide()
+	_pile_picking = discard_picking
+
+	_hand.picking = _picking
+	if _picking:
+		_hand.set_hand(combat.hand, selected, func(_card: BaseCard) -> bool: return true, _picks)
+	else:
+		_hand.set_hand(combat.hand, selected, combat.can_play)
 
 	# Only the grid action the next click places is previewed.
 	var pattern: Dictionary[Vector2i, BaseActionTile] = {}
@@ -251,7 +467,9 @@ func _refresh() -> void:
 		view.placed = []
 	_player_view.placed = []
 	for i in _cells.size():
-		_view_for(_units[i]).placed.append({cell = _cells[i], tiles = selected.grid_actions[i].rotated(_rotations[i])})
+		_view_for(_units[i]).placed.append({cell = _cells[i], tiles = selected.grid_action(i).rotated(_rotations[i])})
+	_player_view.pick_tile = selected.pick_tile if _picking and selected.pick_tiles > 0 else null
+	_player_view.picked = _tile_picks
 
 	# Intents blink on the grid each part targets: attacks on the player, shields on the enemy itself.
 	var player_intents: Array = []
@@ -275,8 +493,8 @@ func _refresh() -> void:
 
 ## The selected card's grid action the next click places, or null.
 func _next_grid_action() -> GridAction:
-	if selected and _cells.size() < selected.grid_actions.size():
-		return selected.grid_actions[_cells.size()]
+	if selected and _cells.size() < selected.clicks(combat.energy):
+		return selected.grid_action(_cells.size())
 	return null
 
 
@@ -292,13 +510,16 @@ func _select(card: BaseCard) -> void:
 	_cells.clear()
 	_rotations.clear()
 	_rotation = 0
+	_picking = false
+	_picks.clear()
+	_tile_picks.clear()
 
 
 ## Whether the next click goes on the player's grid: the current grid action's target, or the card's.
 func _targets_player() -> bool:
 	var target := selected.target
-	if _cells.size() < selected.grid_actions.size():
-		target = selected.grid_actions[_cells.size()].target
+	if _cells.size() < selected.clicks(combat.energy):
+		target = selected.grid_action(_cells.size()).target
 	return target == Enum.TargetType.PLAYER
 
 
@@ -313,8 +534,12 @@ func _card_slot(card: BaseCard) -> Control:
 
 # --- Pile viewer -------------------------------------------------------------
 
-func _show_pile(title: String, cards: Array[BaseCard], hide_order := false) -> void:
+## picking: clicking a card picks it for the selected card, and Close becomes Cancel.
+func _show_pile(title: String, cards: Array[BaseCard], hide_order := false, picking := false) -> void:
 	_pile_title.text = "%s (%d)" % [title, cards.size()]
+	_pile_confirm_button.visible = picking
+	_pile_confirm_button.disabled = picking and _picks.size() < _pick_count()
+	_close_pile_button.text = "Cancel" if picking else "Close"
 	for child in _pile_grid.get_children():
 		child.queue_free()
 	var shown := cards.duplicate()
@@ -322,13 +547,26 @@ func _show_pile(title: String, cards: Array[BaseCard], hide_order := false) -> v
 		shown.sort_custom(func(a: BaseCard, b: BaseCard) -> bool: return a.card_name < b.card_name)
 	for card in shown:
 		var slot := _card_slot(card)
-		slot.get_child(0).get_node("Panel").mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var panel: Panel = slot.get_child(0).get_node("Panel")
+		panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		if picking:
+			slot.mouse_filter = Control.MOUSE_FILTER_STOP
+			slot.gui_input.connect(_on_pile_card_input.bind(card))
+			if card in _picks:
+				var style: StyleBoxFlat = panel.get_theme_stylebox("panel")
+				style.border_color = HandView.COLOR_PICKED
+				style.set_border_width_all(6)
 		_pile_grid.add_child(slot)
 	if shown.is_empty():
 		var empty := Label.new()
 		empty.text = "Empty"
 		_pile_grid.add_child(empty)
 	_pile_viewer.show()
+
+
+func _on_pile_card_input(event: InputEvent, card: BaseCard) -> void:
+	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		_toggle_pick(card)
 
 
 # --- Room, end of combat and rewards ----------------------------------------

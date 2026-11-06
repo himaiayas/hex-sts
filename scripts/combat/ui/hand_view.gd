@@ -6,6 +6,7 @@ extends Control
 ## The selected card gets a blue border and bobs up and down.
 ## Keyword panels show beside the hovered (or else selected) card after a short delay.
 ## A playable card with no grid actions can be dragged; dropping it in PLAY_ZONE casts it.
+## While picking, clicks only pick cards, and picked cards get an orange border.
 
 signal card_clicked(card: BaseCard)
 signal card_cast(card: BaseCard)
@@ -29,6 +30,7 @@ const KEYWORD_GAP := InfoPanel.GAP
 const PLAY_ZONE := Rect2(0.25, 0.15, 0.5, 0.55)
 
 const COLOR_SELECTED := Color("#4fa8ff")
+const COLOR_PICKED := Color("#ff8c3c")
 const COLOR_UNPLAYABLE := Color(0.55, 0.55, 0.55)
 
 var _cards: Array[BaseCard] = []
@@ -37,6 +39,7 @@ var _selected: BaseCard = null
 var _hovered := -1
 var _dragged: BaseCard = null
 var _can_play: Callable
+var picking := false  # the scene's pick step: clicking a card picks it instead of dragging it
 
 var _keyword_box := VBoxContainer.new()
 var _keyword_card: BaseCard = null  # card the panels are counting down for or showing
@@ -50,7 +53,7 @@ func _ready() -> void:
 
 
 ## Keeps existing card nodes so they animate to their new spot instead of being rebuilt.
-func set_hand(cards: Array[BaseCard], selected: BaseCard, can_play: Callable) -> void:
+func set_hand(cards: Array[BaseCard], selected: BaseCard, can_play: Callable, picked: Array[BaseCard] = []) -> void:
 	for card in _holders.keys():
 		if card not in cards:
 			var old := _holders[card]
@@ -69,7 +72,10 @@ func set_hand(cards: Array[BaseCard], selected: BaseCard, can_play: Callable) ->
 			add_child(holder)
 			_holders[card] = holder
 		_holders[card].modulate = Color.WHITE if can_play.call(card) else COLOR_UNPLAYABLE
-		_set_border(card, card == selected)
+		if card == selected:
+			_set_border(card, true)
+		else:
+			_set_border(card, card in picked, COLOR_PICKED)
 
 	_cards = cards.duplicate()
 	_selected = selected
@@ -117,7 +123,7 @@ func _input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
 		get_viewport().set_input_as_handled()
 		var card := _cards[_hovered]
-		if card.grid_actions.is_empty() and _can_play.call(card):
+		if card.grid_actions.is_empty() and _can_play.call(card) and not picking:
 			_dragged = card
 			_update_order()
 		else:
@@ -200,11 +206,11 @@ func _update_order() -> void:
 	move_child(_keyword_box, -1)
 
 
-func _set_border(card: BaseCard, selected: bool) -> void:
+func _set_border(card: BaseCard, on: bool, color := COLOR_SELECTED) -> void:
 	var panel: Panel = _holders[card].get_child(0).get_node("Panel")
 	var style: StyleBoxFlat = panel.get_theme_stylebox("panel")
-	style.border_color = COLOR_SELECTED
-	style.set_border_width_all(6 if selected else 0)  # drawn just outside the card
+	style.border_color = color
+	style.set_border_width_all(6 if on else 0)  # drawn just outside the card
 
 
 func _update_keywords(delta: float) -> void:

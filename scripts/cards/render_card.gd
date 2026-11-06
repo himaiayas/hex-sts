@@ -91,7 +91,7 @@ static func create_card(data: BaseCard) -> Node2D:
 	name_label.add_theme_font_size_override("font_size", NAME_FONT_SIZE)
 
 	var cost_label: Label = card.get_node("%CostLabel")
-	cost_label.text = str(data.cost)
+	cost_label.text = "X" if data.x_cost else str(data.cost)
 	cost_label.add_theme_font_size_override("font_size", COST_FONT_SIZE)
 
 	var description: VBoxContainer = card.get_node("%Description")

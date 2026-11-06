@@ -35,7 +35,7 @@ func _initialize() -> void:
 				elif t is ApplyEffectTile and t.effect is PlateTileEffect:
 					expect_plated[cell] = true
 
-		slime.take_turn(combat)
+		await slime.take_turn(combat)
 
 		# What actually happened must match the intent exactly.
 		var damaged := _cells_with(combat.player, Enum.HealthTileEnum.DAMAGED)

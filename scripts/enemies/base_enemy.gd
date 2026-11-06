@@ -17,7 +17,7 @@ func plan(combat: CombatState) -> void: #triggered at the start of player turn
 func take_turn(combat: CombatState) -> void:
 	if intent_action == null:
 		return
-	intent_action.execute(combat, self)
+	await intent_action.execute(combat, self)
 	intent_action = null
 
 

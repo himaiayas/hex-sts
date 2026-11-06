@@ -72,6 +72,40 @@
   - Random tile actions: e.g. "shield a random tile on your grid". The target cell is picked at play time, so it can't be drawn with `{render}`.
 - [x] Done ✅: `inflict`, `GridAction.execute` and `BaseAction.execute` report the cells they changed (a shield block isn't a hit), and `BaseCard.execute` returns them per grid action, so a card checks `super()`'s result for conditions. New `GainEnergyAction` (not capped by `max_energy`), `RandomTileAction` (random tiles from one pool: your grid, or every living enemy) and `RandomGridAction` (random tiles on the grid you click; every grid it can go on flickers while selected). `can_inflict` keeps random picks off tiles they can't change. Cards with no grid actions are cast by dragging them to the middle of the screen. Example cards Thrust, Divine Mercy, Rapid Fire and Arrow Rain are in the pool and, for testing, the starting deck. Check: `action_check.gd` (headless).
 
+### 21. Keywords and mechanics
+
+- **Owner:** Pakkapao
+- **Requirement/Prereq:** -
+- **Brief Description:** Implement the keywords and mechanics from the sheet that the code doesn't have yet (Bind, which replaces Exhaust, plus Retaliate, Sacrifice, Retain, Heal, Pierce, etc.). The full list is in issue #19. Needed before the cards in #13.
+
+### 22. Action animations
+
+- **Owner:** Pakkapao
+- **Requirement/Prereq:** -
+- **Brief Description:** Animate every action from cast cards, tile effects and powers.
+  - Every change to a hex or a power plays a flash and pop on what it touches, in its own colour per kind (damage / shield / plate / poison / power gain), one after another. That includes turn-start triggers and the enemy's turn.
+  - `GridAction.execute`, `BaseCard.execute` and `CombatState.end_turn` become coroutines that `await` each animation, so the state matches what's on screen. The headless checks `await` too.
+  - Input is blocked while animations play. No skip button.
+  - One hook per kind, so real VFX can replace the placeholder later.
+- [x] Done ✅: `CombatUnit`'s tile and power changes call `CombatState.record()` (`shield_health_tile`, `apply_effect_health_tile` and `add_power` now take `combat`). `CombatState.flush()` hands the batch to the scene's `animator` and awaits it. Flushes happen after a pattern, again after Strength's extras, after each random/power action, and after each artifact, power or tile effect in `fire()`. ON_HIT / ON_BLOCK reactions play with the hit, so `inflict`, `on_trigger` and artifacts stay synchronous. `HealthGridView.flash()` fades and pops the hex or power badge for 0.3s (`FLASH_TIME`), with one `match` branch per `Enum.Change` for future VFX. `_busy` blocks combat input while anything plays. Without an animator nothing waits, so the checks run as before. Check: `action_check.gd` (Strength = pattern then extra) and `effect_check.gd` (Poison then Plate at turn start).
+
+### 23. Attack / hit shake
+
+- **Owner:** Pakkapao
+- **Requirement/Prereq:** 22
+- **Brief Description:** The attacker does a short lunge toward its target. When an enemy is hit, only its sprite shakes. When the player is hit, the player's grid shakes. No screen shake. May touch Mai's UI files.
+- [x] Done ✅: In `combat_scene._animate`, a batch that hits or blocks on the other side of `combat.acting_unit()` makes the attacker's sprite lunge 40px at the target first (0.1s out, 0.15s back), and the flash plays on impact. Every unit with DAMAGE in the batch shakes: an enemy's sprite, or the player's grid (`HealthGridView.shake`, a draw offset). Self-damage such as Poison shakes without a lunge; a blocked hit lunges without a shake; Strength's extras lunge again as a follow-up jab. Sprites sit in plain `Control` slots (`PlayerSlot` in `combat.tscn`, built in code for enemies) so the HBoxes don't snap them back mid-tween.
+
+### 24. Player sprite
+
+- **Owner:** Pakkapao
+- **Requirement/Prereq:** -
+- **Brief Description:** Separate PR, no issue.
+  - Idle loops `char_idle1` → `char_idle2` → `char_idle3` (`assets/characters/`).
+  - Show `char_attack` while the player attacks. Lunge is optional.
+  - Show `char_guard` when an enemy attack hits fewer player hexes than it targets (some or all blocked).
+- [x] Done ✅: `PlayerImage` (`scripts/combat/ui/player_image.gd`) on the `PlayerImage` node loops the idle frames, 0.25s each. `show_pose()` swaps in another sprite for 0.5s. Attack cards show `char_attack` once they're played. `CombatUnit.blocked` fires when a Shield absorbs a hit, and the player's guard shows on it outside the player's own turn, so their own Poison doesn't count. No lunge yet (#23). Turns resolve all at once until #22, so the pose shows after the enemy turn rather than during each hit.
+
 ## Enemies
 
 ### 10. Enemy Class
@@ -93,8 +127,9 @@
 
 ### 13. More cards
 
-- **Requirement/Prereq:** 8, 9
+- **Requirement/Prereq:** 8, 9, 21
 - **Brief Description:** Defend, draw cards, status cards, and multi-tile / row patterns (`LineGridAction`-style computed shapes).
+  - Implement every row with CONFIRM = TRUE in the sheet's Card tab, using the placeholder image, then tick its Implemented column. The scope grows as Mai confirms more rows. Tracked in issue #20. Card upgrades are out of scope.
 
 ### 14. Card descriptions
 

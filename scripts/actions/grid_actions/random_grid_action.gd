@@ -22,8 +22,10 @@ func execute(combat: CombatState, unit: CombatUnit, _cell: Vector2i, _rotation :
 	for cell in picks:
 		if tiles[0].inflict(combat, unit, cell):
 			hits.append(cell)
+	await combat.flush()
 	if tiles[0] is DamageTile:
 		hits.append_array(StrengthPower.spread(combat, picks.map(func(c: Vector2i) -> Array: return [unit, c])))
+	await combat.flush()
 	return hits
 
 ## No pattern to preview; the grid view highlights the whole grid instead.

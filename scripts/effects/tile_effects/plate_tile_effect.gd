@@ -11,11 +11,11 @@ func _init() -> void:
 	order = 1  # after Poison, so Plate alone doesn't make a tile immune
 
 
-func on_trigger(trigger: Enum.Trigger, _combat: CombatState, unit: CombatUnit, cell: Vector2i) -> void:
+func on_trigger(trigger: Enum.Trigger, combat: CombatState, unit: CombatUnit, cell: Vector2i) -> void:
 	match trigger:
 		Enum.Trigger.TURN_START:
 			if not attacked:
-				unit.shield_health_tile(cell)
+				unit.shield_health_tile(combat, cell)
 			attacked = false
 		Enum.Trigger.ON_BLOCK:
 			if not unit.in_turn:
