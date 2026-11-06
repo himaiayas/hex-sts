@@ -24,6 +24,7 @@ static var CARDS: Array = [
 	Hone,
 	DoubleTime,
 	Foresight,
+	Ward,
 ]
 
 static func random_cards(count: int) -> Array[BaseCard]:

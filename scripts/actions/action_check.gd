@@ -1,7 +1,7 @@
 extends SceneTree
 
 ## Headless check for hit reporting, random tile actions, Strength, the example cards, the exhaust, retain
-## and discard piles, Heal, Sacrifice, Retaliate, Pierce, whole-line patterns, Jab and Recall putting cards on top of the draw pile, Strength this turn, Echo and Foresight.
+## and discard piles, Heal, Sacrifice, Retaliate, Pierce, whole-line patterns, Jab and Recall putting cards on top of the draw pile, Strength this turn, Echo, Foresight and Ward.
 ## Exit code = number of failures.
 ## godot --headless --path . -s res://scripts/actions/action_check.gd
 
@@ -340,6 +340,12 @@ func _initialize() -> void:
 	_combat.hand.clear()
 	await _combat.start_turn()
 	_check(_combat.hand.size() == CombatState.DRAW_PER_TURN + 1, "Foresight didn't draw an extra card")
+
+	# Ward shields 1 random tile at the start of each turn.
+	_reset()
+	await _play(Ward.new(), no_units, no_cells)
+	await _combat.player.on_turn_start(_combat)
+	_check(_shielded(_combat.player) == 1, "Ward didn't shield a tile at turn start")
 
 	_run.free()
 	print("action_check: %s" % ("OK" if _failures == 0 else "%d failure(s)" % _failures))
