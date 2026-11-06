@@ -98,7 +98,7 @@ func end_turn() -> void:
 
 
 func can_play(card: BaseCard) -> bool:
-	return card in hand and card.cost <= energy
+	return card in hand and (card.x_cost or card.cost <= energy)
 
 
 ## Pays the cost, runs each grid action on units[i] at cells[i], then discards the card.
@@ -110,7 +110,7 @@ func can_play(card: BaseCard) -> bool:
 func play_card(card: BaseCard, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int], picks: Array[BaseCard] = [], tile_picks: Array[Vector2i] = []) -> bool:
 	if not can_play(card):
 		return false
-	energy -= card.cost
+	energy -= energy if card.x_cost else card.cost
 	hand.erase(card)
 	for pick in picks:
 		if card.pick_from_discard > 0:

@@ -12,7 +12,9 @@ const SQRT3 := 1.7320508
 const NAME_HEIGHT := 40.0
 const NO_CELL := Vector2i(999999, 999999)  # not (0,0): that's a real cell
 const INTENT_PERIOD := 1.4  # seconds per pulse
-const PLACED_PERIOD := 0.4  # faster than intents so the two read differently
+const FLICKER_PERIOD := 0.4  # random targets: faster than intents so the two read differently
+const PLACED_PERIOD := 1.2  # grid actions already clicked: a slow flash of the whole tile
+const PLACED_FILL := 0.6  # strongest fill of that flash
 const ICON_SIZE := 40.0  # action icons on targeted tiles (a hex is ~62 wide)
 const ICON_ALPHA_MIN := 0.35  # icons blink between these; brighter than the old colour fill
 const ICON_ALPHA_MAX := 1.0
@@ -117,7 +119,7 @@ func refresh() -> void:
 
 func _process(delta: float) -> void:
 	if not intents.is_empty() or not placed.is_empty() or random_target:
-		queue_redraw()  # keep the intent pulse and placed flicker animating
+		queue_redraw()  # keep the intent pulse, placed flash and random-target flicker animating
 	if not _flashes.is_empty():
 		var now := Time.get_ticks_msec() / 1000.0
 		_flashes.assign(_flashes.filter(func(f: Dictionary) -> bool: return now - f.start < FLASH_TIME))
@@ -235,13 +237,17 @@ func _draw() -> void:
 			if unit.health.has(cell):
 				_draw_action(t, cell, pulse)
 
-	var flicker_wave := 0.5 + 0.5 * sin(TAU * Time.get_ticks_msec() / 1000.0 / PLACED_PERIOD)
-	var flicker := lerpf(ICON_ALPHA_MIN, ICON_ALPHA_MAX, flicker_wave)
+	var flash := 0.5 + 0.5 * sin(TAU * Time.get_ticks_msec() / 1000.0 / PLACED_PERIOD)
 	for p in placed:
 		for offset: Vector2i in p.tiles:
 			var cell: Vector2i = p.cell + offset
 			if unit.health.has(cell):
-				_draw_action(p.tiles[offset], cell, flicker)
+				var t: BaseActionTile = p.tiles[offset]
+				draw_colored_polygon(hex_corners(cell_position(cell), _hex - 2.5), Color(t.get_color(), flash * PLACED_FILL))
+				_draw_action(t, cell, lerpf(ICON_ALPHA_MIN, ICON_ALPHA_MAX, flash))
+
+	var flicker_wave := 0.5 + 0.5 * sin(TAU * Time.get_ticks_msec() / 1000.0 / FLICKER_PERIOD)
+	var flicker := lerpf(ICON_ALPHA_MIN, ICON_ALPHA_MAX, flicker_wave)
 
 	if random_target:
 		# Steady while hovered, flickering otherwise, on every tile it could hit.

@@ -135,6 +135,9 @@ func _on_card_clicked(card: BaseCard) -> void:
 		return
 	else:
 		_select(card)
+		if card.clicks(combat.energy) == 0:  # an X-cost card with no energy left
+			_play_selected()
+			return
 	_refresh()
 
 
@@ -166,7 +169,7 @@ func _on_cell_clicked(unit: CombatUnit, cell: Vector2i) -> void:
 	_units.append(unit)
 	_cells.append(cell)
 	_rotations.append(_rotation)
-	if _cells.size() < selected.grid_actions.size(): #store intents in _cells, when all grid has been chosen, this condition reeturn false
+	if _cells.size() < selected.clicks(combat.energy): #store intents in _cells, when all grid has been chosen, this condition reeturn false
 		_refresh()
 		return
 	_play_selected()
@@ -421,8 +424,8 @@ func _refresh() -> void:
 			_hint_label.text = "Pick %d card%s in your hand to exhaust. Right-click to cancel." % [count, "" if count == 1 else "s"]
 	elif selected:
 		var step := ""
-		if selected.grid_actions.size() > 1:
-			step = " (pattern %d/%d)" % [_cells.size() + 1, selected.grid_actions.size()]
+		if selected.clicks(combat.energy) > 1:
+			step = " (pattern %d/%d)" % [_cells.size() + 1, selected.clicks(combat.energy)]
 		if _next_grid_action() is RandomGridAction:
 			_hint_label.text = "Click %s%s. Right-click to cancel." % ["your grid" if _targets_player() else "an enemy", step]
 		else:
@@ -464,7 +467,7 @@ func _refresh() -> void:
 		view.placed = []
 	_player_view.placed = []
 	for i in _cells.size():
-		_view_for(_units[i]).placed.append({cell = _cells[i], tiles = selected.grid_actions[i].rotated(_rotations[i])})
+		_view_for(_units[i]).placed.append({cell = _cells[i], tiles = selected.grid_action(i).rotated(_rotations[i])})
 	_player_view.pick_tile = selected.pick_tile if _picking and selected.pick_tiles > 0 else null
 	_player_view.picked = _tile_picks
 
@@ -490,8 +493,8 @@ func _refresh() -> void:
 
 ## The selected card's grid action the next click places, or null.
 func _next_grid_action() -> GridAction:
-	if selected and _cells.size() < selected.grid_actions.size():
-		return selected.grid_actions[_cells.size()]
+	if selected and _cells.size() < selected.clicks(combat.energy):
+		return selected.grid_action(_cells.size())
 	return null
 
 
@@ -515,8 +518,8 @@ func _select(card: BaseCard) -> void:
 ## Whether the next click goes on the player's grid: the current grid action's target, or the card's.
 func _targets_player() -> bool:
 	var target := selected.target
-	if _cells.size() < selected.grid_actions.size():
-		target = selected.grid_actions[_cells.size()].target
+	if _cells.size() < selected.clicks(combat.energy):
+		target = selected.grid_action(_cells.size()).target
 	return target == Enum.TargetType.PLAYER
 
 

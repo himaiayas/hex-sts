@@ -1,7 +1,7 @@
 extends SceneTree
 
 ## Headless check for hit reporting, random tile actions, Strength, the example cards, the exhaust, retain
-## and discard piles, Heal, Sacrifice, Retaliate, Pierce, whole-line patterns, Jab and Recall putting cards on top of the draw pile, Strength this turn, Echo, Foresight, Ward and Fracture.
+## and discard piles, Heal, Sacrifice, Retaliate, Pierce, whole-line patterns, Jab and Recall putting cards on top of the draw pile, Strength this turn, Echo, Foresight, Ward, Fracture and X costs.
 ## Exit code = number of failures.
 ## godot --headless --path . -s res://scripts/actions/action_check.gd
 
@@ -355,6 +355,16 @@ func _initialize() -> void:
 	_combat.enemies[0].damage_health_tile(_combat, Vector2i.ZERO)
 	_check(_alive(_combat.enemies[0]) == 1, "Fracture didn't hit every neighbour once")
 	_check(_combat.enemies[0].health[Vector2i(-1, 1)].hp == UNDAMAGED, "Fracture chained, or a Shield didn't absorb its hit")
+
+	# An X-cost card spends all the energy and places its pattern once per energy.
+	_reset(HEX)
+	_combat.energy = 3
+	var target := _combat.enemies[0]
+	await _play(Flurry.new(), [target, target, target], [Vector2i(-1, 0), Vector2i(-1, 1), Vector2i(0, -1)])
+	_check(_combat.energy == 0, "Flurry didn't spend all the energy")
+	_check(_alive(target) == 1, "Flurry didn't place its pattern 3 times")
+	await _play(Flurry.new(), no_units, no_cells)
+	_check(_alive(target) == 1, "Flurry with 0 energy did something")
 
 	_run.free()
 	print("action_check: %s" % ("OK" if _failures == 0 else "%d failure(s)" % _failures))
