@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Dragon / Dracula / Ramiel. Exit code = number of failures.
+## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Ogre / Dragon / Dracula / Ramiel. Exit code = number of failures.
 ## godot --headless --path . -s res://scripts/enemies/enemy_check.gd
 
 var _failures := 0
@@ -37,6 +37,7 @@ func _initialize() -> void:
 	await _check_goblin(combat)
 	await _check_vermin(combat)
 	await _check_hound(combat)
+	await _check_ogre(combat)
 	await _check_dragon(combat)
 	await _check_dracula(combat)
 	await _check_ramiel(combat)
@@ -118,6 +119,34 @@ func _check_hound(combat: CombatState) -> void:
 			_check(expect.size() >= 2, "the two bites landed on the same open tile")
 		_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == 16 + expect.size(), "hound turn %d didn't damage what its intent showed" % i)
 	_check(names == ["Bite", "Bite", "Lunge", "Bite", "Bite", "Lunge"], "hound order: %s" % [names])
+
+
+
+func _check_ogre(combat: CombatState) -> void:
+	var ogre := Ogre.new()
+	combat.enemies = [ogre]
+	var player := combat.player
+
+	# Wind-up aims without attacking; Smash lands there and strips Plate even where Shield blocks.
+	var names: Array[String] = []
+	for i in 4:
+		_heal(player)
+		for tile in player.health.values():
+			tile.hp = Enum.HealthTileEnum.SHIELDED
+			tile.status_effects.append(PlateTileEffect.new())
+		ogre.plan(combat)
+		var action := ogre.intent_actions[0]
+		names.append(action.action_name)
+		var aimed := _covered(player, action.parts[0])
+		await ogre.take_turn(combat)
+		var stripped := player.health.keys().filter(func(c: Vector2i) -> bool: return not player.health[c].has_effect(PlateTileEffect))
+		stripped.sort()
+		if action is OgreWindUp:
+			_check(stripped.is_empty() and _cells_with(player, Enum.HealthTileEnum.SHIELDED) == player.health.size(), "wind-up touched the player")
+		else:
+			_check(aimed.size() == 12 and stripped == aimed, "smash should strip Plate from the 12 aimed tiles, stripped %d" % stripped.size())
+			_check(_cells_with(player, Enum.HealthTileEnum.UNDAMAGED) == 12, "smash should break the 12 shields")
+	_check(names == ["Wind-up", "Smash", "Wind-up", "Smash"], "ogre order: %s" % [names])
 
 
 

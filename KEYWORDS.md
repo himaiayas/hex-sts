@@ -91,7 +91,7 @@ Agreed with Mai in issue #8, and for issue #19. Where this differs from the shee
 - So there's no Shield on the turn it's cast. The first one comes at the owner's next turn start, if the tile wasn't attacked in between.
 - It's removed when its tile's hp reaches 0 (ON_HIT). Hitting a Plated hex that has Shield twice in one turn breaks the Shield and then removes the Plate.
 - Plate can't go on a damaged hex.
-- Not implemented, sheet draft only: the 20-hex cap and Smash / Shred / Corrode.
+- Not implemented, sheet draft only: the 20-hex cap and Shred / Corrode. Smash (Ogre) removes Plate from every tile it covers.
 
 **Pierce**
 - A Pierce hit goes through both Shield and Plate: the tile is damaged even if it has Shield.

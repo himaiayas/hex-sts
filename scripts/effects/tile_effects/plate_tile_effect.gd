@@ -1,7 +1,7 @@
 class_name PlateTileEffect
 extends BaseTileEffect
 
-## Not implemented yet (sheet draft only): the 20-hex cap and Smash / Shred / Corrode.
+## Not implemented yet (sheet draft only): the 20-hex cap and Shred / Corrode. Smash is OgreSmash.
 
 var attacked := false  # hit during the opponent's turn, so no Shield next turn
 

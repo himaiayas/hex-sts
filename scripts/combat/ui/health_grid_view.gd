@@ -308,7 +308,7 @@ func flash(cell: Vector2i, kind: Enum.Change, effect: BaseEffect) -> void:
 			color = COLOR_PREVIEW
 		Enum.Change.BLOCK, Enum.Change.SHIELD:
 			color = COLOR_SHIELDED
-		Enum.Change.EFFECT, Enum.Change.POWER:
+		Enum.Change.EFFECT, Enum.Change.EFFECT_LOST, Enum.Change.POWER:
 			color = effect.get_color()
 		Enum.Change.HEAL:
 			color = COLOR_HEAL
