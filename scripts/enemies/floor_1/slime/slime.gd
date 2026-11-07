@@ -1,26 +1,25 @@
 class_name Slime
 extends BaseEnemy
 
-
-## Hexagon of this radius: 3r(r+1)+1 tiles (8 -> 217).
-const RADIUS := 8
+## Floor 1, Normal. Cycles Splat -> Goo.
 
 
 func _init() -> void:
-	var coords: Array[Vector2i] = []
-	for q in range(-RADIUS, RADIUS + 1):
-		for r in range(maxi(-RADIUS, -q - RADIUS), mini(RADIUS, -q + RADIUS) + 1):
-			coords.append(Vector2i(q, r))
-	# Sheet shape (12 tiles), kept off while testing with the big hexagon.
-	#coords = [
-	#	Vector2i(-1, -1), Vector2i(0, -1), Vector2i(1, -1), Vector2i(2, -1),
-	#	Vector2i(-2, 0), Vector2i(-1, 0), Vector2i(0, 0), Vector2i(1, 0),
-	#	Vector2i(-2, 1), Vector2i(-1, 1), Vector2i(0, 1), Vector2i(1, 1),
-	#]
+	var coords: Array[Vector2i] = [
+		Vector2i(-1, -1), Vector2i(0, -1), Vector2i(1, -1), Vector2i(2, -1),
+		Vector2i(-2, 0), Vector2i(-1, 0), Vector2i(0, 0), Vector2i(1, 0),
+		Vector2i(-2, 1), Vector2i(-1, 1), Vector2i(0, 1), Vector2i(1, 1),
+	]
 	super("Slime", CombatUnit.make_hex_health(coords))
 	sprite = preload("res://assets/enemies/floor_1/slime.png")
-	actions = [
-		SlimeAttack1.new(0.5),
-		SlimeHarden.new(0.25),
-		SlimeGuardedBash.new(0.25),
+	var splat: Array[BaseActionTile] = [
+		DamageTile.new(Vector2i(0, 0)),
+		DamageTile.new(Vector2i(1, 0)),
+		DamageTile.new(Vector2i(-1, 1)),
+		DamageTile.new(Vector2i(0, 1)),
 	]
+	actions = [
+		EnemyHit.new("Splat", "Hit 4 tiles in a blob.", splat),
+		EnemyShieldSelf.new("Goo", 4, "Shield 4 random tiles of its own."),
+	]
+	p1_cycle = [0, 1]

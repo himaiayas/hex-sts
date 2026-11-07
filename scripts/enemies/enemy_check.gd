@@ -13,41 +13,26 @@ func _initialize() -> void:
 	var slime := Slime.new()
 	combat.enemies.append(slime)
 
-	var seen := {}
-	for i in 60:
+	# Splat -> Goo, looped. Splat damages exactly the tiles its intent shows; Goo shields 4 of its own.
+	var names: Array[String] = []
+	for i in 6:
 		_heal(combat.player)
 		_heal(slime)
 		slime.plan(combat)
 		var action := slime.intent_actions[0]
-		seen[action.action_name] = true
-
-		# What the intent shows, per grid.
+		names.append(action.action_name)
 		var expect_damaged := {}
-		var expect_plated := {}
 		for part in action.parts:
-			var target: CombatUnit = combat.player if part.side == Enum.Side.PLAYER else slime
-			for t in part.tiles:
-				var cell := part.cell + t.coords
-				if not target.health.has(cell):
-					continue
-				if t is DamageTile:
-					expect_damaged[cell] = true
-				elif t is ApplyEffectTile and t.effect is PlateTileEffect:
-					expect_plated[cell] = true
-
+			for cell in _covered(combat.player, part):
+				expect_damaged[cell] = true
 		await slime.take_turn(combat)
-
-		# What actually happened must match the intent exactly.
 		var damaged := _cells_with(combat.player, Enum.HealthTileEnum.DAMAGED)
-		var plated := slime.health.values().filter(func(t: HealthTile) -> bool: return t.has_effect(PlateTileEffect)).size()
-		_check(damaged == expect_damaged.keys().size() and _all_in(combat.player, expect_damaged, Enum.HealthTileEnum.DAMAGED),
+		_check(damaged == expect_damaged.size() and _all_in(combat.player, expect_damaged, Enum.HealthTileEnum.DAMAGED),
 			"turn %d (%s): player damage doesn't match intent" % [i, action.action_name])
-		_check(plated == expect_plated.keys().size() and expect_plated.keys().all(func(c: Vector2i) -> bool: return slime.health[c].has_effect(PlateTileEffect)),
-			"turn %d (%s): self plate doesn't match intent" % [i, action.action_name])
+		if action is EnemyShieldSelf:
+			_check(_cells_with(slime, Enum.HealthTileEnum.SHIELDED) == 4, "goo should shield 4")
 		_check(slime.intent_actions.is_empty(), "turn %d: intent not cleared after take_turn" % i)
-
-	for name in ["Slime Attack 1", "Harden", "Guarded Bash"]:
-		_check(seen.has(name), "action %s never chosen in 60 plans" % name)
+	_check(names == ["Splat", "Goo", "Splat", "Goo", "Splat", "Goo"], "slime order: %s" % [names])
 
 	await _check_goblin(combat)
 	await _check_vermin(combat)

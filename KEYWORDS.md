@@ -92,7 +92,6 @@ Agreed with Mai in issue #8, and for issue #19. Where this differs from the shee
 - It's removed when its tile's hp reaches 0 (ON_HIT). Hitting a Plated hex that has Shield twice in one turn breaks the Shield and then removes the Plate.
 - Plate can't go on a damaged hex.
 - Not implemented, sheet draft only: the 20-hex cap and Smash / Shred / Corrode.
-- Slime Harden and Guarded Bash's self-shield use Plate.
 
 **Pierce**
 - A Pierce hit goes through both Shield and Plate: the tile is damaged even if it has Shield.
