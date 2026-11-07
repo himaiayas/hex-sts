@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bw7rx38abdfsr"
-path="res://.godot/imported/bg_medieval.jpg-d4974beb534bc8b44c7bdd729a34f614.ctex"
+uid="uid://dnyhjqs2cei72"
+path="res://.godot/imported/floor_1_medieval.jpg-668720560b89bacb8b3ed5e74eedf10d.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/rooms/bg_medieval.jpg"
-dest_files=["res://.godot/imported/bg_medieval.jpg-d4974beb534bc8b44c7bdd729a34f614.ctex"]
+source_file="res://assets/rooms/background/floor_1_medieval.jpg"
+dest_files=["res://.godot/imported/floor_1_medieval.jpg-668720560b89bacb8b3ed5e74eedf10d.ctex"]
 
 [params]
 
