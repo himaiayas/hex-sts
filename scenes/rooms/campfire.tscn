@@ -1,7 +1,9 @@
 [gd_scene format=3]
 
-[ext_resource type="Script" path="res://scripts/rooms/placeholder_room.gd" id="1_room"]
+[ext_resource type="Script" path="res://scripts/rooms/campfire_room.gd" id="1_room"]
 [ext_resource type="PackedScene" path="res://scenes/ui/top_bar.tscn" id="9_topbar"]
+[ext_resource type="Texture2D" path="res://assets/icons/heart.png" id="3_heart"]
+[ext_resource type="Texture2D" path="res://assets/icons/cards.png" id="4_cards"]
 
 [node name="Campfire" type="Control"]
 layout_mode = 3
@@ -27,32 +29,106 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+offset_top = 72.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
 
 [node name="Box" type="VBoxContainer" parent="Center"]
 layout_mode = 2
-theme_override_constants/separation = 32
+theme_override_constants/separation = 24
 
 [node name="Title" type="Label" parent="Center/Box"]
-unique_name_in_owner = true
 layout_mode = 2
 theme_override_font_sizes/font_size = 64
 text = "Campfire"
 horizontal_alignment = 1
 
-[node name="Body" type="Label" parent="Center/Box"]
+[node name="Hint" type="Label" parent="Center/Box"]
+unique_name_in_owner = true
 modulate = Color(0.552941, 0.576471, 0.647059, 1)
 layout_mode = 2
-theme_override_font_sizes/font_size = 28
-text = "Rest or upgrade a card. (Coming soon)"
+theme_override_font_sizes/font_size = 26
+text = "Choose one."
 horizontal_alignment = 1
 
-[node name="LeaveButton" type="Button" parent="Center/Box"]
-custom_minimum_size = Vector2(240, 64)
+[node name="Options" type="HBoxContainer" parent="Center/Box"]
+unique_name_in_owner = true
+layout_mode = 2
+theme_override_constants/separation = 28
+alignment = 1
+
+[node name="RestButton" type="Button" parent="Center/Box/Options"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(320, 160)
+layout_mode = 2
+theme_override_constants/icon_max_width = 72
+theme_override_font_sizes/font_size = 36
+text = "Rest"
+icon = ExtResource("3_heart")
+autowrap_mode = 3
+expand_icon = true
+
+[node name="PurgeButton" type="Button" parent="Center/Box/Options"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(320, 160)
+layout_mode = 2
+theme_override_constants/icon_max_width = 72
+theme_override_font_sizes/font_size = 36
+text = "Purge"
+icon = ExtResource("4_cards")
+autowrap_mode = 3
+expand_icon = true
+
+[node name="PurgePage" type="ScrollContainer" parent="Center/Box"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(1640, 660)
+layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="Pad" type="MarginContainer" parent="Center/Box/PurgePage"]
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_constants/margin_left = 30
+theme_override_constants/margin_top = 40
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="CardGrid" type="GridContainer" parent="Center/Box/PurgePage/Pad"]
+unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 4
+theme_override_constants/h_separation = 28
+theme_override_constants/v_separation = 50
+columns = 6
+
+[node name="Buttons" type="HBoxContainer" parent="Center/Box"]
+layout_mode = 2
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="BackButton" type="Button" parent="Center/Box/Buttons"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(240, 64)
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Back"
+
+[node name="ConfirmButton" type="Button" parent="Center/Box/Buttons"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(240, 64)
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+disabled = true
+text = "Remove"
+
+[node name="LeaveButton" type="Button" parent="Center/Box/Buttons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(240, 64)
+layout_mode = 2
 theme_override_font_sizes/font_size = 28
 text = "Leave"
 
@@ -60,4 +136,8 @@ text = "Leave"
 unique_name_in_owner = true
 layout_mode = 1
 
-[connection signal="pressed" from="Center/Box/LeaveButton" to="." method="_on_leave_pressed"]
+[connection signal="pressed" from="Center/Box/Options/RestButton" to="." method="_on_rest_pressed"]
+[connection signal="pressed" from="Center/Box/Options/PurgeButton" to="." method="_on_purge_pressed"]
+[connection signal="pressed" from="Center/Box/Buttons/BackButton" to="." method="_on_back_pressed"]
+[connection signal="pressed" from="Center/Box/Buttons/ConfirmButton" to="." method="_on_confirm_pressed"]
+[connection signal="pressed" from="Center/Box/Buttons/LeaveButton" to="." method="_on_leave_pressed"]
