@@ -330,7 +330,7 @@ func _initialize() -> void:
 	for cell in LINE:
 		_combat.enemies[0].health[cell].hp = SHIELDED
 	await _play(DoubleTime.new(), no_units, no_cells)
-	await _play(Strike.new(), [_combat.enemies[0]], [LINE[1]])
+	await _play(CinderStrike.new(), [_combat.enemies[0]], [LINE[1]])
 	_check(_alive(_combat.enemies[0]) == 0, "Echo didn't play the Attack twice")
 	_check(_combat.player.power_amount(EchoPower) == 0, "Echo wasn't used up")
 

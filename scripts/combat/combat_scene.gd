@@ -28,7 +28,7 @@ var _pile_picking := false  # the pile viewer is open for picking from the disca
 var _tile_picks: Array[Vector2i] = []  # tiles of yours picked for selected.pick_tile
 
 var _enemy_views: Array[HealthGridView] = []
-var _enemy_images: Array[TextureRect] = []  # one per enemy, same order as _enemy_views
+var _enemy_images: Array[UnitImage] = []  # one per enemy, same order as _enemy_views
 var _intent_labels: Array[Label] = []
 
 @onready var _top_bar: TopBar = %TopBar
@@ -36,7 +36,7 @@ var _intent_labels: Array[Label] = []
 @onready var _status_label: Label = %StatusLabel
 @onready var _hint_label: Label = %HintLabel
 @onready var _player_view: HealthGridView = %PlayerGrid
-@onready var _player_image: PlayerImage = %PlayerImage
+@onready var _player_image: UnitImage = %PlayerImage
 @onready var _enemies_box: HBoxContainer = %Enemies
 @onready var _hand: HandView = %Hand
 @onready var _deck_button: Button = %DeckButton
@@ -96,8 +96,10 @@ func _ready() -> void:
 		slot.custom_minimum_size = ENEMY_IMAGE_SIZE
 		slot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var image := TextureRect.new()
-		image.texture = enemy.sprite
+		var image := UnitImage.new()
+		image.idle_frames = enemy.idle_frames
+		if image.idle_frames.is_empty():
+			image.idle_frames = [enemy.sprite]
 		image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		image.mouse_filter = Control.MOUSE_FILTER_IGNORE
@@ -226,7 +228,7 @@ func _play_selected() -> void:
 	_refresh()
 	_busy = true
 	if card.type == Enum.CardType.ATTACK:
-		_player_image.show_pose(PlayerImage.ATTACK)
+		_player_image.show_pose(UnitImage.PLAYER_ATTACK)
 	await combat.play_card(card, units, cells, rotations, picks, tile_picks)
 	_busy = false
 	_refresh()
@@ -271,7 +273,7 @@ func _on_end_turn_pressed() -> void:
 ## Only enemy hits count, not the player's own Poison at turn start.
 func _on_player_blocked(_coords: Vector2i) -> void:
 	if not combat.player.in_turn:
-		_player_image.show_pose(PlayerImage.GUARD)
+		_player_image.show_pose(UnitImage.PLAYER_GUARD)
 
 
 func _on_deck_pressed() -> void:

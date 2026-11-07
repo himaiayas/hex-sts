@@ -18,7 +18,7 @@ const MENU_SCENE := "res://scenes/mainmenu.tscn"
 const BOSS_INTRO := preload("res://scenes/ui/boss_intro.tscn")
 
 ## Boss of each floor: FLOOR_BOSSES[0] is floor 1. Floors past the end reuse the last one.
-static var FLOOR_BOSSES: Array = [TheDragon]
+static var FLOOR_BOSSES: Array = [Dragon, Dracula, Ramiel]
 
 ## Combat room background of each floor: [0] is floor 1. All the same for now.
 const FLOOR_COMBAT_BACKGROUNDS: Array[Texture2D] = [

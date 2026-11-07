@@ -77,6 +77,7 @@
 - **Owner:** Pakkapao
 - **Requirement/Prereq:** -
 - **Brief Description:** Implement the keywords and mechanics from the sheet that the code doesn't have yet (Bind, which replaces Exhaust, plus Retaliate, Sacrifice, Retain, Heal, Pierce, etc.). The full list is in issue #19. Needed before the cards in #13.
+- [x] Done ✅: In #22, closing #19. Every mechanic the confirmed cards use, each with an example card in the pool and starting deck: Exhaust (kept the name; the sheet's Bind), Exhaust X from hand, "exhausted this turn", Retain, Heal, Sacrifice, Retaliate, Pierce, whole-row patterns, back to the top of the draw pile, discard to the top of the draw pile, Strength this turn, Echo, Foresight, Ward, Fracture, Cost X, and Poison reworked to explode after 2 turns. Picking cards or your own tiles uses a Confirm / Cancel step. Rules are in `KEYWORDS.md`. Mechanics only unconfirmed cards use, and Heroic, moved to #24. Check: `action_check.gd` and `effect_check.gd`.
 
 ### 22. Action animations
 

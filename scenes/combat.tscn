@@ -5,7 +5,7 @@
 [ext_resource type="Script" uid="uid://e17p874bkot" path="res://scripts/combat/ui/hand_view.gd" id="3_hand"]
 [ext_resource type="PackedScene" path="res://scenes/ui/top_bar.tscn" id="9_topbar"]
 [ext_resource type="Texture2D" path="res://assets/characters/char_idle1.png" id="10_player"]
-[ext_resource type="Script" path="res://scripts/combat/ui/player_image.gd" id="11_player_image"]
+[ext_resource type="Script" uid="uid://cdht0ce1ofkdn" path="res://scripts/combat/ui/unit_image.gd" id="11_player_image"]
 
 [node name="Combat" type="Control" unique_id=1963554734]
 layout_mode = 3

@@ -2,6 +2,7 @@
 extends CombatUnit
 
 var sprite: Texture2D
+var idle_frames: Array[Texture2D] = []  # looped instead of sprite when set (bosses)
 var actions: Array[BaseEnemyAction] = []  # picked at random, weighted by probability
 var intent_action: BaseEnemyAction
 
