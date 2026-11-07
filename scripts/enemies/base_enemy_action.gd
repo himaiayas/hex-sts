@@ -74,3 +74,24 @@ func score_cell(part: EnemyActionPart, cell: Vector2i, target: CombatUnit) -> in
         else:
             score += 1
     return score
+
+
+## A random cell where the part covers at least one tile that isn't damaged, for scattered hits.
+## Cells that cover more of them are more likely.
+func pick_random_cell(part: EnemyActionPart, target: CombatUnit) -> Vector2i:
+    var cells: Array[Vector2i] = []
+    for cell in target.health:
+        if target.health[cell].hp > Enum.HealthTileEnum.DAMAGED:
+            for t in part.tiles:
+                cells.append(cell - t.coords)
+    return cells.pick_random() if not cells.is_empty() else Vector2i.ZERO
+
+
+## Inflicts tile on amount random tiles of the owner's own grid that it can change (heal, shield).
+## Picked when the move runs, so it uses the grid as the player's turn left it.
+func inflict_random_own(combat: CombatState, owner: CombatUnit, tile: BaseActionTile, amount: int) -> void:
+    var cells: Array = owner.health.keys().filter(func(c: Vector2i) -> bool: return tile.can_inflict(owner, c))
+    cells.shuffle()
+    for cell in cells.slice(0, amount):
+        tile.inflict(combat, owner, cell)
+    await combat.flush()

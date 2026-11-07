@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Headless check for BaseEnemy / Slime / Dragon. Exit code = number of failures.
+## Headless check for BaseEnemy / Slime / Dragon / Dracula. Exit code = number of failures.
 ## godot --headless --path . -s res://scripts/enemies/enemy_check.gd
 
 var _failures := 0
@@ -50,6 +50,7 @@ func _initialize() -> void:
 		_check(seen.has(name), "action %s never chosen in 60 plans" % name)
 
 	await _check_dragon(combat)
+	await _check_dracula(combat)
 
 	run.free()
 	print("enemy_check: %s" % ("OK" if _failures == 0 else "%d failure(s)" % _failures))
@@ -116,6 +117,64 @@ func _check_dragon(combat: CombatState) -> void:
 		names.append(dragon.intent_action.action_name)
 		await dragon.take_turn(combat)
 	_check(names == ["Claw", "Inferno", "Tail Sweep", "Inferno", "Claw"], "dragon P2 order: %s" % [names])
+
+
+
+func _check_dracula(combat: CombatState) -> void:
+	var dracula := Dracula.new()
+	combat.enemies = [dracula]
+	var player := combat.player
+
+	# P1 cycle, by index so the two Bites (heal 4 / heal 8) are told apart.
+	var order: Array[int] = []
+	for i in 4:
+		_heal(player)
+		dracula.plan(combat)
+		order.append(dracula.actions.find(dracula.intent_action))
+		await dracula.take_turn(combat)
+	_check(order == [0, 1, 2, 0], "dracula P1 order: %s" % [order])
+
+	# Bite heals 4 of its own damaged tiles, 8 in P2.
+	for bite: DraculaBite in [dracula.actions[0], dracula.actions[3]]:
+		_heal(player)
+		_heal(dracula)
+		var tiles := dracula.health.values()
+		for i in 10:
+			tiles[i].hp = Enum.HealthTileEnum.DAMAGED
+		bite.plan(combat, dracula)
+		await bite.execute(combat, dracula)
+		_check(_cells_with(dracula, Enum.HealthTileEnum.DAMAGED) == 10 - bite.heal, "bite should heal %d" % bite.heal)
+
+	# Blood Mist shields 10 of its own tiles.
+	_heal(dracula)
+	await dracula.actions[2].execute(combat, dracula)
+	_check(_cells_with(dracula, Enum.HealthTileEnum.SHIELDED) == 10, "blood mist should shield 10")
+
+	# Bat Swarm and Crimson Rain land every hit on a tile that isn't damaged yet.
+	for scattered in [dracula.actions[1], dracula.actions[4]]:
+		for i in 20:
+			_heal(player)
+			for cell in player.health.keys().slice(0, 12):
+				player.health[cell].hp = Enum.HealthTileEnum.DAMAGED
+			scattered.plan(combat, dracula)
+			for part in scattered.parts:
+				_check(_covered(player, part).any(func(c: Vector2i) -> bool: return player.health[c].hp > Enum.HealthTileEnum.DAMAGED),
+					"%s put a hit where nothing is left" % scattered.action_name)
+
+	# P2 below half its tiles.
+	_heal(dracula)
+	var tiles := dracula.health.values()
+	for i in 66:
+		tiles[i].hp = Enum.HealthTileEnum.DAMAGED
+	order.clear()
+	for i in 4:
+		_heal(player)
+		dracula.plan(combat)
+		order.append(dracula.actions.find(dracula.intent_action))
+		await dracula.take_turn(combat)
+		for t in tiles.slice(0, 66):  # keep it below half despite the Bite heals
+			t.hp = Enum.HealthTileEnum.DAMAGED
+	_check(order == [3, 4, 2, 3], "dracula P2 order: %s" % [order])
 
 
 ## Cells of unit's grid that a planned part covers.
