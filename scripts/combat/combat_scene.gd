@@ -8,7 +8,6 @@ extends Control
 
 const RenderCard := preload("res://scripts/cards/render_card.gd")
 const CARD_SIZE := HandView.CARD_SIZE
-const ENEMY_IMAGE_SIZE := Vector2(300, 300)
 const LUNGE_DISTANCE := 40.0  # px toward the target
 const LUNGE_TIME := 0.1  # out to the target; the hit flashes when it gets there
 const LUNGE_BACK_TIME := 0.15
@@ -93,7 +92,7 @@ func _ready() -> void:
 		side.add_theme_constant_override("separation", 24)
 		# The image sits in a plain slot, so it can lunge and shake without the HBox putting it back.
 		var slot := Control.new()
-		slot.custom_minimum_size = ENEMY_IMAGE_SIZE
+		slot.custom_minimum_size = enemy.image_size
 		slot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var image := UnitImage.new()

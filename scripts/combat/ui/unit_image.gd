@@ -12,7 +12,7 @@ const PLAYER_IDLE: Array[Texture2D] = [
 ]
 const PLAYER_ATTACK := preload("res://assets/characters/char_attack.png")
 const PLAYER_GUARD := preload("res://assets/characters/char_guard.png")
-const IDLE_FRAME_TIME := 0.25  # seconds per idle frame
+const IDLE_LOOP_TIME := 0.75  # seconds per idle loop, however many frames it has
 const POSE_TIME := 0.5
 
 var idle_frames: Array[Texture2D] = PLAYER_IDLE
@@ -34,7 +34,7 @@ func _process(delta: float) -> void:
 	if _pose:
 		_pose = null
 		queue_redraw()
-	texture = idle_frames[int(_time / IDLE_FRAME_TIME) % idle_frames.size()]
+	texture = idle_frames[int(_time / IDLE_LOOP_TIME * idle_frames.size()) % idle_frames.size()]
 
 
 func show_pose(pose: Texture2D) -> void:

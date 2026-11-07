@@ -3,6 +3,7 @@ extends CombatUnit
 
 var sprite: Texture2D
 var idle_frames: Array[Texture2D] = []  # looped instead of sprite when set (bosses)
+var image_size := Vector2(300, 300)  # the sprite's slot in combat
 var actions: Array[BaseEnemyAction] = []  # picked at random, weighted by probability
 var intent_action: BaseEnemyAction
 

@@ -35,6 +35,8 @@ func _init() -> void:
 		preload("res://assets/enemies/floor_1/dragon_idle1.png"),
 		preload("res://assets/enemies/floor_1/dragon_idle2.png"),
 	]
+	# Near the most that fits at 1920x1080 next to its grid and the player's side.
+	image_size = Vector2(680, 680)
 	actions = [
 		DragonClaw.new(),
 		DragonTailSweep.new(),
