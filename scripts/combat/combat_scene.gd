@@ -682,9 +682,11 @@ func _enemies_for(room_type: Enum.RoomType) -> Array[CombatUnit]:
 	if room_type == Enum.RoomType.BOSS_COMBAT:
 		enemies.append(RunState.floor_boss())
 		return enemies
-	var count := 2 if room_type == Enum.RoomType.ELITE_COMBAT else 1
-	for i in count:
+	if room_type == Enum.RoomType.ELITE_COMBAT:
 		enemies.append(Slime.new())
+		enemies.append(Slime.new())
+		return enemies
+	enemies.append([Goblin].pick_random().new())
 	return enemies
 
 

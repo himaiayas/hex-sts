@@ -1,7 +1,7 @@
 class_name Goblin
 extends BaseEnemy
 
-## Floor 1, Normal.
+## Floor 1, Normal. Cycles Stab -> Backstab.
 
 
 func _init() -> void:
@@ -14,4 +14,16 @@ func _init() -> void:
 	]
 	super("Goblin", CombatUnit.make_hex_health(coords))
 	sprite = preload("res://assets/enemies/floor_1/goblin.png")
-	actions = []
+	var line: Array[BaseActionTile] = []
+	for q in 5:
+		line.append(DamageTile.new(Vector2i(q, 0)))
+	var backstab: Array[BaseActionTile] = [
+		DamageTile.new(Vector2i(0, 0), true),
+		DamageTile.new(Vector2i(1, 0), true),
+		DamageTile.new(Vector2i(0, 1), true),
+	]
+	actions = [
+		EnemyHit.new("Stab", "Hit 5 tiles in a line.", line),
+		EnemyHit.new("Backstab", "Hit 3 tiles with Pierce.", backstab),
+	]
+	p1_cycle = [0, 1]

@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Headless check for BaseEnemy / Slime / Dragon / Dracula / Ramiel. Exit code = number of failures.
+## Headless check for BaseEnemy / Slime / Goblin / Dragon / Dracula / Ramiel. Exit code = number of failures.
 ## godot --headless --path . -s res://scripts/enemies/enemy_check.gd
 
 var _failures := 0
@@ -49,6 +49,7 @@ func _initialize() -> void:
 	for name in ["Slime Attack 1", "Harden", "Guarded Bash"]:
 		_check(seen.has(name), "action %s never chosen in 60 plans" % name)
 
+	await _check_goblin(combat)
 	await _check_dragon(combat)
 	await _check_dracula(combat)
 	await _check_ramiel(combat)
@@ -56,6 +57,28 @@ func _initialize() -> void:
 	run.free()
 	print("enemy_check: %s" % ("OK" if _failures == 0 else "%d failure(s)" % _failures))
 	quit(_failures)
+
+
+func _check_goblin(combat: CombatState) -> void:
+	var goblin := Goblin.new()
+	combat.enemies = [goblin]
+	var player := combat.player
+
+	# Stab -> Backstab, looped. Stab hits 5 open tiles; Backstab pierces Shield.
+	var names: Array[String] = []
+	for i in 4:
+		_heal(player)
+		for tile in player.health.values():
+			tile.hp = Enum.HealthTileEnum.SHIELDED if i % 2 else Enum.HealthTileEnum.UNDAMAGED
+		goblin.plan(combat)
+		var action := goblin.intent_actions[0]
+		names.append(action.action_name)
+		var hit := _covered(player, action.parts[0])
+		await goblin.take_turn(combat)
+		_check(hit.size() == (5 if i % 2 == 0 else 3) and _cells_with(player, Enum.HealthTileEnum.DAMAGED) == hit.size(),
+			"goblin %s should damage %d tiles, damaged %d" % [action.action_name, 5 if i % 2 == 0 else 3, _cells_with(player, Enum.HealthTileEnum.DAMAGED)])
+	_check(names == ["Stab", "Backstab", "Stab", "Backstab"], "goblin order: %s" % [names])
+
 
 
 func _check_dragon(combat: CombatState) -> void:
