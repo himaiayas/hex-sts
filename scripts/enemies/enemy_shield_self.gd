@@ -10,6 +10,7 @@ var amount: int
 func _init(_name: String, _amount: int) -> void:
 	super(Enum.BaseEnemyActionEnum.DEFEND, _name, 1.0)
 	amount = _amount
+	description = "Shield %d random tiles of its own." % amount
 
 
 func execute(combat: CombatState, owner: CombatUnit) -> void:

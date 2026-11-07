@@ -3,6 +3,7 @@ extends BaseEnemyAction
 ## Plates three cells of the slime's own grid.
 func _init(_probability: float) -> void:
 	super(Enum.BaseEnemyActionEnum.DEFEND, "Harden", _probability)
+	description = "Plate 3 of its own tiles."
 	parts = [
 		EnemyActionPart.new(Enum.Side.SELF, [
 			ApplyEffectTile.new(Vector2i(0,0), PlateTileEffect.new()),

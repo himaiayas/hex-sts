@@ -2,6 +2,7 @@ class_name SlimeAttack1 # this is just placeholder
 extends BaseEnemyAction
 func _init(_probability: float) -> void:
 	super(Enum.BaseEnemyActionEnum.ATTACK, "Slime Attack 1", _probability)
+	description = "Hit 2 tiles in a row."
 	parts = [
 		EnemyActionPart.new(Enum.Side.PLAYER, [
 			DamageTile.new(Vector2i(0,0)),
