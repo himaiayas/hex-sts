@@ -35,12 +35,15 @@ const ARTIFACT_IMAGE_SIZE := 96.0
 const NEIGHBORS: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1),
 	Vector2i(0, -1), Vector2i(1, -1), Vector2i(-1, 1)]
 
+var _hover_info := HoverInfo.new()  # keywords of cards in the Deck modal
+
 ## Level-up in progress: a copy of the health grid with the placed tiles, and the artifact on offer.
 var _level_up_health: Dictionary[Vector2i, HealthTile] = {}
 var _level_up_reward: BaseArtifact = null
 
 
 func _ready() -> void:
+	add_child(_hover_info)
 	_close_modals()
 	refresh()
 
@@ -101,6 +104,7 @@ func _on_health_pressed() -> void:
 func _on_deck_pressed() -> void:
 	_close_modals()
 	_deck_title.text = "Deck (%d)" % RunState.deck.size()
+	_hover_info.clear()
 	for child in _deck_grid.get_children():
 		child.queue_free()
 	for card in RunState.deck:
@@ -111,6 +115,7 @@ func _on_deck_pressed() -> void:
 		view.get_node("Panel").mouse_filter = Control.MOUSE_FILTER_IGNORE
 		slot.add_child(view)
 		_deck_grid.add_child(slot)
+		_hover_info.add_card(slot, card, _deck_grid.get_parent())
 	_deck_modal.show()
 
 

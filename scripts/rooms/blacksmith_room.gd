@@ -6,7 +6,6 @@ extends Control
 const OFFER_COUNT := 4
 const OFFER_SIZE := Vector2(280, 380)
 const ICON_SIZE := 112.0
-const COIN := preload("res://assets/icons/coin.png")
 
 @onready var _top_bar: TopBar = %TopBar
 @onready var _hint: Label = %Hint
@@ -36,62 +35,10 @@ func _refresh() -> void:
 
 
 func _make_offer(augment: BaseAugment) -> Control:
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.0784314, 0.0862745, 0.109804)
-	style.border_color = Color(0.231373, 0.254902, 0.321569)
-	style.set_border_width_all(2)
-	style.set_corner_radius_all(12)
-	style.set_content_margin_all(20)
-	var panel := PanelContainer.new()
-	panel.custom_minimum_size = OFFER_SIZE
-	panel.add_theme_stylebox_override("panel", style)
-	var box := VBoxContainer.new()
-	box.add_theme_constant_override("separation", 12)
-	panel.add_child(box)
-
-	var icon := TextureRect.new()
-	icon.texture = augment.icon
-	icon.custom_minimum_size = Vector2(ICON_SIZE, ICON_SIZE)
-	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	box.add_child(icon)
-	var title := Label.new()
-	title.text = augment.name
-	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	title.add_theme_font_size_override("font_size", 26)
-	box.add_child(title)
-	var description := Label.new()
-	description.text = augment.description
-	description.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	description.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	description.modulate = Color(0.552941, 0.576471, 0.647059)
-	description.add_theme_font_size_override("font_size", 20)
-	box.add_child(description)
-
-	var buy := Button.new()
-	buy.custom_minimum_size = Vector2(0, 56)
-	buy.add_theme_font_size_override("font_size", 26)
-	buy.icon = COIN
-	buy.expand_icon = true
-	buy.add_theme_constant_override("icon_max_width", 32)
-	if augment in _sold:
-		buy.text = "Sold"
-		buy.icon = null
-		buy.disabled = true
-		panel.modulate = Color(1, 1, 1, 0.45)
-	else:
-		buy.text = str(augment.price)
-		var fits := RunState.deck.any(func(card: BaseCard) -> bool: return augment.can_apply(card))
-		buy.disabled = RunState.gold < augment.price or not fits
-		if not fits:
-			buy.tooltip_text = "No card in your deck can take this."
-		elif RunState.gold < augment.price:
-			buy.tooltip_text = "Not enough coins."
-		buy.pressed.connect(_on_buy_pressed.bind(augment))
-	box.add_child(buy)
-	return panel
+	var fits := RunState.deck.any(func(card: BaseCard) -> bool: return augment.can_apply(card))
+	var info := ShopOffer.make_info_column(augment.icon, ICON_SIZE, augment.name, augment.description)
+	return ShopOffer.make(OFFER_SIZE, info, augment.price, augment in _sold, _on_buy_pressed.bind(augment),
+		"" if fits else "No card in your deck can take this.")
 
 
 func _on_buy_pressed(augment: BaseAugment) -> void:

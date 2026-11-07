@@ -16,7 +16,7 @@ const ROOM_ICONS := {
 	Enum.RoomType.NORMAL_COMBAT: preload("res://assets/icons/room_normal_combat.png"),
 	Enum.RoomType.ELITE_COMBAT: preload("res://assets/icons/room_elite_combat.png"),
 	Enum.RoomType.CAMPFIRE: preload("res://assets/icons/room_campfire.png"),
-	Enum.RoomType.CARD_SHOP: preload("res://assets/icons/room_merchant.png"),
+	Enum.RoomType.MERCHANT: preload("res://assets/icons/room_merchant.png"),
 	Enum.RoomType.BLACKSMITH: preload("res://assets/icons/room_blacksmith.png"),
 	Enum.RoomType.TREASURE: preload("res://assets/icons/room_treasure.png"),
 	Enum.RoomType.EVENT: preload("res://assets/icons/room_event.png"),

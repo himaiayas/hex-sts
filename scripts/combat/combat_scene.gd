@@ -33,6 +33,7 @@ var _intent_labels: Array[Label] = []
 
 @onready var _top_bar: TopBar = %TopBar
 @onready var _floor_background: TextureRect = %FloorBackground
+var _hover_info := HoverInfo.new()  # keywords of cards in the pile viewer and card rewards
 @onready var _status_label: Label = %StatusLabel
 @onready var _hint_label: Label = %HintLabel
 @onready var _player_view: HealthGridView = %PlayerGrid
@@ -69,6 +70,8 @@ func _ready() -> void:
 	if RunState.deck.is_empty():
 		RunState.start_new_run()
 	_floor_background.texture = RunState.combat_background()
+	_hover_info.is_blocked = _top_bar.is_modal_open
+	add_child(_hover_info)
 	combat = RunState.start_combat()
 	for enemy in _enemies_for(_room_type()):
 		combat.enemies.append(enemy)
@@ -540,6 +543,7 @@ func _show_pile(title: String, cards: Array[BaseCard], hide_order := false, pick
 	_pile_confirm_button.visible = picking
 	_pile_confirm_button.disabled = picking and _picks.size() < _pick_count()
 	_close_pile_button.text = "Cancel" if picking else "Close"
+	_hover_info.clear()
 	for child in _pile_grid.get_children():
 		child.queue_free()
 	var shown := cards.duplicate()
@@ -557,6 +561,7 @@ func _show_pile(title: String, cards: Array[BaseCard], hide_order := false, pick
 				style.border_color = HandView.COLOR_PICKED
 				style.set_border_width_all(6)
 		_pile_grid.add_child(slot)
+		_hover_info.add_card(slot, card, _pile_grid.get_parent())
 	if shown.is_empty():
 		var empty := Label.new()
 		empty.text = "Empty"
@@ -631,6 +636,7 @@ func _on_exp_reward_pressed() -> void:
 
 
 func _on_card_reward_pressed() -> void:
+	_hover_info.clear()
 	for child in _card_choices.get_children():
 		child.queue_free()
 	for card in _rewards.cards:
@@ -638,6 +644,7 @@ func _on_card_reward_pressed() -> void:
 		var panel: Control = slot.get_child(0).get_node("Panel")
 		panel.gui_input.connect(_on_reward_card_input.bind(card))
 		_card_choices.add_child(slot)
+		_hover_info.add_card(slot, card)
 	_card_choice_panel.show()
 
 
