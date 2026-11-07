@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Ogre / Dragon / Dracula / Ramiel. Exit code = number of failures.
+## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Ogre / Magic Golem / Dragon / Dracula / Ramiel. Exit code = number of failures.
 ## godot --headless --path . -s res://scripts/enemies/enemy_check.gd
 
 var _failures := 0
@@ -38,6 +38,7 @@ func _initialize() -> void:
 	await _check_vermin(combat)
 	await _check_hound(combat)
 	await _check_ogre(combat)
+	await _check_golem(combat)
 	await _check_dragon(combat)
 	await _check_dracula(combat)
 	await _check_ramiel(combat)
@@ -147,6 +148,34 @@ func _check_ogre(combat: CombatState) -> void:
 			_check(aimed.size() == 12 and stripped == aimed, "smash should strip Plate from the 12 aimed tiles, stripped %d" % stripped.size())
 			_check(_cells_with(player, Enum.HealthTileEnum.UNDAMAGED) == 12, "smash should break the 12 shields")
 	_check(names == ["Wind-up", "Smash", "Wind-up", "Smash"], "ogre order: %s" % [names])
+
+
+
+func _check_golem(combat: CombatState) -> void:
+	var golem := MagicGolem.new()
+	combat.enemies = [golem]
+	var player := combat.player
+	_check(_cells_with(golem, Enum.HealthTileEnum.SHIELDED) == MagicGolem.RUNE_START, "golem should start with %d shields" % MagicGolem.RUNE_START)
+	_check(golem.power_amount(RuneArmorPower) == MagicGolem.RUNE_EVERY_TURN, "golem should start with Rune Armor %d" % MagicGolem.RUNE_EVERY_TURN)
+
+	# Arcane Bolt -> Charge -> Overload, looped, with Rune Armor's 5 Shields before each move.
+	var names: Array[String] = []
+	for i in 6:
+		_heal(player)
+		_heal(golem)
+		golem.plan(combat)
+		var action := golem.intent_actions[0]
+		names.append(action.action_name)
+		await golem.on_turn_start(combat)
+		_check(_cells_with(golem, Enum.HealthTileEnum.SHIELDED) == MagicGolem.RUNE_EVERY_TURN, "rune armor should shield %d before the move" % MagicGolem.RUNE_EVERY_TURN)
+		await golem.take_turn(combat)
+		await golem.on_turn_end(combat)
+		if action is EnemyHit:
+			_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == _covered(player, action.parts[0]).size(), "%s didn't damage what its intent showed" % action.action_name)
+		else:
+			_check(_cells_with(golem, Enum.HealthTileEnum.SHIELDED) == MagicGolem.RUNE_EVERY_TURN + 8, "charge should shield 8 more")
+	_check(names == ["Arcane Bolt", "Charge", "Overload", "Arcane Bolt", "Charge", "Overload"], "golem order: %s" % [names])
+	_check(golem.actions[0].parts[0].tiles.size() == 6 and golem.actions[2].parts[0].tiles.size() == 14, "golem patterns should be 6 and 14 tiles")
 
 
 

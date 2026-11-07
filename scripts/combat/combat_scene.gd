@@ -678,7 +678,7 @@ func _room_type() -> Enum.RoomType:
 
 ## The enemy being built, fought in every normal and elite room (and on F6) until it's done.
 ## null = the usual line-ups.
-static var testing: Script = Ogre
+static var testing: Script = MagicGolem
 
 
 ## Placeholder line-ups until there are more enemies.
@@ -694,7 +694,7 @@ func _enemies_for(room_type: Enum.RoomType) -> Array[CombatUnit]:
 		enemies.append(Slime.new())
 		enemies.append(Slime.new())
 		return enemies
-	enemies.append([Slime, Goblin, Vermin, Hound, Ogre].pick_random().new())
+	enemies.append([Slime, Goblin, Vermin, Hound, Ogre, MagicGolem].pick_random().new())
 	return enemies
 
 
