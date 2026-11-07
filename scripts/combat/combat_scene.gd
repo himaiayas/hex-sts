@@ -8,7 +8,6 @@ extends Control
 
 const RenderCard := preload("res://scripts/cards/render_card.gd")
 const CARD_SIZE := HandView.CARD_SIZE
-const ENEMY_IMAGE_SIZE := Vector2(300, 300)
 const LUNGE_DISTANCE := 40.0  # px toward the target
 const LUNGE_TIME := 0.1  # out to the target; the hit flashes when it gets there
 const LUNGE_BACK_TIME := 0.15
@@ -93,7 +92,7 @@ func _ready() -> void:
 		side.add_theme_constant_override("separation", 24)
 		# The image sits in a plain slot, so it can lunge and shake without the HBox putting it back.
 		var slot := Control.new()
-		slot.custom_minimum_size = ENEMY_IMAGE_SIZE
+		slot.custom_minimum_size = enemy.image_size
 		slot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		var image := UnitImage.new()
@@ -351,7 +350,8 @@ func _rotation_step(event: InputEvent) -> int:
 # --- Refresh -----------------------------------------------------------------
 
 ## combat.animator: shows the new state, then plays the batch and waits for it. If the batch hits
-## the other side, the acting unit lunges at it first. On impact every change flashes at once,
+## the other side, the acting unit lunges at it first, in its move's pose if it has one. On impact
+## the move's hit image fades over the target's grid, every change flashes at once,
 ## and every unit that took damage shakes: an enemy's sprite, or the player's grid.
 func _animate(batch: Array[Dictionary]) -> void:
 	_refresh()
@@ -365,10 +365,16 @@ func _animate(batch: Array[Dictionary]) -> void:
 		if target == null and attacker and unit.is_player != attacker.is_player \
 				and change.kind in [Enum.Change.DAMAGE, Enum.Change.BLOCK]:
 			target = unit
+	var enemy := attacker as BaseEnemy
+	var action: BaseEnemyAction = enemy.intent_action if enemy else null
 	if target:
 		var sprite := _sprite_for(attacker)
+		if action and action.pose:
+			sprite.show_pose(action.pose)
 		_lunge(sprite, _center(_sprite_for(target)) - _center(sprite))
 		await get_tree().create_timer(LUNGE_TIME).timeout
+		if action and action.hit_vfx:
+			_show_vfx(action.hit_vfx, _view_for(target))
 	for change in batch:
 		_view_for(change.unit).flash(change.cell, change.kind, change.effect)
 	for unit in damaged:
@@ -386,6 +392,20 @@ func _lunge(node: Control, toward: Vector2) -> void:
 	tween.tween_property(node, "position", Vector2.ZERO, LUNGE_BACK_TIME).set_ease(Tween.EASE_IN_OUT)
 
 
+## Fades an enemy move's hit image out over a grid, as long as the hex flash.
+func _show_vfx(texture: Texture2D, over: Control) -> void:
+	var vfx := TextureRect.new()
+	vfx.texture = texture
+	vfx.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	vfx.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	vfx.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	over.add_child(vfx)
+	vfx.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	var tween := vfx.create_tween()
+	tween.tween_property(vfx, "modulate:a", 0.0, HealthGridView.FLASH_TIME)
+	tween.tween_callback(vfx.queue_free)
+
+
 ## Jolts a Vector2 property that rests at ZERO in random directions, smaller each time, then back to ZERO.
 func _shake(node: Object, property: String) -> void:
 	var step := SHAKE_TIME / (SHAKE_STEPS + 1)
@@ -396,7 +416,7 @@ func _shake(node: Object, property: String) -> void:
 	tween.tween_property(node, property, Vector2.ZERO, step)
 
 
-func _sprite_for(unit: CombatUnit) -> Control:
+func _sprite_for(unit: CombatUnit) -> UnitImage:
 	if unit == combat.player:
 		return _player_image
 	return _enemy_images[combat.enemies.find(unit)]

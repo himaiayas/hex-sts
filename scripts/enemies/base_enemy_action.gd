@@ -8,6 +8,8 @@ var action_type: Enum.BaseEnemyActionEnum # used to determine the intent graphic
 var action_name: String # Apply for some big action, like "Cyborg uses 'NeoArmstrongCycloneJetArmstrongCannon'!"
 var probability: float # init in BaseEnemy (when instancing the action)
 var parts: Array[EnemyActionPart] = [] # set in subclass _init()
+var pose: Texture2D # optional, shown on the enemy while it attacks
+var hit_vfx: Texture2D # optional, faded over the target's grid when the hit lands
 
 
 func _init(_action_type: Enum.BaseEnemyActionEnum,_action_name: String, _probability: float) -> void:
