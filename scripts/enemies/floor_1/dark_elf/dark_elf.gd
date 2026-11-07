@@ -1,7 +1,7 @@
 class_name DarkElf
 extends BaseEnemy
 
-## Floor 1, Normal.
+## Floor 1, Normal. Cycles Poison Dart -> Shadow Step.
 
 
 func _init() -> void:
@@ -21,4 +21,16 @@ func _init() -> void:
 	]
 	super("Dark Elf", CombatUnit.make_hex_health(coords))
 	sprite = preload("res://assets/enemies/floor_1/dark_elf.png")
-	actions = []
+	# A line of 4, with Poison on the tile past its tip.
+	var dart: Array[BaseActionTile] = []
+	for q in 4:
+		dart.append(DamageTile.new(Vector2i(q, 0)))
+	dart.append(ApplyEffectTile.new(Vector2i(4, 0), PoisonTileEffect.new()))
+	var poison_dart := EnemyHit.new("Poison Dart", "Hit 4 tiles in a line and Poison the tile past its tip.", dart)
+	# The arrow alone, without the image's empty margin.
+	var arrow := AtlasTexture.new()
+	arrow.atlas = preload("res://assets/enemies/floor_1/dark_elf_arrow.png")
+	arrow.region = Rect2(312, 444, 376, 38)
+	poison_dart.projectile_vfx = arrow
+	actions = [poison_dart, DarkElfShadowStep.new()]
+	p1_cycle = [0, 1]

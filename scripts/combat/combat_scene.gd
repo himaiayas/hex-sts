@@ -23,6 +23,8 @@ const AIM_LOOP_TIME := 3.0
 const SHAKE_AMOUNT := 8.0  # px, the first jolt; later ones get smaller
 const SHAKE_STEPS := 6
 const SHAKE_TIME := 0.25
+const PROJECTILE_WIDTH := 200.0  # px; its height keeps the texture's aspect
+const PROJECTILE_SPEED := 2400.0  # px per second, steady
 
 var combat: CombatState
 var selected: BaseCard = null
@@ -389,6 +391,8 @@ func _animate(batch: Array[Dictionary]) -> void:
 			sprite.show_pose(action.pose)
 		_lunge(sprite, _center(_sprite_for(target)) - _center(sprite))
 		await get_tree().create_timer(LUNGE_TIME).timeout
+		if action and action.projectile_vfx:
+			await _shoot(action.projectile_vfx, sprite, _sprite_for(target))
 		if action and action.hit_vfx:
 			var area := enemy.hit_vfx_area if enemy.hit_vfx_area.has_area() else _view_for(target).get_global_rect()
 			_show_vfx(action.hit_vfx, area)
@@ -419,6 +423,22 @@ func _show_vfx(texture: Texture2D, area: Rect2) -> void:
 	var tween := vfx.create_tween()
 	tween.tween_property(vfx, "modulate:a", 0.0, HealthGridView.FLASH_TIME)
 	tween.tween_callback(vfx.queue_free)
+
+
+## Flies texture left at PROJECTILE_SPEED, from from's left edge until its tip passes to's right edge,
+## at a random height both sprites share.
+func _shoot(texture: Texture2D, from: Control, to: Control) -> void:
+	var size := Vector2(PROJECTILE_WIDTH, PROJECTILE_WIDTH * texture.get_height() / texture.get_width())
+	var a := from.get_global_rect()
+	var b := to.get_global_rect()
+	var top := maxf(a.position.y, b.position.y)
+	var bottom := maxf(top, minf(a.end.y, b.end.y) - size.y)
+	var start := Vector2(a.position.x - size.x, randf_range(top, bottom))
+	var vfx := _add_vfx(texture, Rect2(start, size))
+	var tween := vfx.create_tween()
+	tween.tween_property(vfx, "global_position:x", b.end.x, absf(start.x - b.end.x) / PROJECTILE_SPEED)
+	tween.tween_callback(vfx.queue_free)
+	await tween.finished
 
 
 ## RIPPLES rings of texture spreading out from center (global coords) like water: each grows from
@@ -678,7 +698,7 @@ func _room_type() -> Enum.RoomType:
 
 ## The enemy being built, fought in every normal and elite room (and on F6) until it's done.
 ## null = the usual line-ups.
-static var testing: Script = MagicGolem
+static var testing: Script = DarkElf
 
 
 ## Placeholder line-ups until there are more enemies.
@@ -694,7 +714,7 @@ func _enemies_for(room_type: Enum.RoomType) -> Array[CombatUnit]:
 		enemies.append(Slime.new())
 		enemies.append(Slime.new())
 		return enemies
-	enemies.append([Slime, Goblin, Vermin, Hound, Ogre, MagicGolem].pick_random().new())
+	enemies.append([Slime, Goblin, Vermin, Hound, Ogre, MagicGolem, DarkElf].pick_random().new())
 	return enemies
 
 

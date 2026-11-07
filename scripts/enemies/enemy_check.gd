@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Ogre / Magic Golem / Dragon / Dracula / Ramiel. Exit code = number of failures.
+## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Ogre / Magic Golem / Dark Elf / Dragon / Dracula / Ramiel. Exit code = number of failures.
 ## godot --headless --path . -s res://scripts/enemies/enemy_check.gd
 
 var _failures := 0
@@ -39,6 +39,7 @@ func _initialize() -> void:
 	await _check_hound(combat)
 	await _check_ogre(combat)
 	await _check_golem(combat)
+	await _check_dark_elf(combat)
 	await _check_dragon(combat)
 	await _check_dracula(combat)
 	await _check_ramiel(combat)
@@ -176,6 +177,44 @@ func _check_golem(combat: CombatState) -> void:
 			_check(_cells_with(golem, Enum.HealthTileEnum.SHIELDED) == MagicGolem.RUNE_EVERY_TURN + 8, "charge should shield 8 more")
 	_check(names == ["Arcane Bolt", "Charge", "Overload", "Arcane Bolt", "Charge", "Overload"], "golem order: %s" % [names])
 	_check(golem.actions[0].parts[0].tiles.size() == 6 and golem.actions[2].parts[0].tiles.size() == 14, "golem patterns should be 6 and 14 tiles")
+
+
+
+func _check_dark_elf(combat: CombatState) -> void:
+	var elf := DarkElf.new()
+	combat.enemies = [elf]
+	var player := combat.player
+
+	# Poison Dart -> Shadow Step, looped. The dart damages its line and poisons the tile past its tip;
+	# Shadow Step shields 5 of its own and damages its slash.
+	var names: Array[String] = []
+	for i in 4:
+		_heal(player)
+		_heal(elf)
+		elf.plan(combat)
+		var action := elf.intent_actions[0]
+		names.append(action.action_name)
+		var expect_damaged := {}
+		var expect_poisoned := {}
+		for t in action.parts[0].tiles:
+			var cell: Vector2i = action.parts[0].cell + t.coords
+			if not player.health.has(cell):
+				continue
+			if t is DamageTile:
+				expect_damaged[cell] = true
+			else:
+				expect_poisoned[cell] = true
+		await elf.take_turn(combat)
+		var poisoned := player.health.keys().filter(func(c: Vector2i) -> bool: return player.health[c].has_effect(PoisonTileEffect))
+		_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == expect_damaged.size() and _all_in(player, expect_damaged, Enum.HealthTileEnum.DAMAGED),
+			"%s didn't damage what its intent showed" % action.action_name)
+		_check(poisoned.size() == expect_poisoned.size() and poisoned.all(func(c: Vector2i) -> bool: return expect_poisoned.has(c)),
+			"%s didn't poison what its intent showed" % action.action_name)
+		if action is DarkElfShadowStep:
+			_check(_cells_with(elf, Enum.HealthTileEnum.SHIELDED) == DarkElfShadowStep.SHIELDS, "shadow step should shield %d" % DarkElfShadowStep.SHIELDS)
+		else:
+			_check(not expect_poisoned.is_empty(), "poison dart poisoned nothing")
+	_check(names == ["Poison Dart", "Shadow Step", "Poison Dart", "Shadow Step"], "dark elf order: %s" % [names])
 
 
 
