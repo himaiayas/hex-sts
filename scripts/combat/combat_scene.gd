@@ -12,6 +12,14 @@ const LUNGE_DISTANCE := 40.0  # px toward the target
 const LUNGE_TIME := 0.1  # out to the target; the hit flashes when it gets there
 const LUNGE_BACK_TIME := 0.15
 const VFX_SCALE := 1.25  # an enemy move's hit image, relative to its area
+const RIPPLES := 3
+const RIPPLE_GAP := 0.2  # seconds between rings
+const RIPPLE_TIME := 1.0  # each ring, from RIPPLE_START to full size
+const RIPPLE_START := 0.3
+const RIPPLE_WIDTH := 1800.0  # px, a ring at full size
+const AIM_SIZE := Vector2(200, 200)
+const AIM_DRIFT := 30.0  # px the sight wanders from the middle of the player's sprite
+const AIM_LOOP_TIME := 3.0
 const SHAKE_AMOUNT := 8.0  # px, the first jolt; later ones get smaller
 const SHAKE_STEPS := 6
 const SHAKE_TIME := 0.25
@@ -30,6 +38,7 @@ var _tile_picks: Array[Vector2i] = []  # tiles of yours picked for selected.pick
 var _enemy_views: Array[HealthGridView] = []
 var _enemy_images: Array[UnitImage] = []  # one per enemy, same order as _enemy_views
 var _intent_labels: Array[Label] = []
+var _aim: TextureRect  # an enemy's sight on the player's sprite, while a move with aim_vfx is in its intent
 
 @onready var _top_bar: TopBar = %TopBar
 @onready var _floor_background: TextureRect = %FloorBackground
@@ -383,6 +392,8 @@ func _animate(batch: Array[Dictionary]) -> void:
 		if action and action.hit_vfx:
 			var area := enemy.hit_vfx_area if enemy.hit_vfx_area.has_area() else _view_for(target).get_global_rect()
 			_show_vfx(action.hit_vfx, area)
+	if action and action.ripple_vfx and batch.any(func(c: Dictionary) -> bool: return c.unit == attacker):
+		_ripple(action.ripple_vfx, _center(_sprite_for(attacker)))
 	for change in batch:
 		_view_for(change.unit).flash(change.cell, change.kind, change.effect)
 	for unit in damaged:
@@ -401,20 +412,69 @@ func _lunge(node: Control, toward: Vector2) -> void:
 
 
 ## Fades an enemy move's hit image out, as long as the hex flash. It's drawn VFX_SCALE times the
-## size of area (global coords), centered on it, above the arena but under the top bar and panels.
+## size of area (global coords), centered on it.
 func _show_vfx(texture: Texture2D, area: Rect2) -> void:
+	var size := area.size * VFX_SCALE
+	var vfx := _add_vfx(texture, Rect2(area.get_center() - size / 2.0, size))
+	var tween := vfx.create_tween()
+	tween.tween_property(vfx, "modulate:a", 0.0, HealthGridView.FLASH_TIME)
+	tween.tween_callback(vfx.queue_free)
+
+
+## RIPPLES rings of texture spreading out from center (global coords) like water: each grows from
+## RIPPLE_START to RIPPLE_WIDTH wide and fades, RIPPLE_GAP after the last. Drawn under the arena.
+func _ripple(texture: Texture2D, center: Vector2) -> void:
+	var size := Vector2(RIPPLE_WIDTH, RIPPLE_WIDTH * texture.get_height() / texture.get_width())
+	for i in RIPPLES:
+		var ring := _add_vfx(texture, Rect2(center - size / 2.0, size), true)
+		ring.pivot_offset = size / 2.0
+		ring.scale = Vector2.ONE * RIPPLE_START
+		ring.modulate.a = 0.0  # hidden until its turn
+		var tween := ring.create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+		tween.tween_interval(RIPPLE_GAP * i)
+		tween.tween_property(ring, "modulate:a", 1.0, 0.0)
+		tween.tween_property(ring, "scale", Vector2.ONE, RIPPLE_TIME)
+		tween.parallel().tween_property(ring, "modulate:a", 0.0, RIPPLE_TIME)
+		tween.tween_callback(ring.queue_free)
+
+
+## An image over rect (global coords), above the arena but under the top bar and panels,
+## or just above the floor under the whole arena.
+func _add_vfx(texture: Texture2D, rect: Rect2, under_arena := false) -> TextureRect:
 	var vfx := TextureRect.new()
 	vfx.texture = texture
 	vfx.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	vfx.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	vfx.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(vfx)
-	move_child(vfx, $Margin.get_index() + 1)
-	vfx.size = area.size * VFX_SCALE
-	vfx.global_position = area.get_center() - vfx.size / 2.0
-	var tween := vfx.create_tween()
-	tween.tween_property(vfx, "modulate:a", 0.0, HealthGridView.FLASH_TIME)
-	tween.tween_callback(vfx.queue_free)
+	move_child(vfx, $Margin.get_index() + (0 if under_arena else 1))
+	vfx.size = rect.size
+	vfx.global_position = rect.position
+	return vfx
+
+
+## Shows texture as a sight wandering over the player's sprite (a figure 8, AIM_DRIFT px out),
+## or removes it when texture is null.
+func _set_aim(texture: Texture2D) -> void:
+	if texture == null:
+		if _aim:
+			_aim.queue_free()
+			_aim = null
+		return
+	if _aim:
+		_aim.texture = texture
+		return
+	var aim := TextureRect.new()
+	aim.texture = texture
+	aim.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	aim.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	aim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	aim.size = AIM_SIZE
+	_player_image.add_child(aim)
+	var tween := aim.create_tween().set_loops()
+	tween.tween_method(func(t: float) -> void:
+		aim.position = (_player_image.size - AIM_SIZE) / 2.0 + Vector2(sin(t), sin(2.0 * t) * 0.6) * AIM_DRIFT, 0.0, TAU, AIM_LOOP_TIME)
+	_aim = aim
 
 
 ## Jolts a Vector2 property that rests at ZERO in random directions, smaller each time, then back to ZERO.
@@ -506,6 +566,7 @@ func _refresh() -> void:
 
 	# Intents blink on the grid each part targets: attacks on the player, shields on the enemy itself.
 	var player_intents: Array = []
+	var aim: Texture2D = null
 	for i in combat.enemies.size():
 		var enemy := combat.enemies[i] as BaseEnemy
 		var actions: Array[BaseEnemyAction] = []
@@ -514,6 +575,8 @@ func _refresh() -> void:
 		var self_intents: Array = []
 		_intent_labels[i].text = "\n".join(PackedStringArray(actions.map(func(a: BaseEnemyAction) -> String: return a.intent_text())))
 		for action in actions:
+			if action.aim_vfx:
+				aim = action.aim_vfx
 			for part in action.parts:
 				var intent := {cell = part.cell, tiles = part.tiles}
 				if part.side == Enum.Side.PLAYER:
@@ -523,6 +586,7 @@ func _refresh() -> void:
 		_enemy_views[i].intents = self_intents
 		_enemy_views[i].refresh()
 	_player_view.intents = player_intents
+	_set_aim(aim)
 	_player_view.refresh()
 
 

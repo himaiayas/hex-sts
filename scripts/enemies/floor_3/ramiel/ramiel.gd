@@ -54,6 +54,15 @@ func _init() -> void:
 		preload("res://assets/enemies/floor_3/ramiel_idle2.png"),
 		preload("res://assets/enemies/floor_3/ramiel_idle3.png"),
 	]
+	image_size = Vector2(450, 450)  # 1.5x the default
+	# The scan art's inner ring, the only whole one.
+	var ring := AtlasTexture.new()
+	ring.atlas = preload("res://assets/enemies/floor_3/ramiel_scan.png")
+	ring.region = Rect2(822, 332, 752, 330)
+	_scan.ripple_vfx = ring
+	# Aimed at the player from the first Charge until the beam fires.
+	_charge.aim_vfx = preload("res://assets/enemies/floor_3/ramiel_charge.png")
+	_beam.aim_vfx = _charge.aim_vfx
 	actions = [_field, _scan, _charge, _beam, _drill, _stunned]
 	var cells := health.keys()
 	cells.shuffle()
