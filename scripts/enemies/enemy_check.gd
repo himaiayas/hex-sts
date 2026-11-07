@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Headless check for BaseEnemy / Slime / Goblin / Vermin / Dragon / Dracula / Ramiel. Exit code = number of failures.
+## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Dragon / Dracula / Ramiel. Exit code = number of failures.
 ## godot --headless --path . -s res://scripts/enemies/enemy_check.gd
 
 var _failures := 0
@@ -36,6 +36,7 @@ func _initialize() -> void:
 
 	await _check_goblin(combat)
 	await _check_vermin(combat)
+	await _check_hound(combat)
 	await _check_dragon(combat)
 	await _check_dracula(combat)
 	await _check_ramiel(combat)
@@ -90,6 +91,33 @@ func _check_vermin(combat: CombatState) -> void:
 		if action is EnemyShieldSelf:
 			_check(_cells_with(vermin, Enum.HealthTileEnum.SHIELDED) == 5, "skitter should shield 5")
 	_check(names == ["Gnaw", "Gnaw", "Skitter", "Gnaw", "Gnaw", "Skitter"], "vermin order: %s" % [names])
+
+
+
+func _check_hound(combat: CombatState) -> void:
+	var hound := Hound.new()
+	combat.enemies = [hound]
+	var player := combat.player
+
+	# Bite (2 hits), Bite, Lunge, looped. With 3 tiles left, the two hits can't land on the same one.
+	var names: Array[String] = []
+	for i in 6:
+		_heal(player)
+		for cell in player.health.keys().slice(0, 16):
+			player.health[cell].hp = Enum.HealthTileEnum.DAMAGED
+		hound.plan(combat)
+		var action := hound.intent_actions[0]
+		names.append(action.action_name)
+		var expect := {}
+		for part in action.parts:
+			for cell in _covered(player, part):
+				if player.health[cell].hp > Enum.HealthTileEnum.DAMAGED:
+					expect[cell] = true
+		await hound.take_turn(combat)
+		if action.parts.size() == 2:
+			_check(expect.size() >= 2, "the two bites landed on the same open tile")
+		_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == 16 + expect.size(), "hound turn %d didn't damage what its intent showed" % i)
+	_check(names == ["Bite", "Bite", "Lunge", "Bite", "Bite", "Lunge"], "hound order: %s" % [names])
 
 
 
