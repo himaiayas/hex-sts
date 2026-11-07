@@ -43,16 +43,12 @@ var combat: CombatState = null
 
 
 func start_new_run() -> void:
-	health = CombatUnit.make_hex_health([
-		Vector2i(0, 0), 
-		Vector2i(1, 0), 
-		Vector2i(0, 1), 
-		Vector2i(-1, 1), 
-		Vector2i(-1, 0), 
-		Vector2i(0, -1), 
-		Vector2i(1, -1),
-		
-	])
+	# Radius-2 hexagon: 19 tiles, the sheet's starting health.
+	var coords: Array[Vector2i] = []
+	for q in range(-2, 3):
+		for r in range(maxi(-2, -q - 2), mini(2, -q + 2) + 1):
+			coords.append(Vector2i(q, r))
+	health = CombatUnit.make_hex_health(coords)
 	gold = 0
 	deck = []
 	artifacts = []
