@@ -114,7 +114,8 @@ func refresh() -> void:
 	_origin = -min_p + pad + Vector2(0, NAME_HEIGHT)
 	custom_minimum_size = max_p - min_p + pad * 2 + Vector2(0, NAME_HEIGHT)
 	_powers_y = custom_minimum_size.y
-	if not unit.statuses.is_empty():
+	# Enemies always keep the row, so their first power doesn't move the grid.
+	if not unit.is_player or not unit.statuses.is_empty():
 		custom_minimum_size.y += POWER_SIZE + POWER_GAP
 	queue_redraw()
 

@@ -1,7 +1,26 @@
 class_name Ramiel
 extends BaseEnemy
 
-## Floor 3, Boss.
+## Floor 3, Boss. P1 cycles Scan -> Charge x3 -> Particle Beam. Below half its tiles (P2, from the
+## next cycle) it cycles Charge x2 -> Particle Beam, with a Shard Drill on every Charge turn.
+## Losing RamielCharge.INTERRUPT tiles from the first Charge until the beam turns the Charge into a Stunned turn,
+## and the cycle starts over. Absolute Terror Field: starts with 20 Shields and tops them back up
+## every 3rd turn, before its move.
+
+const FIELD_EVERY := 3
+const P1_CHARGES := 3
+const P2_CHARGES := 2
+
+var _counting := false  # from the first Charge until the beam is planned
+var _step := 0  # turns into the current cycle
+var _turns := 0  # turns planned, for the Field
+
+var _field := RamielField.new()
+var _scan := EnemyShieldSelf.new("Scan", 15)
+var _charge := RamielCharge.new()
+var _beam := RamielParticleBeam.new(_charge)
+var _drill := RamielShardDrill.new()
+var _stunned := RamielStunned.new()
 
 
 func _init() -> void:
@@ -35,4 +54,57 @@ func _init() -> void:
 		preload("res://assets/enemies/floor_3/ramiel_idle2.png"),
 		preload("res://assets/enemies/floor_3/ramiel_idle3.png"),
 	]
-	actions = []
+	actions = [_field, _scan, _charge, _beam, _drill, _stunned]
+	var cells := health.keys()
+	cells.shuffle()
+	for cell in cells.slice(0, RamielField.SHIELDS):
+		health[cell].hp = Enum.HealthTileEnum.SHIELDED
+
+
+func _choose_actions() -> Array[BaseEnemyAction]:
+	_turns += 1
+	var rows: Array[BaseEnemyAction] = []
+	if _turns % FIELD_EVERY == 0 and RamielField.shields(self) < RamielField.SHIELDS:
+		rows.append(_field)
+	var undamaged := health.values().filter(func(t: HealthTile) -> bool: return t.hp > Enum.HealthTileEnum.DAMAGED).size()
+	if _step == 0 and undamaged * 2 < health.size():
+		in_p2 = true
+	var scans := 0 if in_p2 else 1
+	var charges := P2_CHARGES if in_p2 else P1_CHARGES
+	if _step < scans:
+		rows.append(_scan)
+	elif _step < scans + charges:
+		if not _counting:
+			_counting = true
+			_charge.damage = 0
+			_charge.locked = false
+		_charge.turns_left = scans + charges - _step
+		rows.append(_charge)
+		if in_p2:
+			rows.append(_drill)
+	else:
+		_counting = false
+		rows.append(_beam)
+	_step = (_step + 1) % (scans + charges + 1)
+	return rows
+
+
+## Counts the tiles lost while charging, and interrupts at RamielCharge.INTERRUPT, even mid-turn.
+func fire_at(trigger: Enum.Trigger, combat: CombatState, cell: Vector2i) -> void:
+	super(trigger, combat, cell)
+	if trigger == Enum.Trigger.ON_HIT and _counting:
+		_charge.damage += 1
+		if _charge.damage >= RamielCharge.INTERRUPT:
+			_interrupt()
+
+
+## The Charge (and its Shard Drill) becomes Stunned; a planned Field still restores.
+## The next turn starts the cycle over.
+func _interrupt() -> void:
+	_counting = false
+	_step = 0
+	var rows: Array[BaseEnemyAction] = []
+	if _field in intent_actions:
+		rows.append(_field)
+	rows.append(_stunned)
+	intent_actions = rows

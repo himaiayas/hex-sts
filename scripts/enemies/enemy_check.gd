@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Headless check for BaseEnemy / Slime / Dragon / Dracula. Exit code = number of failures.
+## Headless check for BaseEnemy / Slime / Dragon / Dracula / Ramiel. Exit code = number of failures.
 ## godot --headless --path . -s res://scripts/enemies/enemy_check.gd
 
 var _failures := 0
@@ -18,7 +18,7 @@ func _initialize() -> void:
 		_heal(combat.player)
 		_heal(slime)
 		slime.plan(combat)
-		var action := slime.intent_action
+		var action := slime.intent_actions[0]
 		seen[action.action_name] = true
 
 		# What the intent shows, per grid.
@@ -44,13 +44,14 @@ func _initialize() -> void:
 			"turn %d (%s): player damage doesn't match intent" % [i, action.action_name])
 		_check(plated == expect_plated.keys().size() and expect_plated.keys().all(func(c: Vector2i) -> bool: return slime.health[c].has_effect(PlateTileEffect)),
 			"turn %d (%s): self plate doesn't match intent" % [i, action.action_name])
-		_check(slime.intent_action == null, "turn %d: intent not cleared after take_turn" % i)
+		_check(slime.intent_actions.is_empty(), "turn %d: intent not cleared after take_turn" % i)
 
 	for name in ["Slime Attack 1", "Harden", "Guarded Bash"]:
 		_check(seen.has(name), "action %s never chosen in 60 plans" % name)
 
 	await _check_dragon(combat)
 	await _check_dracula(combat)
+	await _check_ramiel(combat)
 
 	run.free()
 	print("enemy_check: %s" % ("OK" if _failures == 0 else "%d failure(s)" % _failures))
@@ -67,7 +68,7 @@ func _check_dragon(combat: CombatState) -> void:
 	for i in 6:
 		_heal(player)
 		dragon.plan(combat)
-		names.append(dragon.intent_action.action_name)
+		names.append(dragon.intent_actions[0].action_name)
 		await dragon.take_turn(combat)
 	_check(names == ["Claw", "Tail Sweep", "Fire Breath", "Claw", "Tail Sweep", "Fire Breath"], "dragon P1 order: %s" % [names])
 
@@ -114,7 +115,7 @@ func _check_dragon(combat: CombatState) -> void:
 	for i in 5:
 		_heal(player)
 		dragon.plan(combat)
-		names.append(dragon.intent_action.action_name)
+		names.append(dragon.intent_actions[0].action_name)
 		await dragon.take_turn(combat)
 	_check(names == ["Claw", "Inferno", "Tail Sweep", "Inferno", "Claw"], "dragon P2 order: %s" % [names])
 
@@ -130,7 +131,7 @@ func _check_dracula(combat: CombatState) -> void:
 	for i in 4:
 		_heal(player)
 		dracula.plan(combat)
-		order.append(dracula.actions.find(dracula.intent_action))
+		order.append(dracula.actions.find(dracula.intent_actions[0]))
 		await dracula.take_turn(combat)
 	_check(order == [0, 1, 2, 0], "dracula P1 order: %s" % [order])
 
@@ -180,11 +181,117 @@ func _check_dracula(combat: CombatState) -> void:
 	for i in 4:
 		_heal(player)
 		dracula.plan(combat)
-		order.append(dracula.actions.find(dracula.intent_action))
+		order.append(dracula.actions.find(dracula.intent_actions[0]))
 		await dracula.take_turn(combat)
 		for t in tiles.slice(0, 66):  # keep it below half despite the Bite heals
 			t.hp = Enum.HealthTileEnum.DAMAGED
 	_check(order == [3, 4, 2, 3], "dracula P2 order: %s" % [order])
+
+
+
+func _check_ramiel(combat: CombatState) -> void:
+	var player := combat.player
+	var ramiel := Ramiel.new()
+	combat.enemies = [ramiel]
+	_check(RamielField.shields(ramiel) == 20, "ramiel should start with 20 shields")
+
+	# P1: Scan -> Charge x3 (counting down, beam locked) -> Particle Beam (Pierce) -> Scan.
+	var turns: Array[String] = []
+	var locked := Vector2i.ZERO
+	for i in 6:
+		_heal(player)
+		ramiel.plan(combat)
+		turns.append(_rows(ramiel))
+		var charge := ramiel.intent_actions.filter(func(a: BaseEnemyAction) -> bool: return a is RamielCharge)
+		if i == 1:
+			locked = charge[0].parts[0].cell
+		elif not charge.is_empty():
+			_check(charge[0].parts[0].cell == locked, "charge %d moved the beam" % i)
+		if i == 4:
+			for tile in player.health.values():
+				tile.hp = Enum.HealthTileEnum.SHIELDED
+			var beam: RamielParticleBeam = ramiel.intent_actions.back()
+			_check(beam.parts[0].cell == locked, "beam didn't fire where the charges aimed")
+			await ramiel.take_turn(combat)
+			var burnt := _covered(player, beam.parts[0])
+			_check(not burnt.is_empty() and burnt.all(func(c: Vector2i) -> bool: return player.health[c].hp == Enum.HealthTileEnum.DAMAGED), "beam didn't pierce Shield")
+		else:
+			await ramiel.take_turn(combat)
+	_check(turns == ["Scan", "Charge: 3 turns (0/20)", "Charge: 2 turns (0/20)",
+		"Charge: 1 turn (0/20)", "Particle Beam", "Scan"], "ramiel P1 turns: %s" % [turns])
+
+	# Interrupt: 19 lost tiles don't, the 20th turns the Charge into Stunned at once; then it starts over.
+	ramiel = Ramiel.new()
+	combat.enemies = [ramiel]
+	for i in 2:
+		ramiel.plan(combat)
+		if i == 0:
+			await ramiel.take_turn(combat)
+	var open: Array = ramiel.health.keys()
+	for i in 19:
+		ramiel.damage_health_tile(combat, open[i], true)
+	_check(_rows(ramiel) == "Charge: 3 turns (19/20)", "19 lost tiles: %s" % _rows(ramiel))
+	ramiel.damage_health_tile(combat, open[19], true)
+	_check(_rows(ramiel) == "Stunned", "20 lost tiles should stun, got %s" % _rows(ramiel))
+	_heal(player)
+	await ramiel.take_turn(combat)
+	_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == 0, "a stunned ramiel attacked")
+	ramiel.plan(combat)
+	_check(_rows(ramiel) == "Scan", "after the stun the cycle should start over, got %s" % _rows(ramiel))
+
+	# P2 from a cycle boundary: Charge x2 with a Shard Drill each -> Particle Beam.
+	ramiel = Ramiel.new()
+	combat.enemies = [ramiel]
+	var tiles := ramiel.health.values()
+	for i in 86:
+		tiles[i].hp = Enum.HealthTileEnum.DAMAGED
+	turns.clear()
+	for i in 4:
+		_heal(player)
+		ramiel.plan(combat)
+		turns.append(_rows(ramiel).replace("Absolute Terror Field\n", ""))
+		await ramiel.take_turn(combat)
+	_check(turns == ["Charge: 2 turns (0/20)\nShard Drill", "Charge: 1 turn (0/20)\nShard Drill",
+		"Particle Beam", "Charge: 2 turns (0/20)\nShard Drill"], "ramiel P2 turns: %s" % [turns])
+
+	# Field: every 3rd turn, first in the turn; marked tiles destroyed before it runs stay unshielded.
+	ramiel = Ramiel.new()
+	combat.enemies = [ramiel]
+	var shielded: Array = ramiel.health.keys().filter(func(c: Vector2i) -> bool: return ramiel.health[c].hp == Enum.HealthTileEnum.SHIELDED)
+	for cell in shielded.slice(5):
+		ramiel.health[cell].hp = Enum.HealthTileEnum.UNDAMAGED
+	ramiel._turns = 2
+	ramiel._step = 1  # a Charge turn, so no Scan joins in
+	ramiel.plan(combat)
+	var field: BaseEnemyAction = ramiel.intent_actions[0]
+	_check(field is RamielField and field.parts[0].tiles.size() == 15, "field should plan 15 tiles first in the turn")
+	for t in field.parts[0].tiles.slice(0, 2):
+		ramiel.health[t.coords].hp = Enum.HealthTileEnum.DAMAGED
+	await ramiel.take_turn(combat)
+	_check(RamielField.shields(ramiel) == 18, "field should shield 13 surviving marks, has %d shields" % RamielField.shields(ramiel))
+	# At 20 Shields it's skipped, but the turn still counts.
+	ramiel._turns = 5
+	for cell in ramiel.health:
+		if RamielField.shields(ramiel) < 20 and ramiel.health[cell].hp == Enum.HealthTileEnum.UNDAMAGED:
+			ramiel.health[cell].hp = Enum.HealthTileEnum.SHIELDED
+	ramiel.plan(combat)
+	_check(not _rows(ramiel).contains("Absolute Terror Field") and ramiel._turns == 6, "field at 20 shields should be skipped")
+	# Field + Scan on the same turn: 20, then 15 more.
+	ramiel = Ramiel.new()
+	combat.enemies = [ramiel]
+	for cell in ramiel.health:
+		if ramiel.health[cell].hp == Enum.HealthTileEnum.SHIELDED:
+			ramiel.health[cell].hp = Enum.HealthTileEnum.UNDAMAGED
+	ramiel._turns = 2
+	ramiel.plan(combat)
+	_check(_rows(ramiel) == "Absolute Terror Field\nScan", "field + scan rows: %s" % _rows(ramiel))
+	await ramiel.take_turn(combat)
+	_check(RamielField.shields(ramiel) == 35, "field + scan should make 35 shields, has %d" % RamielField.shields(ramiel))
+
+
+## A unit's intent label: one row per move.
+func _rows(enemy: BaseEnemy) -> String:
+	return "\n".join(PackedStringArray(enemy.intent_actions.map(func(a: BaseEnemyAction) -> String: return a.intent_text())))
 
 
 ## Cells of unit's grid that a planned part covers.
