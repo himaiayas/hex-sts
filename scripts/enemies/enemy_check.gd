@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Ogre / Magic Golem / Dark Elf / Dragon / Dracula / Ramiel. Exit code = number of failures.
+## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Ogre / Magic Golem / Dark Elf / Griffin / Dragon / Dracula / Ramiel. Exit code = number of failures.
 ## godot --headless --path . -s res://scripts/enemies/enemy_check.gd
 
 var _failures := 0
@@ -40,6 +40,7 @@ func _initialize() -> void:
 	await _check_ogre(combat)
 	await _check_golem(combat)
 	await _check_dark_elf(combat)
+	await _check_griffin(combat)
 	await _check_dragon(combat)
 	await _check_dracula(combat)
 	await _check_ramiel(combat)
@@ -215,6 +216,50 @@ func _check_dark_elf(combat: CombatState) -> void:
 		else:
 			_check(not expect_poisoned.is_empty(), "poison dart poisoned nothing")
 	_check(names == ["Poison Dart", "Shadow Step", "Poison Dart", "Shadow Step"], "dark elf order: %s" % [names])
+
+
+
+func _check_griffin(combat: CombatState) -> void:
+	var griffin := Griffin.new()
+	combat.enemies = [griffin]
+	var player := combat.player
+
+	# Talon (2 hits) -> Wing Gust -> Dive, looped. Each attack damages what its intent showed.
+	var names: Array[String] = []
+	for i in 6:
+		_heal(player)
+		_heal(griffin)
+		griffin.plan(combat)
+		var action := griffin.intent_actions[0]
+		names.append(action.action_name)
+		var expect := {}
+		for part in action.parts:
+			for cell in _covered(player, part):
+				expect[cell] = true
+		await griffin.take_turn(combat)
+		if action is EnemyHit:
+			_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == expect.size(), "%s didn't damage what its intent showed" % action.action_name)
+		else:
+			_check(_cells_with(griffin, Enum.HealthTileEnum.SHIELDED) == 6, "wing gust should shield 6")
+	_check(names == ["Talon", "Wing Gust", "Dive", "Talon", "Wing Gust", "Dive"], "griffin order: %s" % [names])
+	_check(griffin.actions[0].parts[0].tiles.size() == 5 and griffin.actions[2].parts[0].tiles.size() == 9, "griffin patterns should be 5 and 9 tiles")
+
+	# Aerial: the first 3 hits each player turn miss, even on a Shield or with Pierce; the 4th lands.
+	# Hits during its own turn always land, and its turn end gets the 3 misses back.
+	_check(griffin.power_amount(AerialPower) == Griffin.AERIAL, "griffin should start with Aerial %d" % Griffin.AERIAL)
+	_heal(griffin)
+	await griffin.on_turn_end(combat)
+	var cells := griffin.health.keys()
+	griffin.health[cells[0]].hp = Enum.HealthTileEnum.SHIELDED
+	var landed: Array[bool] = []
+	for i in 4:
+		landed.append(griffin.damage_health_tile(combat, cells[i], i == 1))
+	_check(landed == [false, false, false, true], "aerial hits: %s" % [landed])
+	_check(griffin.health[cells[0]].hp == Enum.HealthTileEnum.SHIELDED, "aerial should keep the Shield")
+	await griffin.on_turn_start(combat)
+	_check(griffin.damage_health_tile(combat, cells[4]), "aerial cancelled a hit during its own turn")
+	await griffin.on_turn_end(combat)
+	_check(not griffin.damage_health_tile(combat, cells[5]), "aerial should miss again after its turn")
 
 
 
