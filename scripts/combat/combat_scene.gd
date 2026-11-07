@@ -11,6 +11,7 @@ const CARD_SIZE := HandView.CARD_SIZE
 const LUNGE_DISTANCE := 40.0  # px toward the target
 const LUNGE_TIME := 0.1  # out to the target; the hit flashes when it gets there
 const LUNGE_BACK_TIME := 0.15
+const VFX_SCALE := 1.25  # an enemy move's hit image, relative to its area
 const SHAKE_AMOUNT := 8.0  # px, the first jolt; later ones get smaller
 const SHAKE_STEPS := 6
 const SHAKE_TIME := 0.25
@@ -374,7 +375,8 @@ func _animate(batch: Array[Dictionary]) -> void:
 		_lunge(sprite, _center(_sprite_for(target)) - _center(sprite))
 		await get_tree().create_timer(LUNGE_TIME).timeout
 		if action and action.hit_vfx:
-			_show_vfx(action.hit_vfx, _view_for(target))
+			var area := enemy.hit_vfx_area if enemy.hit_vfx_area.has_area() else _view_for(target).get_global_rect()
+			_show_vfx(action.hit_vfx, area)
 	for change in batch:
 		_view_for(change.unit).flash(change.cell, change.kind, change.effect)
 	for unit in damaged:
@@ -392,15 +394,18 @@ func _lunge(node: Control, toward: Vector2) -> void:
 	tween.tween_property(node, "position", Vector2.ZERO, LUNGE_BACK_TIME).set_ease(Tween.EASE_IN_OUT)
 
 
-## Fades an enemy move's hit image out over a grid, as long as the hex flash.
-func _show_vfx(texture: Texture2D, over: Control) -> void:
+## Fades an enemy move's hit image out, as long as the hex flash. It's drawn VFX_SCALE times the
+## size of area (global coords), centered on it, above the arena but under the top bar and panels.
+func _show_vfx(texture: Texture2D, area: Rect2) -> void:
 	var vfx := TextureRect.new()
 	vfx.texture = texture
 	vfx.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	vfx.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	vfx.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	over.add_child(vfx)
-	vfx.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(vfx)
+	move_child(vfx, $Margin.get_index() + 1)
+	vfx.size = area.size * VFX_SCALE
+	vfx.global_position = area.get_center() - vfx.size / 2.0
 	var tween := vfx.create_tween()
 	tween.tween_property(vfx, "modulate:a", 0.0, HealthGridView.FLASH_TIME)
 	tween.tween_callback(vfx.queue_free)

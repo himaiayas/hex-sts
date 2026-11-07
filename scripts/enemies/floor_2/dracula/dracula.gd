@@ -1,7 +1,8 @@
 class_name Dracula
 extends BaseEnemy
 
-## Floor 2, Boss.
+## Floor 2, Boss. P1 cycles Bite (heal 4) -> Bat Swarm -> Blood Mist. Below half its tiles (P2)
+## it cycles Bite (heal 8) -> Crimson Rain -> Blood Mist.
 
 
 func _init() -> void:
@@ -28,4 +29,13 @@ func _init() -> void:
 		preload("res://assets/enemies/floor_2/dracula_idle2.png"),
 		preload("res://assets/enemies/floor_2/dracula_idle3.png"),
 	]
-	actions = []
+	hit_vfx_area = Rect2(373, 244, 735, 582)  # x 373-1108, y 244-826: from your sprite to Dracula's
+	actions = [
+		DraculaBite.new(4),
+		DraculaBatSwarm.new(),
+		DraculaBloodMist.new(),
+		DraculaBite.new(8),
+		DraculaCrimsonRain.new(),
+	]
+	p1_cycle = [0, 1, 2]
+	p2_cycle = [3, 4, 2]

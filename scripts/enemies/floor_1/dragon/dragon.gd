@@ -4,12 +4,6 @@ extends BaseEnemy
 ## Floor 1, Boss. P1 cycles Claw -> Tail Sweep -> Fire Breath. Below half its tiles (P2)
 ## it cycles Claw -> Inferno -> Tail Sweep -> Inferno, starting over at Claw.
 
-const P1_CYCLE: Array[int] = [0, 1, 2]  # indexes into actions
-const P2_CYCLE: Array[int] = [0, 3, 1, 3]
-
-var in_p2 := false
-var _turn := 0  # moves chosen so far in this phase
-
 
 func _init() -> void:
 	var coords: Array[Vector2i] = [
@@ -37,20 +31,13 @@ func _init() -> void:
 	]
 	# Near the most that fits at 1920x1080 next to its grid and the player's side.
 	image_size = Vector2(680, 680)
+	hit_vfx_area = Rect2(349, 244, 356, 582)  # x 349-705, y 244-826: between your grid and the Dragon
 	actions = [
 		DragonClaw.new(),
 		DragonTailSweep.new(),
 		DragonFireBreath.new(),
 		DragonFireBreath.new(true),
 	]
+	p1_cycle = [0, 1, 2]
+	p2_cycle = [0, 3, 1, 3]
 
-
-func _choose_action() -> BaseEnemyAction:
-	var undamaged := health.values().filter(func(t: HealthTile) -> bool: return t.hp > Enum.HealthTileEnum.DAMAGED).size()
-	if not in_p2 and undamaged * 2 < health.size():
-		in_p2 = true
-		_turn = 0
-	var cycle := P2_CYCLE if in_p2 else P1_CYCLE
-	var action := actions[cycle[_turn % cycle.size()]]
-	_turn += 1
-	return action
