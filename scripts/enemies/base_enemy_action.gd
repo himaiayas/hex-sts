@@ -77,11 +77,18 @@ func score_cell(part: EnemyActionPart, cell: Vector2i, target: CombatUnit) -> in
 
 
 ## A random cell where the part covers at least one tile that isn't damaged, for scattered hits.
-## Cells that cover more of them are more likely.
+## Tiles the earlier parts of this move will damage don't count (a Shield there only breaks),
+## so every hit lands on something. Cells that cover more open tiles are more likely.
 func pick_random_cell(part: EnemyActionPart, target: CombatUnit) -> Vector2i:
+    var taken := {}
+    for earlier: EnemyActionPart in parts.slice(0, parts.find(part)):
+        for t in earlier.tiles:
+            var c: Vector2i = earlier.cell + t.coords
+            if target.health.has(c) and target.health[c].hp != Enum.HealthTileEnum.SHIELDED:
+                taken[c] = true
     var cells: Array[Vector2i] = []
     for cell in target.health:
-        if target.health[cell].hp > Enum.HealthTileEnum.DAMAGED:
+        if target.health[cell].hp > Enum.HealthTileEnum.DAMAGED and not taken.has(cell):
             for t in part.tiles:
                 cells.append(cell - t.coords)
     return cells.pick_random() if not cells.is_empty() else Vector2i.ZERO

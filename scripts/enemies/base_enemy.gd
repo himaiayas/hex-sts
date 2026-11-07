@@ -4,6 +4,9 @@ extends CombatUnit
 var sprite: Texture2D
 var idle_frames: Array[Texture2D] = []  # looped instead of sprite when set (bosses)
 var image_size := Vector2(300, 300)  # the sprite's slot in combat
+## Where its moves' hit images play, in global coords at 1920x1080. Empty = over the target's grid.
+## ponytail: fixed for 16:9; derive it from the sprites' positions if wider screens need it.
+var hit_vfx_area := Rect2()
 var actions: Array[BaseEnemyAction] = []  # picked at random, weighted by probability, unless p1_cycle is set
 var intent_action: BaseEnemyAction
 

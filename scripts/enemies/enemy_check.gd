@@ -161,6 +161,16 @@ func _check_dracula(combat: CombatState) -> void:
 				_check(_covered(player, part).any(func(c: Vector2i) -> bool: return player.health[c].hp > Enum.HealthTileEnum.DAMAGED),
 					"%s put a hit where nothing is left" % scattered.action_name)
 
+	# Each hit plays on its own: one animated batch per bat and per wave.
+	for scattered in [dracula.actions[1], dracula.actions[4]]:
+		_heal(player)
+		var batches := []
+		combat.animator = func(batch: Array[Dictionary]) -> void: batches.append(batch)
+		scattered.plan(combat, dracula)
+		await scattered.execute(combat, dracula)
+		combat.animator = Callable()
+		_check(batches.size() == scattered.parts.size(), "%s played %d hits, not %d" % [scattered.action_name, batches.size(), scattered.parts.size()])
+
 	# P2 below half its tiles.
 	_heal(dracula)
 	var tiles := dracula.health.values()
