@@ -97,6 +97,7 @@ Agreed with Mai in issue #8, and for issue #19. Where this differs from the shee
 **Pierce**
 - A Pierce hit goes through both Shield and Plate: the tile is damaged even if it has Shield.
 - Plate on that tile is removed as usual (ON_HIT). There's one kind of Pierce, for both the player and enemies.
+- The Dragon's P2 Inferno is Fire Breath with Pierce. The sheet's "Plate only blocks half" is dropped, since Pierce already goes through Plate.
 
 **Strength**
 - Each attack also damages X random tiles next to the cells it landed on (`StrengthPower`). The player doesn't place them.

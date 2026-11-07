@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Headless check for BaseEnemy / Slime. Exit code = number of failures.
+## Headless check for BaseEnemy / Slime / Dragon. Exit code = number of failures.
 ## godot --headless --path . -s res://scripts/enemies/enemy_check.gd
 
 var _failures := 0
@@ -49,9 +49,83 @@ func _initialize() -> void:
 	for name in ["Slime Attack 1", "Harden", "Guarded Bash"]:
 		_check(seen.has(name), "action %s never chosen in 60 plans" % name)
 
+	await _check_dragon(combat)
+
 	run.free()
 	print("enemy_check: %s" % ("OK" if _failures == 0 else "%d failure(s)" % _failures))
 	quit(_failures)
+
+
+func _check_dragon(combat: CombatState) -> void:
+	var dragon := Dragon.new()
+	combat.enemies = [dragon]
+	var player := combat.player
+
+	# P1 cycle.
+	var names: Array[String] = []
+	for i in 6:
+		_heal(player)
+		dragon.plan(combat)
+		names.append(dragon.intent_action.action_name)
+		await dragon.take_turn(combat)
+	_check(names == ["Claw", "Tail Sweep", "Fire Breath", "Claw", "Tail Sweep", "Fire Breath"], "dragon P1 order: %s" % [names])
+
+	# Claw goes for open tiles before shielded ones.
+	_heal(player)
+	var cells := player.health.keys()
+	for cell in cells.slice(0, 12):
+		player.health[cell].hp = Enum.HealthTileEnum.SHIELDED
+	var claw := dragon.actions[0]
+	claw.plan(combat, dragon)
+	var open := claw.parts[0].tiles.filter(func(t: BaseActionTile) -> bool: return player.health[t.coords].hp == Enum.HealthTileEnum.UNDAMAGED).size()
+	_check(claw.parts[0].tiles.size() == 8 and open == 7, "claw should take all 7 open tiles first, took %d of %d" % [open, claw.parts[0].tiles.size()])
+
+	# Tail Sweep: on open tiles the second row goes elsewhere; on shielded ones it follows the first.
+	var sweep := dragon.actions[1]
+	_heal(player)
+	sweep.plan(combat, dragon)
+	_check(_covered(player, sweep.parts[0]) != _covered(player, sweep.parts[1]), "tail sweep hit the same row twice on open tiles")
+	for tile in player.health.values():
+		tile.hp = Enum.HealthTileEnum.SHIELDED
+	sweep.plan(combat, dragon)
+	var first := _covered(player, sweep.parts[0])
+	_check(first == _covered(player, sweep.parts[1]), "tail sweep should follow up on the shielded row")
+	await sweep.execute(combat, dragon)
+	_check(first.all(func(c: Vector2i) -> bool: return player.health[c].hp == Enum.HealthTileEnum.DAMAGED), "tail sweep x2 didn't damage the shielded row")
+
+	# Inferno pierces Shield.
+	for tile in player.health.values():
+		tile.hp = Enum.HealthTileEnum.SHIELDED
+	var inferno := dragon.actions[3]
+	inferno.plan(combat, dragon)
+	await inferno.execute(combat, dragon)
+	var burnt := _covered(player, inferno.parts[0])
+	_check(not burnt.is_empty() and burnt.all(func(c: Vector2i) -> bool: return player.health[c].hp == Enum.HealthTileEnum.DAMAGED), "inferno didn't pierce Shield")
+
+	# P2 starts below half the tiles: 45 of 90 undamaged is still P1, 44 is P2.
+	var tiles := dragon.health.values()
+	for i in 45:
+		tiles[i].hp = Enum.HealthTileEnum.DAMAGED
+	dragon.plan(combat)
+	_check(not dragon.in_p2, "dragon in P2 at exactly half its tiles")
+	tiles[45].hp = Enum.HealthTileEnum.DAMAGED
+	names.clear()
+	for i in 5:
+		_heal(player)
+		dragon.plan(combat)
+		names.append(dragon.intent_action.action_name)
+		await dragon.take_turn(combat)
+	_check(names == ["Claw", "Inferno", "Tail Sweep", "Inferno", "Claw"], "dragon P2 order: %s" % [names])
+
+
+## Cells of unit's grid that a planned part covers.
+func _covered(unit: CombatUnit, part: EnemyActionPart) -> Array[Vector2i]:
+	var cells: Array[Vector2i] = []
+	for t in part.tiles:
+		if unit.health.has(part.cell + t.coords):
+			cells.append(part.cell + t.coords)
+	cells.sort()
+	return cells
 
 
 func _check(ok: bool, msg: String) -> void:
