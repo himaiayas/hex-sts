@@ -18,6 +18,11 @@ func _init(_action_type: Enum.BaseEnemyActionEnum,_action_name: String, _probabi
     probability = _probability
 
 
+## Its row in the intent label.
+func intent_text() -> String:
+    return action_name
+
+
 ## Called at the start of the player's turn: choose a cell for every part.
 func plan(combat: CombatState, owner: CombatUnit) -> void:
     for part in parts:

@@ -82,12 +82,18 @@ func _ready() -> void:
 		var view := HealthGridView.new()
 		view.setup(enemy, true)
 		view.cell_clicked.connect(_on_cell_clicked)
+		view.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		# The intent hangs under the grid, as wide as it, and grows down only,
+		# so a longer or shorter intent never moves the enemy.
 		var intent_label := Label.new()
 		intent_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		var box := VBoxContainer.new()
-		box.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		box.add_child(view)
-		box.add_child(intent_label)
+		intent_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		intent_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		view.add_child(intent_label)
+		intent_label.anchor_top = 1.0
+		intent_label.anchor_bottom = 1.0
+		intent_label.anchor_right = 1.0
+		intent_label.grow_vertical = Control.GROW_DIRECTION_END
 		# Enemy image on the left, its health grid on the right.
 		var side := HBoxContainer.new()
 		side.add_theme_constant_override("separation", 24)
@@ -106,7 +112,7 @@ func _ready() -> void:
 		image.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 		slot.add_child(image)
 		side.add_child(slot)
-		side.add_child(box)
+		side.add_child(view)
 		_enemies_box.add_child(side)
 		_enemy_views.append(view)
 		_enemy_images.append(image)
@@ -367,7 +373,7 @@ func _animate(batch: Array[Dictionary]) -> void:
 				and change.kind in [Enum.Change.DAMAGE, Enum.Change.BLOCK]:
 			target = unit
 	var enemy := attacker as BaseEnemy
-	var action: BaseEnemyAction = enemy.intent_action if enemy else null
+	var action: BaseEnemyAction = enemy.acting_action if enemy else null
 	if target:
 		var sprite := _sprite_for(attacker)
 		if action and action.pose:
@@ -502,10 +508,12 @@ func _refresh() -> void:
 	var player_intents: Array = []
 	for i in combat.enemies.size():
 		var enemy := combat.enemies[i] as BaseEnemy
-		var action: BaseEnemyAction = enemy.intent_action if enemy else null
+		var actions: Array[BaseEnemyAction] = []
+		if enemy:
+			actions = enemy.intent_actions
 		var self_intents: Array = []
-		_intent_labels[i].text = "Intent: %s" % action.action_name if action else ""
-		if action:
+		_intent_labels[i].text = "\n".join(PackedStringArray(actions.map(func(a: BaseEnemyAction) -> String: return a.intent_text())))
+		for action in actions:
 			for part in action.parts:
 				var intent := {cell = part.cell, tiles = part.tiles}
 				if part.side == Enum.Side.PLAYER:
