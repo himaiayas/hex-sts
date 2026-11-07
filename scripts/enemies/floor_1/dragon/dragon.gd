@@ -31,6 +31,7 @@ func _init() -> void:
 	]
 	# Near the most that fits at 1920x1080 next to its grid and the player's side.
 	image_size = Vector2(680, 680)
+	hit_vfx_area = Rect2(349, 244, 356, 582)  # x 349-705, y 244-826: between your grid and the Dragon
 	actions = [
 		DragonClaw.new(),
 		DragonTailSweep.new(),
