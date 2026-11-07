@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Headless check for BaseEnemy / Slime / Goblin / Dragon / Dracula / Ramiel. Exit code = number of failures.
+## Headless check for BaseEnemy / Slime / Goblin / Vermin / Dragon / Dracula / Ramiel. Exit code = number of failures.
 ## godot --headless --path . -s res://scripts/enemies/enemy_check.gd
 
 var _failures := 0
@@ -50,6 +50,7 @@ func _initialize() -> void:
 		_check(seen.has(name), "action %s never chosen in 60 plans" % name)
 
 	await _check_goblin(combat)
+	await _check_vermin(combat)
 	await _check_dragon(combat)
 	await _check_dracula(combat)
 	await _check_ramiel(combat)
@@ -78,6 +79,32 @@ func _check_goblin(combat: CombatState) -> void:
 		_check(hit.size() == (5 if i % 2 == 0 else 3) and _cells_with(player, Enum.HealthTileEnum.DAMAGED) == hit.size(),
 			"goblin %s should damage %d tiles, damaged %d" % [action.action_name, 5 if i % 2 == 0 else 3, _cells_with(player, Enum.HealthTileEnum.DAMAGED)])
 	_check(names == ["Stab", "Backstab", "Stab", "Backstab"], "goblin order: %s" % [names])
+
+
+
+func _check_vermin(combat: CombatState) -> void:
+	var vermin := Vermin.new()
+	combat.enemies = [vermin]
+	var player := combat.player
+
+	# Gnaw -> Gnaw -> Skitter, looped. Each Gnaw lands two bites on tiles that aren't damaged yet.
+	var names: Array[String] = []
+	for i in 6:
+		_heal(player)
+		_heal(vermin)
+		for cell in player.health.keys().slice(0, 12):
+			player.health[cell].hp = Enum.HealthTileEnum.DAMAGED
+		vermin.plan(combat)
+		var action := vermin.intent_actions[0]
+		names.append(action.action_name)
+		if action is EnemyHit:
+			for part in action.parts:
+				_check(_covered(player, part).any(func(c: Vector2i) -> bool: return player.health[c].hp > Enum.HealthTileEnum.DAMAGED),
+					"gnaw put a bite where nothing is left")
+		await vermin.take_turn(combat)
+		if action is EnemyShieldSelf:
+			_check(_cells_with(vermin, Enum.HealthTileEnum.SHIELDED) == 5, "skitter should shield 5")
+	_check(names == ["Gnaw", "Gnaw", "Skitter", "Gnaw", "Gnaw", "Skitter"], "vermin order: %s" % [names])
 
 
 

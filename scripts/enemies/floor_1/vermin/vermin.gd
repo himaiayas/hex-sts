@@ -1,7 +1,7 @@
 class_name Vermin
 extends BaseEnemy
 
-## Floor 1, Normal.
+## Floor 1, Normal. Cycles Gnaw -> Gnaw -> Skitter.
 
 
 func _init() -> void:
@@ -13,4 +13,13 @@ func _init() -> void:
 	]
 	super("Vermin", CombatUnit.make_hex_health(coords))
 	sprite = preload("res://assets/enemies/floor_1/vermin.png")
-	actions = []
+	var bite: Array[BaseActionTile] = [
+		DamageTile.new(Vector2i(0, 0)),
+		DamageTile.new(Vector2i(1, 0)),
+		DamageTile.new(Vector2i(0, 1)),
+	]
+	actions = [
+		EnemyHit.new("Gnaw", "Hit 3 tiles twice, scattered.", bite, 2),
+		EnemyShieldSelf.new("Skitter", 5, "Shield 5 random tiles of its own."),
+	]
+	p1_cycle = [0, 0, 1]
