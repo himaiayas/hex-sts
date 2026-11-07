@@ -23,4 +23,9 @@ func _init() -> void:
 		Vector2i(-8, 5), Vector2i(-7, 5), Vector2i(-3, 5), Vector2i(-2, 5), Vector2i(2, 5), Vector2i(3, 5),
 	]
 	super("Dracula", CombatUnit.make_hex_health(coords))
+	idle_frames = [
+		preload("res://assets/enemies/floor_2/dracula_idle1.png"),
+		preload("res://assets/enemies/floor_2/dracula_idle2.png"),
+		preload("res://assets/enemies/floor_2/dracula_idle3.png"),
+	]
 	actions = []

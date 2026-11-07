@@ -17,4 +17,5 @@ func _init() -> void:
 		Vector2i(-3, 5),
 	]
 	super("Magic Golem", CombatUnit.make_hex_health(coords))
+	sprite = preload("res://assets/enemies/floor_1/magic_golem.png")
 	actions = []

@@ -23,4 +23,5 @@ func _init() -> void:
 		Vector2i(1, 6), Vector2i(2, 6),
 	]
 	super("Lich", CombatUnit.make_hex_health(coords))
+	sprite = preload("res://assets/enemies/floor_2/lich.png")
 	actions = []

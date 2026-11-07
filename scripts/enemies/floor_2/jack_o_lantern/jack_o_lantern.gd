@@ -18,4 +18,5 @@ func _init() -> void:
 		Vector2i(-4, 4), Vector2i(-3, 4), Vector2i(-2, 4), Vector2i(-1, 4), Vector2i(0, 4),
 	]
 	super("Jack O'Lantern", CombatUnit.make_hex_health(coords))
+	sprite = preload("res://assets/enemies/floor_2/jack_o_lantern.png")
 	actions = []

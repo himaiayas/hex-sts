@@ -16,4 +16,5 @@ func _init() -> void:
 		Vector2i(0, 4),
 	]
 	super("Skeleton", CombatUnit.make_hex_health(coords))
+	sprite = preload("res://assets/enemies/floor_2/skeleton.png")
 	actions = []

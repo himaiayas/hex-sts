@@ -15,4 +15,5 @@ func _init() -> void:
 		Vector2i(-6, 3), Vector2i(-5, 3), Vector2i(-4, 3), Vector2i(-3, 3), Vector2i(-2, 3), Vector2i(-1, 3), Vector2i(0, 3), Vector2i(1, 3),
 	]
 	super("Plasma Turret", CombatUnit.make_hex_health(coords))
+	sprite = preload("res://assets/enemies/floor_3/plasma_turret.png")
 	actions = []

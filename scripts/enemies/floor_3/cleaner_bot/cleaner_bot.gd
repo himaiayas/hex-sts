@@ -17,4 +17,5 @@ func _init() -> void:
 		Vector2i(-3, 3),
 	]
 	super("Cleaner Bot", CombatUnit.make_hex_health(coords))
+	sprite = preload("res://assets/enemies/floor_3/cleaner_bot.png")
 	actions = []

@@ -23,4 +23,5 @@ func _init() -> void:
 		Vector2i(-9, 7), Vector2i(-8, 7), Vector2i(-7, 7), Vector2i(-6, 7), Vector2i(-5, 7), Vector2i(-2, 7), Vector2i(-1, 7), Vector2i(0, 7), Vector2i(1, 7), Vector2i(2, 7),
 	]
 	super("Mech Walker", CombatUnit.make_hex_health(coords))
+	sprite = preload("res://assets/enemies/floor_3/mech_walker.png")
 	actions = []

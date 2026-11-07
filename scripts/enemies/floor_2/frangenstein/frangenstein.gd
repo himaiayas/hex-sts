@@ -20,4 +20,5 @@ func _init() -> void:
 		Vector2i(-4, 5), Vector2i(-3, 5), Vector2i(-2, 5), Vector2i(-1, 5),
 	]
 	super("Frangenstein", CombatUnit.make_hex_health(coords))
+	sprite = preload("res://assets/enemies/floor_2/frangenstein.png")
 	actions = []

@@ -21,4 +21,5 @@ func _init() -> void:
 		Vector2i(-5, 6), Vector2i(-4, 6), Vector2i(-3, 6), Vector2i(-2, 6),
 	]
 	super("Android Sentinel", CombatUnit.make_hex_health(coords))
+	sprite = preload("res://assets/enemies/floor_3/android_sentinel.png")
 	actions = []

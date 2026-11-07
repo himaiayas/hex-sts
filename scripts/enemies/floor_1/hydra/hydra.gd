@@ -19,4 +19,5 @@ func _init() -> void:
 		Vector2i(-3, 4), Vector2i(-2, 4), Vector2i(-1, 4),
 	]
 	super("Hydra", CombatUnit.make_hex_health(coords))
+	sprite = preload("res://assets/enemies/floor_1/hydra.png")
 	actions = []

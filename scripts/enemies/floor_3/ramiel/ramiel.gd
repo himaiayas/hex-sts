@@ -30,4 +30,9 @@ func _init() -> void:
 		Vector2i(-6, 10), Vector2i(-5, 10), Vector2i(-4, 10),
 	]
 	super("Ramiel", CombatUnit.make_hex_health(coords))
+	idle_frames = [
+		preload("res://assets/enemies/floor_3/ramiel_idle1.png"),
+		preload("res://assets/enemies/floor_3/ramiel_idle2.png"),
+		preload("res://assets/enemies/floor_3/ramiel_idle3.png"),
+	]
 	actions = []

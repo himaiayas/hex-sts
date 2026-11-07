@@ -25,4 +25,5 @@ func _init() -> void:
 		Vector2i(-6, 8), Vector2i(-5, 8), Vector2i(-3, 8), Vector2i(-2, 8),
 	]
 	super("Terminator", CombatUnit.make_hex_health(coords))
+	sprite = preload("res://assets/enemies/floor_3/terminator.png")
 	actions = []

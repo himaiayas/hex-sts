@@ -20,4 +20,5 @@ func _init() -> void:
 		Vector2i(0, 5), Vector2i(1, 5),
 	]
 	super("Nano Swarm", CombatUnit.make_hex_health(coords))
+	sprite = preload("res://assets/enemies/floor_3/nano_swarm.png")
 	actions = []

@@ -20,4 +20,5 @@ func _init() -> void:
 		Vector2i(-5, 5), Vector2i(-4, 5), Vector2i(-3, 5), Vector2i(-2, 5), Vector2i(-1, 5), Vector2i(0, 5),
 	]
 	super("Hacker AI", CombatUnit.make_hex_health(coords))
+	sprite = preload("res://assets/enemies/floor_3/hacker_ai.png")
 	actions = []
