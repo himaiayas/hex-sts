@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://ddymykvgy3fil" path="res://scripts/map/map_scene.gd" id="1_map"]
 [ext_resource type="Script" uid="uid://d2mguidiwck0p" path="res://scripts/map/map_view.gd" id="2_view"]
-[ext_resource type="PackedScene" path="res://scenes/ui/top_bar.tscn" id="3_topbar"]
+[ext_resource type="PackedScene" uid="uid://b76onrkqqin8t" path="res://scenes/ui/top_bar.tscn" id="3_topbar"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 content_margin_left = 48.0

@@ -7,6 +7,7 @@ func _init() -> void:
 	cost = 1
 	type = Enum.CardType.ATTACK
 	description = "{render:0}\nFor every 2 shielded tiles you have, deal 1 damage to random tiles."
+	image = preload("res://assets/cards/cards/shield_bash.png")
 	grid_actions = [
 		GridAction.new(Enum.TargetType.ENEMY, [
 			DamageTile.new(Vector2i(1,0)),

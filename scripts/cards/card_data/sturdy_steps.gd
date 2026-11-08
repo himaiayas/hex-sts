@@ -8,6 +8,7 @@ func _init() -> void:
 	type = Enum.CardType.ATTACK
 	rarity = Enum.CardRarity.UNCOMMON
 	description = "{render:0}\nIf you played a Defense this turn, deal damage to 3 random enemy tiles."
+	image = preload("res://assets/cards/cards/sturdy_steps.png")
 	grid_actions = [
 		GridAction.new(Enum.TargetType.ENEMY, [
 			DamageTile.new(Vector2i(-2,0)),

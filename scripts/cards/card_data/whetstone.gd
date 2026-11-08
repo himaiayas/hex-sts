@@ -8,6 +8,7 @@ func _init() -> void:
 	type = Enum.CardType.SKILL
 	target = Enum.TargetType.PLAYER
 	description = "Gain 2 {keyword:Strength} this turn."
+	image = preload("res://assets/cards/cards/whetstone.png")
 
 
 func execute(combat: CombatState, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int])->Array:

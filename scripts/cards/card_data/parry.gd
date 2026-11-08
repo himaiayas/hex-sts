@@ -10,6 +10,7 @@ func _init() -> void:
 	rarity = Enum.CardRarity.UNCOMMON
 	retain = true
 	description = "Gain 1 {keyword:Retaliate} this turn. {keyword:Retain}."
+	image = preload("res://assets/cards/cards/parry.png")
 
 
 func execute(combat: CombatState, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int])->Array:

@@ -9,6 +9,7 @@ func _init() -> void:
 	rarity = Enum.CardRarity.RARE
 	target = Enum.TargetType.ENEMY
 	description = "{render:0} twice\n{render:1}\nIf this card hit 10 tiles, gain 1 energy."
+	image = preload("res://assets/cards/cards/spear_of_destiny.png")
 	grid_actions = [
         RepeatAction.new(GridAction.new(Enum.TargetType.ENEMY, [
 			ApplyEffectTile.new(Vector2i(0,0), FractureTileEffect.new()),

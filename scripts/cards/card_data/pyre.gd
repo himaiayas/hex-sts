@@ -9,6 +9,7 @@ func _init() -> void:
 	rarity = Enum.CardRarity.COMMON
 	target = Enum.TargetType.PLAYER
 	description = "{keyword:Exhaust} all non-Attack cards in your hand. Draw that many cards."
+	image = preload("res://assets/cards/cards/pyre.png")
 
 
 func execute(combat: CombatState, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int])->Array:

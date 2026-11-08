@@ -9,6 +9,7 @@ func _init() -> void:
 	rarity = Enum.CardRarity.UNCOMMON
 	target = Enum.TargetType.PLAYER
 	description = "When you play a Power card, put a random Attack from your draw pile into your hand. It costs 0 this turn."
+	image = preload("res://assets/cards/cards/reserved_armory.png")
 
 
 func execute(combat: CombatState, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int])->Array:

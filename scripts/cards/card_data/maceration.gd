@@ -13,6 +13,7 @@ func _init() -> void:
 	type = Enum.CardType.SKILL
 	rarity = Enum.CardRarity.RARE
 	description = "Apply {keyword:Fracture} to every tile next to a Fractured tile on each enemy."
+	image = preload("res://assets/cards/cards/maceration.png")
 
 
 ## Spreads from the tiles fractured when it's played, so new Fracture doesn't spread again.

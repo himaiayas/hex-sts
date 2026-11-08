@@ -8,6 +8,7 @@ func _init() -> void:
 	type = Enum.CardType.DEFENSE
 	target = Enum.TargetType.PLAYER
 	description = "{render:0}\nGain 1 {keyword:Retaliate} this turn."
+	image = preload("res://assets/cards/cards/spiked_guard.png")
 	grid_actions = [
 		GridAction.new(Enum.TargetType.PLAYER, [
 			ShieldTile.new(Vector2i(0,0)),

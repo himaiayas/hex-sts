@@ -10,6 +10,7 @@ func _init() -> void:
 	rarity = Enum.CardRarity.LEGENDARY
 	target = Enum.TargetType.PLAYER
 	description = "Add a random Sword of Might, Axe of Resilience or Spear of Destiny to your hand. It costs 0 this turn."
+	image = preload("res://assets/cards/cards/sacred_blessing.png")
 
 
 func execute(combat: CombatState, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int])->Array:
