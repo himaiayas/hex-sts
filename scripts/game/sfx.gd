@@ -2,8 +2,8 @@ extends Node
 
 ## Sound effects (autoload "Sfx"). Call Sfx.play("event"): it plays one of that event's sounds
 ## at random, slightly re-pitched, so repeats don't sound identical. Every Button in the game
-## clicks on its own (set meta "no_click_sfx" on one to silence it). Sounds play on the "SFX" bus
-## when the project has one, else on Master. Sources and licences: CREDITS.md.
+## clicks on its own (set meta "no_click_sfx" on one to silence it). Sounds play on the "SFX" bus,
+## whose level the Options slider sets (volume). Sources and licences: CREDITS.md.
 
 const DIR := "res://assets/sfx/"
 ## event -> sound files under DIR. Add or swap files here.
@@ -44,6 +44,14 @@ const SOUNDS := {
 ## Per-event volume in dB on top of VOLUME_DB (missing = 0). Quiet the frequent ones.
 const EVENT_VOLUME := {card_hover = -10.0, shuffle = -4.0, footstep = -6.0, click = -4.0, boss_boom = 3.0, boss_crash = 2.0}
 const VOLUME_DB := -4.0
+const BUS := "SFX"  # made at start if the project has none
+
+## 0 to 1, set from Options; saved by AudioSettings.
+var volume := 1.0:
+	set(value):
+		volume = clampf(value, 0.0, 1.0)
+		AudioSettings.apply(BUS, volume)
+		AudioSettings.save_level("sfx", volume)
 const PITCH_JITTER := 0.06  # random pitch up or down by up to this fraction
 const VOICES := 12  # sounds that can play at once
 
@@ -59,7 +67,9 @@ func _ready() -> void:
 		for file: String in SOUNDS[event]:
 			streams.append(load(DIR + file))
 		_streams[event] = streams
-	var bus := "SFX" if AudioServer.get_bus_index("SFX") != -1 else "Master"
+	AudioSettings.ensure_bus(BUS)
+	volume = AudioSettings.load_level("sfx", volume)
+	var bus := BUS
 	for i in VOICES:
 		var player := AudioStreamPlayer.new()
 		player.bus = bus

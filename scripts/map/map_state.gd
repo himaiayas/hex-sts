@@ -196,6 +196,7 @@ func place(room: MapRoom) -> void:
 		var next: Vector2i = room.coord + DIRS[dir]
 		if rooms.has(next) and not room.has_door(dir):
 			rooms[next].doors.erase(opposite(dir))
+	room.number = rooms.size()  # the entrance is rooms[0], so the first built room is 1
 	rooms[room.coord] = room
 	steps -= BUILD_COST
 	current = room.coord

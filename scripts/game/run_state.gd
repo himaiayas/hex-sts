@@ -62,8 +62,14 @@ var current_room: MapRoom = null
 ## Non-null only during a fight.
 var combat: CombatState = null
 
+## The run as it was on entering the current room (snapshot()). Save & Quit inside a room saves
+## this, so Continue starts that room over, like on entering it. Empty outside rooms.
+var _entry_snapshot: Dictionary = {}
+
 
 func start_new_run() -> void:
+	SaveGame.delete()
+	_entry_snapshot = {}
 	# Radius-2 hexagon: 19 tiles, the sheet's starting health.
 	var coords: Array[Vector2i] = []
 	for q in range(-2, 3):
@@ -116,6 +122,7 @@ func enter_room(room: MapRoom) -> void:
 	if room.scene_path().is_empty():
 		return
 	current_room = room
+	_entry_snapshot = snapshot()
 	get_tree().change_scene_to_file(room.scene_path())
 
 
@@ -124,6 +131,7 @@ func enter_room(room: MapRoom) -> void:
 func leave_room() -> void:
 	var beat_boss := current_room != null and current_room.type == Enum.RoomType.BOSS_COMBAT
 	current_room = null
+	_entry_snapshot = {}
 	offered_artifacts.clear()
 	if beat_boss:
 		_next_floor()
@@ -136,6 +144,67 @@ func combat_background() -> Texture2D:
 	return FLOOR_COMBAT_BACKGROUNDS[clampi(dungeon_floor, 1, FLOOR_COMBAT_BACKGROUNDS.size()) - 1].pick_random()
 
 
+## Everything that lasts between rooms, as plain data (SaveGame.pack). The fight in progress isn't.
+func snapshot() -> Dictionary:
+	return {
+		health = SaveGame.pack(health),
+		gold = gold,
+		deck = SaveGame.pack(deck),
+		artifacts = SaveGame.pack(artifacts),
+		level = level,
+		xp = xp,
+		pending_level_ups = pending_level_ups,
+		pending_tile_slots = pending_tile_slots,
+		dungeon_floor = dungeon_floor,
+		fought = SaveGame.pack(fought),
+		normal_fights_on_floor = normal_fights_on_floor,
+		map = SaveGame.pack(map),
+		room = SaveGame.pack(current_room),
+		room_in_map = current_room != null and map.rooms.get(current_room.coord) == current_room,
+	}
+
+
+## Save & Quit: inside a room, the run as it was on entering it; on the map, as it is now.
+func save_and_quit() -> void:
+	SaveGame.write(_entry_snapshot if current_room != null and not _entry_snapshot.is_empty() else snapshot())
+	combat = null
+	get_tree().change_scene_to_file(MENU_SCENE)
+
+
+## Loads the saved run and goes where it was saved: back into its room, or the map.
+## False if there's no readable save.
+func continue_run() -> bool:
+	var data := SaveGame.read()
+	if data.is_empty():
+		return false
+	var saved_health: Dictionary[Vector2i, HealthTile] = {}
+	saved_health.assign(SaveGame.unpack(data.health))
+	health = saved_health
+	gold = data.gold
+	deck = []
+	deck.assign(SaveGame.unpack(data.deck))
+	artifacts = []
+	artifacts.assign(SaveGame.unpack(data.artifacts))
+	level = data.level
+	xp = data.xp
+	pending_level_ups = data.pending_level_ups
+	pending_tile_slots = data.pending_tile_slots
+	dungeon_floor = data.dungeon_floor
+	fought = SaveGame.unpack(data.fought)
+	normal_fights_on_floor = data.normal_fights_on_floor
+	map = SaveGame.unpack(data.map)
+	offered_artifacts = []
+	combat = null
+	current_room = null
+	_entry_snapshot = {}
+	var room: MapRoom = SaveGame.unpack(data.room)
+	if room == null:
+		get_tree().change_scene_to_file(MAP_SCENE)
+	else:
+		enter_room(map.rooms[room.coord] if data.room_in_map else room)
+	return true
+
+
 ## A new instance of this floor's boss.
 func floor_boss() -> BaseEnemy:
 	return FLOOR_BOSSES[mini(dungeon_floor, FLOOR_BOSSES.size()) - 1].new()
@@ -144,6 +213,7 @@ func floor_boss() -> BaseEnemy:
 ## Out of steps: fade to black, show the boss's name, then fight it where the player stands.
 func start_boss() -> void:
 	current_room = MapRoom.new(map.current, Enum.RoomType.BOSS_COMBAT, [])
+	_entry_snapshot = snapshot()
 	var intro := BOSS_INTRO.instantiate()
 	get_tree().root.add_child(intro)
 	intro.play(floor_boss().display_name, current_room.scene_path())

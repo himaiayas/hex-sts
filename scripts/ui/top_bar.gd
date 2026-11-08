@@ -16,6 +16,7 @@ const ARTIFACT_IMAGE_SIZE := 96.0
 @onready var _exp_text: Label = %ExpText
 @onready var _cur_level: Label = %CurrentLevelLabel
 @onready var _next_level: Label = %NextLevelLabel
+@onready var _location_label: Label = %LocationLabel
 
 @onready var _health_modal: Control = %HealthModal
 @onready var _health_grid: HealthGridView = %HealthGrid
@@ -44,14 +45,22 @@ var _placing := 0  # tiles this modal places: LEVEL_UP_TILES for a level, or an 
 var _slots_only := false  # opened for RunState.pending_tile_slots, not a level
 
 
+const MENU_LAYER := 60  # above the hand, the scenes' panels and HoverInfo
+var _menu: Control  # Resume / Options / Save & Quit, over everything (_build_menu)
+var _menu_buttons: Control
+var _options: OptionsPanel
+
+
 func _ready() -> void:
 	add_child(_hover_info)
+	_build_menu()
 	_close_modals()
 	refresh()
 
 
 ## Icons show their numbers; EXP only in its hover text.
 func refresh() -> void:
+	_location_label.text = _location()
 	_health_button.text = "%d/%d" % [_alive_tiles(), RunState.health.size()]
 	_gold_display.text = str(RunState.gold)
 	_deck_button.text = str(RunState.deck.size())
@@ -80,7 +89,102 @@ func refresh() -> void:
 
 func is_modal_open() -> bool:
 	return _health_modal.visible or _deck_modal.visible or _artifact_modal.visible \
-		or _level_up_modal.visible
+		or _level_up_modal.visible or _menu.visible
+
+
+## "Floor 1 - Room 3": the room the player is in, or stands on in the map.
+func _location() -> String:
+	if RunState.map == null:
+		return ""
+	var room: MapRoom = RunState.current_room
+	if room == null:
+		room = RunState.map.rooms.get(RunState.map.current)
+	var where := "Entrance"
+	if room and room.type == Enum.RoomType.BOSS_COMBAT:
+		where = "Boss"
+	elif room and room.number > 0:
+		where = "Room %d" % room.number
+	return "Floor %d - %s" % [RunState.dungeon_floor, where]
+
+
+# --- Menu ---------------------------------------------------------------------------
+
+func _build_menu() -> void:
+	_menu = ColorRect.new()
+	_menu.color = Color(0, 0, 0, 0.75)
+	_menu.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_menu.mouse_filter = Control.MOUSE_FILTER_STOP
+	var layer := CanvasLayer.new()
+	layer.layer = MENU_LAYER
+	add_child(layer)
+	layer.add_child(_menu)
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_menu.add_child(center)
+
+	var panel := PanelContainer.new()
+	var style := StyleBoxFlat.new()
+	style.bg_color = OptionsPanel.COLOR_BG
+	style.border_color = OptionsPanel.COLOR_BORDER
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(12)
+	style.set_content_margin_all(40)
+	panel.add_theme_stylebox_override("panel", style)
+	center.add_child(panel)
+	_menu_buttons = panel
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 20)
+	panel.add_child(box)
+	var title := Label.new()
+	title.text = "Menu"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 44)
+	box.add_child(title)
+	for entry in [["Resume", _close_menu], ["Options", _show_options], ["Save & Quit", RunState.save_and_quit]]:
+		var button := Button.new()
+		button.text = entry[0]
+		button.custom_minimum_size = Vector2(320, 64)
+		button.add_theme_font_size_override("font_size", 30)
+		button.pressed.connect(entry[1])
+		box.add_child(button)
+
+	_options = OptionsPanel.new()
+	_options.back_pressed.connect(_show_menu_buttons)
+	center.add_child(_options)
+	_menu.hide()
+
+
+func _open_menu() -> void:
+	_close_modals()
+	_show_menu_buttons()
+	_menu.show()
+
+
+func _close_menu() -> void:
+	_menu.hide()
+
+
+func _show_options() -> void:
+	_menu_buttons.hide()
+	_options.show()
+
+
+func _show_menu_buttons() -> void:
+	_options.hide()
+	_menu_buttons.show()
+
+
+## Esc opens the menu, or closes it (Options goes back to the menu first).
+func _unhandled_key_input(event: InputEvent) -> void:
+	if event.is_pressed() and not event.is_echo() and event.keycode == KEY_ESCAPE:
+		if not _menu.visible:
+			_open_menu()
+		elif _options.visible:
+			_show_menu_buttons()
+		else:
+			_close_menu()
+		get_viewport().set_input_as_handled()
 
 
 func _alive_tiles() -> int:

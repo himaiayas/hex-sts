@@ -956,6 +956,7 @@ func _check_combat_end() -> void:
 	if combat.is_lost():
 		_end_combat()
 		Sfx.play("lose")
+		SaveGame.delete()  # the run is over
 		_defeat_panel.show()
 	elif combat.is_won():
 		_end_combat()
@@ -1045,7 +1046,7 @@ func _on_continue_pressed() -> void:
 
 func _on_new_run_pressed() -> void:
 	RunState.start_new_run()
-	get_tree().change_scene_to_file(RunState.COMBAT_SCENE)
+	get_tree().change_scene_to_file(RunState.MAP_SCENE)
 
 
 func _on_main_menu_pressed() -> void:

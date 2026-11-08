@@ -13,6 +13,14 @@ const TRACKS := {
 const VOLUME_DB := -8.0  # all tracks
 const SILENT_DB := -60.0
 const FADE_TIME := 1.2  # seconds of crossfade
+const BUS := "Music"  # made at start if the project has none; the Options slider sets its volume
+
+## 0 to 1, set from Options; saved by AudioSettings.
+var volume := 0.8:
+	set(value):
+		volume = clampf(value, 0.0, 1.0)
+		AudioSettings.apply(BUS, volume)
+		AudioSettings.save_level("music", volume)
 
 var _players: Array[AudioStreamPlayer] = []
 var _active := 0  # index into _players of the one fading in / playing
@@ -21,8 +29,11 @@ var _track := ""
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS  # keeps playing while the game is paused
+	AudioSettings.ensure_bus(BUS)
+	volume = AudioSettings.load_level("music", volume)
 	for i in 2:
 		var player := AudioStreamPlayer.new()
+		player.bus = BUS
 		player.volume_db = SILENT_DB
 		add_child(player)
 		_players.append(player)
@@ -63,3 +74,4 @@ func play(track: String) -> void:
 	if old.playing:
 		tween.tween_property(old, "volume_db", SILENT_DB, FADE_TIME)
 		tween.chain().tween_callback(old.stop)
+

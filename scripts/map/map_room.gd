@@ -30,6 +30,7 @@ const NAMES := {
 var coord: Vector2i
 var type: Enum.RoomType
 var doors: Array[int] = []
+var number := 0  # rooms built on this floor before it, plus 1: shown as "Room N" (0 = entrance)
 
 
 func _init(_coord: Vector2i, _type: Enum.RoomType, _doors: Array[int]) -> void:
