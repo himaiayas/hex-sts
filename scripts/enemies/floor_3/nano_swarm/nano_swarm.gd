@@ -1,7 +1,9 @@
 class_name NanoSwarm
 extends BaseEnemy
 
-## Floor 3, Normal.
+## Floor 3, Normal. Corrodes every turn. Consume (a power): heals CONSUME tiles at the start of its turn.
+
+const CONSUME := 5
 
 
 func _init() -> void:
@@ -21,4 +23,5 @@ func _init() -> void:
 	]
 	super("Nano Swarm", CombatUnit.make_hex_health(coords))
 	sprite = preload("res://assets/enemies/floor_3/nano_swarm.png")
-	actions = []
+	actions = [NanoSwarmCorrode.new()]
+	statuses.append(ConsumePower.new(CONSUME))

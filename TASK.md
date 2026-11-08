@@ -114,6 +114,7 @@
 - **Requirement/Prereq:** 1, 2
 - **Brief Description:** Enemy classes implemented with Polymorphism concept of OOP: name, health grid shape, sprite, and a list of actions/pattern.
 - [x] Done ✅: `BaseEnemy` subclasses for every floor 1 monster from the sheet, each with its moves, plus the Mini Slime from Split. Common moves are `EnemyHit` (Hit X, optionally several scattered hits) and `EnemyShieldSelf` (Block X); the rest are small subclasses. Passives are powers (Rune Armor, Aerial, Multi-head, Regen). Normal rooms pick a random floor 1 monster, elite rooms are the Hydra. `combat_scene.testing` puts one monster in every non-boss fight while it's being built. Check: `enemy_check.gd`.
+- [x] Done ✅: Floor 3 monsters, each with its moves, in the floor 3 normal and elite pools. New shared moves: `EnemyWindUp` (aims the next move without attacking; Ogre, Plasma Turret, Android Sentinel) and `EnemyField` (tops Shields back up; Ramiel, Mech Walker), and `PlateTileEffect.strip()` for Smash / Shred / Corrode. New powers: Hover, Consume, Firewall, Hacked, Lockdown. Rules are in `KEYWORDS.md`. Check: `enemy_check.gd`.
 
 ### 11. Enemy turn and AI
 

@@ -16,5 +16,5 @@ func _init() -> void:
 	super("Ogre", CombatUnit.make_hex_health(coords))
 	sprite = preload("res://assets/enemies/floor_1/ogre.png")
 	var smash := OgreSmash.new()
-	actions = [OgreWindUp.new(smash), smash]
+	actions = [EnemyWindUp.new("Wind-up", "No attack. Aims the next Smash.", smash), smash]
 	p1_cycle = [0, 1]

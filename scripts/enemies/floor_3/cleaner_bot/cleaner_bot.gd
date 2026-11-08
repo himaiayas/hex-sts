@@ -1,7 +1,7 @@
 class_name CleanerBot
 extends BaseEnemy
 
-## Floor 3, Normal.
+## Floor 3, Normal. Cycles Sweep -> Shred.
 
 
 func _init() -> void:
@@ -18,4 +18,9 @@ func _init() -> void:
 	]
 	super("Cleaner Bot", CombatUnit.make_hex_health(coords))
 	sprite = preload("res://assets/enemies/floor_3/cleaner_bot.png")
-	actions = []
+	# A ring with a tile further out on each side.
+	var sweep: Array[BaseActionTile] = [DamageTile.new(Vector2i(-2, 0)), DamageTile.new(Vector2i(2, 0))]
+	for dir in StrengthPower.DIRS:
+		sweep.append(DamageTile.new(dir))
+	actions = [EnemyHit.new("Sweep", "Hit 8 tiles in a ring.", sweep), CleanerBotShred.new()]
+	p1_cycle = [0, 1]

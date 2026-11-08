@@ -14,8 +14,12 @@ func inflict(combat: CombatState, unit: CombatUnit, cell: Vector2i)->bool:
 	return true
 
 ## Most effects only go on undamaged tiles; allow_damaged ones (Poison) go on any tile.
+## Debuffs never go on a unit with Firewall.
 func can_inflict(unit: CombatUnit, cell: Vector2i)->bool:
-	return unit.health.has(cell) and (unit.health[cell].hp != Enum.HealthTileEnum.DAMAGED or (effect as BaseTileEffect).allow_damaged)
+	var tile_effect := effect as BaseTileEffect
+	if tile_effect.debuff and unit.power_amount(FirewallPower) > 0:
+		return false
+	return unit.health.has(cell) and (unit.health[cell].hp != Enum.HealthTileEnum.DAMAGED or tile_effect.allow_damaged)
 
 func get_color()->Color:
 	return effect.get_color()

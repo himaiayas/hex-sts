@@ -835,8 +835,9 @@ static var testing: Script = null
 static var NORMALS: Array = [
 	[Slime, Goblin, Vermin, Hound, Ogre, MagicGolem, DarkElf, Griffin],
 	[Skeleton, Bat, Zombie, JackOLantern, LilGhost, Mummy, Werewolf],
+	[ScoutDrone, CleanerBot, CyberHound, PlasmaTurret, AndroidSentinel, NanoSwarm, HackerAI],
 ]
-static var ELITES: Array = [[Hydra], [Frangenstein, Lich]]
+static var ELITES: Array = [[Hydra], [Frangenstein, Lich], [MechWalker, Terminator]]
 
 
 ## The floor whose monster lists have script, or 0.
