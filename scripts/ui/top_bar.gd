@@ -35,7 +35,7 @@ const ARTIFACT_IMAGE_SIZE := 96.0
 const NEIGHBORS: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1),
 	Vector2i(0, -1), Vector2i(1, -1), Vector2i(-1, 1)]
 
-var _hover_info := HoverInfo.new()  # keywords of cards in the Deck modal
+var _hover_info := HoverInfo.new()  # keywords of cards in the Deck modal and of artifacts
 
 ## Level-up in progress: a copy of the health grid with the placed tiles, and the artifact on offer.
 var _level_up_health: Dictionary[Vector2i, HealthTile] = {}
@@ -123,6 +123,7 @@ func _on_deck_pressed() -> void:
 
 func _on_artifacts_pressed() -> void:
 	_close_modals()
+	_hover_info.clear()
 	for child in _artifact_list.get_children():
 		child.queue_free()
 	for artifact in RunState.artifacts:
@@ -137,7 +138,7 @@ func _on_artifacts_pressed() -> void:
 		var text := RichTextLabel.new()
 		text.bbcode_enabled = true
 		text.fit_content = true 
-		text.text = "[b]%s[/b]\n[color=#8d93a5]%s[/color]" % [artifact.name, artifact.description]
+		text.text = "[b]%s[/b]\n[color=#8d93a5]%s[/color]" % [artifact.name, artifact.bbcode_description()]
 		text.add_theme_font_size_override("normal_font_size", 26)
 		text.add_theme_font_size_override("bold_font_size", 26)
 		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -145,6 +146,7 @@ func _on_artifacts_pressed() -> void:
 		text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		row.add_child(text)
 		_artifact_list.add_child(row)
+		_hover_info.add(row, artifact.keyword_entries(), false, _artifact_list.get_parent())
 	if RunState.artifacts.is_empty():
 		var empty := Label.new()
 		empty.text = "No artifacts yet."
@@ -170,7 +172,9 @@ func _open_level_up() -> void:
 	if _level_up_reward:
 		_level_up_artifact_image.texture = _level_up_reward.image
 		_level_up_artifact.text = "[center][b]%s[/b]\n[color=#8d93a5]%s[/color][/center]" % [
-			_level_up_reward.name, _level_up_reward.description]
+			_level_up_reward.name, _level_up_reward.bbcode_description()]
+		_hover_info.clear()
+		_hover_info.add(_level_up_artifact, _level_up_reward.keyword_entries())
 	else:
 		_level_up_artifact.text = "[center]You own every artifact.[/center]"
 	if _level_up_grid.unit == null:

@@ -3,7 +3,7 @@ extends BaseArtifact
 
 
 func _init() -> void:
-	super("Heavy Cuirass", "At the start of your turn, gain 1 Energy. Whenever you play a Defense, remove the Shield from 1 random shielded tile.", Enum.ArtifactRarity.LEGENDARY,
+	super("Heavy Cuirass", "At the start of your turn, gain 1 Energy. Whenever you play a Defense, remove the {keyword:Shield} from 1 random shielded tile.", Enum.ArtifactRarity.LEGENDARY,
 		preload("res://assets/artifacts/heavy_cuirass.png"))
 
 func on_trigger(trigger: Enum.Trigger, combat: CombatState, _unit: CombatUnit, _cell: Vector2i) -> void:

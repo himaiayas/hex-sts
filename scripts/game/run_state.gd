@@ -11,6 +11,8 @@ var artifacts: Array[BaseArtifact] = []
 var level :=0
 var xp :=0
 var dungeon_floor :=1
+var fought: Dictionary = {}  # monster script -> times fought this run; repeats are less likely (combat_scene)
+var normal_fights_on_floor := 0  # the first few of each floor are easy (combat_scene.EASY_FIGHTS)
 
 const MAP_SCENE := "res://scenes/map.tscn"
 const COMBAT_SCENE := "res://scenes/combat.tscn"
@@ -77,6 +79,8 @@ func start_new_run() -> void:
 	pending_tile_slots = 0
 	offered_artifacts = []
 	dungeon_floor = 1
+	fought = {}
+	normal_fights_on_floor = 0
 
 	deck.append(CureAilment.new())
 	deck.append(LuckyShield.new())
@@ -147,6 +151,7 @@ func start_boss() -> void:
 
 func _next_floor() -> void:
 	dungeon_floor += 1
+	normal_fights_on_floor = 0
 	map = MapState.new()
 	map.start()
 
@@ -167,6 +172,7 @@ func add_artifact(artifact: BaseArtifact) -> void:
 		push_warning("Already own %s; not added again" % artifact.name)
 		return
 	artifacts.append(artifact)
+	Sfx.play("artifact")
 	artifact.on_pickup()
 
 

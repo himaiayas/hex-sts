@@ -28,12 +28,13 @@ func _on_chest_pressed() -> void:
 	_artifact_button.visible = artifact != null
 	if artifact:
 		_artifact_button.text = artifact.name
-		_artifact_button.tooltip_text = artifact.description
+		_artifact_button.tooltip_text = artifact.plain_description()
 		_artifact_button.icon = artifact.image
 	_modal.show()
 
 
 func _on_gold_pressed() -> void:
+	Sfx.play("coins")
 	RunState.gold += gold
 	_gold_button.hide()
 	_top_bar.refresh()

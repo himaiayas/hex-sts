@@ -3,7 +3,7 @@ extends BaseArtifact
 
 
 func _init() -> void:
-	super("Banner of Three", "Each turn, if the third card you play is a Defense, Shield 1 random tile.", Enum.ArtifactRarity.UNCOMMON,
+	super("Banner of Three", "Each turn, if the third card you play is a Defense, {keyword:Shield} 1 random tile.", Enum.ArtifactRarity.UNCOMMON,
 		preload("res://assets/artifacts/banner_of_three.png"))
 
 func on_card_played(combat: CombatState, card: BaseCard) -> void:

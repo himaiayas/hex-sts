@@ -96,6 +96,8 @@ func _process(delta: float) -> void:
 	var hovered := _card_under_mouse()
 	if hovered != _hovered:
 		_hovered = hovered
+		if hovered != -1:
+			Sfx.play("card_hover")
 		_update_order()
 
 	var weight := 1.0 - exp(-SPEED * delta)

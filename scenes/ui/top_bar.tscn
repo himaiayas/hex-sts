@@ -320,10 +320,15 @@ theme_override_font_sizes/font_size = 44
 text = "Artifacts"
 horizontal_alignment = 1
 
-[node name="ArtifactList" type="VBoxContainer" parent="ArtifactModal/Center/Panel/Box" unique_id=1117686320]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(640, 0)
+[node name="Scroll" type="ScrollContainer" parent="ArtifactModal/Center/Panel/Box" unique_id=1117686321]
+custom_minimum_size = Vector2(820, 680)
 layout_mode = 2
+horizontal_scroll_mode = 0
+
+[node name="ArtifactList" type="VBoxContainer" parent="ArtifactModal/Center/Panel/Box/Scroll" unique_id=1117686320]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 3
 theme_override_constants/separation = 20
 
 [node name="CloseButton" type="Button" parent="ArtifactModal/Center/Panel/Box" unique_id=1324661767]

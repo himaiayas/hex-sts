@@ -24,6 +24,39 @@ func _init(_name: String, _description: String, _rarity: Enum.ArtifactRarity,
 	image = _image
 
 
+## {keyword:Plate} in a description: shown as the word, coloured, with a hover panel explaining it.
+static var _keyword_regex := RegEx.create_from_string("\\{keyword:([^}]+)\\}")
+const COLOR_KEYWORD := Color(1, 0.831373, 0.352941)  # as on cards (RenderCard.COLOR_KEYWORD)
+
+
+## description with each {keyword:X} as plain X, for tooltips and Labels.
+func plain_description() -> String:
+	return _keyword_regex.sub(description, "$1", true)
+
+
+## description as BBCode for a RichTextLabel, keywords coloured as on cards.
+func bbcode_description() -> String:
+	return _keyword_regex.sub(description, "[color=#%s]$1[/color]" % COLOR_KEYWORD.to_html(false), true)
+
+
+## HoverInfo entries: the artifact itself, then each keyword in its description.
+func hover_entries() -> Array:
+	var entries := [[name, plain_description(), null]]
+	var seen: Array[String] = []
+	for m in _keyword_regex.search_all(description):
+		var keyword := m.get_string(1)
+		var text := Keywords.describe(keyword)
+		if keyword not in seen and not text.is_empty():
+			seen.append(keyword)
+			entries.append([keyword, text, null])
+	return entries
+
+
+## Just the keyword entries, for places that already show the description.
+func keyword_entries() -> Array:
+	return hover_entries().slice(1)
+
+
 ## Once, when the player gets it (RunState.add_artifact).
 func on_pickup() -> void:
 	pass

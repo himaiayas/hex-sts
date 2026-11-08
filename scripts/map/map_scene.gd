@@ -84,6 +84,7 @@ func _open_draft(cell: Vector2i, door: int) -> void:
 
 func _on_room_chosen(room: MapRoom) -> void:
 	_draft_panel.hide()
+	Sfx.play("build")
 	map.place(room)
 	_refresh()
 	await _map_view.animate_path([room.coord] as Array[Vector2i])

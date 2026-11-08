@@ -45,6 +45,7 @@ func setup(_map: MapState) -> void:
 ## Moves the player token through each room in order. Await it to know when it arrives.
 func animate_path(path: Array[Vector2i]) -> void:
 	for cell in path:
+		Sfx.play("footstep")
 		var tween := create_tween()
 		tween.tween_property(self, "token_pos", RoomDraw.axial_to_pixel(cell, HEX), STEP_TIME)
 		await tween.finished

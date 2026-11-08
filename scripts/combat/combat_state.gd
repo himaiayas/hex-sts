@@ -2,6 +2,8 @@ class_name CombatState
 extends RefCounted
 
 signal enemy_spawned(enemy: CombatUnit, in_place_of: CombatUnit)  # the scene shows it in in_place_of's slot, or beside when null
+signal reshuffled  # the discard pile became the draw pile (for sound)
+signal card_exhausted(card: BaseCard)  # (for sound)
 
 
 # Temporary state for combat encounter
@@ -114,6 +116,7 @@ func draw(amount: int) -> void:
 			draw_pile = discard_pile
 			discard_pile = []
 			draw_pile.shuffle()
+			reshuffled.emit()
 		hand.append(draw_pile.pop_back())
 
 
@@ -273,6 +276,7 @@ func exhaust(card: BaseCard) -> void:
 	exhaust_pile.append(card)
 	exhausted_this_turn += 1
 	exhausted_this_combat += 1
+	card_exhausted.emit(card)
 	for other in draw_pile + hand + discard_pile + exhaust_pile:
 		other.on_card_exhausted(self)
 	if playing:
