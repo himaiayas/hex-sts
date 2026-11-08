@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Ogre / Magic Golem / Dark Elf / Griffin / Hydra / Skeleton / Bat / Zombie / Frangenstein / Jack O Lantern / Lil Ghost / Dragon / Dracula / Ramiel. Exit code = number of failures.
+## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Ogre / Magic Golem / Dark Elf / Griffin / Hydra / Skeleton / Bat / Zombie / Frangenstein / Jack O Lantern / Lil Ghost / Mummy / Dragon / Dracula / Ramiel. Exit code = number of failures.
 ## godot --headless --path . -s res://scripts/enemies/enemy_check.gd
 
 var _failures := 0
@@ -49,6 +49,7 @@ func _initialize() -> void:
 	await _check_frangenstein(combat)
 	await _check_jack(combat)
 	await _check_lil_ghost(combat)
+	await _check_mummy(combat)
 	await _check_dragon(combat)
 	await _check_dracula(combat)
 	await _check_ramiel(combat)
@@ -660,6 +661,77 @@ func _check_lil_ghost(combat: CombatState) -> void:
 			landed += 1
 	combat.playing = null
 	_check(landed == 8, "ethereal capped a non-Attack card")
+
+
+
+func _check_mummy(combat: CombatState) -> void:
+	var mummy := Mummy.new()
+	combat.enemies = [mummy]
+	var player := combat.player
+	player.statuses.clear()
+
+	# Curse Wrap (on the player) -> Pierce (through Shield).
+	var names: Array[String] = []
+	for i in 2:
+		_heal(player)
+		for tile in player.health.values():
+			tile.hp = Enum.HealthTileEnum.SHIELDED
+		mummy.plan(combat)
+		var action := mummy.intent_actions[0]
+		names.append(action.action_name)
+		var hit: Array = _covered(player, action.parts[0]) if not action.parts.is_empty() else []
+		await mummy.take_turn(combat)
+		if action is EnemyHit:
+			_check(not hit.is_empty() and _cells_with(player, Enum.HealthTileEnum.DAMAGED) == hit.size(), "pierce didn't go through Shield where its intent showed")
+		else:
+			_check(player.power_amount(CurseWrapPower) == Mummy.CURSE_WRAP, "curse wrap should put Curse Wrap 3 on the player")
+	_check(names == ["Curse Wrap", "Pierce"], "mummy order: %s" % [names])
+
+	# Curse Wrap: during a Defense card, the first 3 Shields or Plates fizzle; other cards aren't affected;
+	# it's gone after the Defense card, and at the end of the player's turn.
+	_heal(player)
+	var cells: Array = player.health.keys()
+	combat.playing = Strike.new()
+	player.shield_health_tile(combat, cells[0])
+	combat.playing = ShieldPlayer.new()
+	for i in range(1, 5):
+		player.shield_health_tile(combat, cells[i])
+	player.apply_effect_health_tile(combat, cells[5], PlateTileEffect.new())
+	combat.playing = null
+	_check(_cells_with(player, Enum.HealthTileEnum.SHIELDED) == 2 and player.health[cells[5]].has_effect(PlateTileEffect),
+		"curse wrap should eat 3 Shields of the Defense card only")
+	player.statuses.clear()  # used up outside play_card, so nothing took it off
+	await mummy.actions[0].execute(combat, mummy)
+	var card := ShieldPlayer.new()
+	combat.hand.append(card)
+	combat.energy = card.cost
+	_heal(player)
+	await combat.play_card(card, [player], [cells[0]], [0])
+	_check(_cells_with(player, Enum.HealthTileEnum.SHIELDED) == 0 and player.power_amount(CurseWrapPower) == 0, "curse wrap should eat the card's Shield, then go")
+	await mummy.actions[0].execute(combat, mummy)
+	await player.on_turn_end(combat)
+	_check(player.power_amount(CurseWrapPower) == 0, "curse wrap should end with the player's turn")
+
+	# Wrapped: every other hit of the first Attack card misses; later cards land; it resets each turn.
+	var tiles: Array = mummy.health.keys()
+	_heal(mummy)
+	combat.playing = Strike.new()
+	var landed := 0
+	for i in 6:
+		if mummy.damage_health_tile(combat, tiles[i]):
+			landed += 1
+	_check(landed == 3, "wrapped should halve the first card, landed %d of 6" % landed)
+	combat.playing = Strike.new()
+	_check(mummy.damage_health_tile(combat, tiles[6]) and mummy.damage_health_tile(combat, tiles[7]), "wrapped should only halve the first card")
+	combat.playing = null
+	await mummy.on_turn_end(combat)
+	combat.playing = Strike.new()
+	landed = 0
+	for i in range(8, 12):
+		if mummy.damage_health_tile(combat, tiles[i]):
+			landed += 1
+	combat.playing = null
+	_check(landed == 2, "wrapped should halve the first card again next turn")
 
 
 
