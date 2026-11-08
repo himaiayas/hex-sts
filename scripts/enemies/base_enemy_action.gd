@@ -4,6 +4,8 @@
 ## or the enemy's own grid, so one action can attack, shield itself, or both.
 ## plan() locks the target cells (the intent); execute() uses exactly those cells.
 
+const SCATTER_MIN := 0.75 # a scattered hit covers at least this share of the most open tiles it could
+
 var action_type: Enum.BaseEnemyActionEnum # used to determine the intent graphic, init in subclass
 var action_name: String # Apply for some big action, like "Cyborg uses 'NeoArmstrongCycloneJetArmstrongCannon'!"
 var description: String # a short line on what the move does, set in subclass _init()
@@ -59,8 +61,8 @@ func pick_cell(part: EnemyActionPart, target: CombatUnit) -> Vector2i:
     return best.pick_random() if not best.is_empty() else Vector2i.ZERO
 
 
-## Damage: undamaged = 2, shielded = 1, +1 if plated (it would shield again). Shield: undamaged = 1.
-## Plate: undamaged without Plate = 1. Other tiles on the grid = 1.
+## Damage: undamaged = 2, shielded = 1 (2 with Pierce), +1 if plated (it would shield again).
+## Shield: undamaged = 1. Plate: undamaged without Plate = 1. Other tiles on the grid = 1.
 func score_cell(part: EnemyActionPart, cell: Vector2i, target: CombatUnit) -> int:
     var score := 0
     for t in part.tiles:
@@ -68,9 +70,9 @@ func score_cell(part: EnemyActionPart, cell: Vector2i, target: CombatUnit) -> in
         if tile == null:
             continue
         if t is DamageTile:
-            if tile.hp >= Enum.HealthTileEnum.SHIELDED:
+            if tile.hp == Enum.HealthTileEnum.SHIELDED and not t.pierce:
                 score += 1
-            elif tile.hp == Enum.HealthTileEnum.UNDAMAGED:
+            elif tile.hp > Enum.HealthTileEnum.DAMAGED:
                 score += 2
             if tile.has_effect(PlateTileEffect):
                 score += 1
@@ -87,7 +89,8 @@ func score_cell(part: EnemyActionPart, cell: Vector2i, target: CombatUnit) -> in
 
 ## A random cell where the part covers at least one tile that isn't damaged, for scattered hits.
 ## Tiles the earlier parts of this move will damage don't count (a Shield there only breaks),
-## so every hit lands on something. Cells that cover more open tiles are more likely.
+## so every hit lands on something. Only cells covering at least SCATTER_MIN of the best count
+## are picked, so a hit never lands on a poor spot.
 func pick_random_cell(part: EnemyActionPart, target: CombatUnit) -> Vector2i:
     var taken := {}
     for earlier: EnemyActionPart in parts.slice(0, parts.find(part)):
@@ -95,12 +98,15 @@ func pick_random_cell(part: EnemyActionPart, target: CombatUnit) -> Vector2i:
             var c: Vector2i = earlier.cell + t.coords
             if target.health.has(c) and target.health[c].hp != Enum.HealthTileEnum.SHIELDED:
                 taken[c] = true
-    var cells: Array[Vector2i] = []
+    var open := {} # cell -> open tiles the part covers there
     for cell in target.health:
         if target.health[cell].hp > Enum.HealthTileEnum.DAMAGED and not taken.has(cell):
             for t in part.tiles:
-                cells.append(cell - t.coords)
-    return cells.pick_random() if not cells.is_empty() else Vector2i.ZERO
+                open[cell - t.coords] = open.get(cell - t.coords, 0) + 1
+    if open.is_empty():
+        return Vector2i.ZERO
+    var least: float = open.values().max() * SCATTER_MIN
+    return open.keys().filter(func(c: Vector2i) -> bool: return open[c] >= least).pick_random()
 
 
 ## Inflicts tile on amount random tiles of the owner's own grid that it can change (heal, shield).
