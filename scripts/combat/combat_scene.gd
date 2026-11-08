@@ -50,6 +50,8 @@ var _aim: TextureRect  # an enemy's sight on the player's sprite, while a move w
 @onready var _player_view: HealthGridView = %PlayerGrid
 @onready var _player_image: UnitImage = %PlayerImage
 @onready var _enemies_box: HBoxContainer = %Enemies
+@onready var _arena: HBoxContainer = $Margin/Layout/Arena
+@onready var _player_side: HBoxContainer = $Margin/Layout/Arena/Player
 @onready var _hand: HandView = %Hand
 @onready var _deck_button: Button = %DeckButton
 @onready var _draw_button: Button = %DrawPileButton
@@ -96,6 +98,7 @@ func _ready() -> void:
 	combat.enemy_spawned.connect(_on_enemy_spawned)
 	for enemy in combat.enemies:
 		_add_enemy(enemy)
+	_fit_enemies()
 
 	combat.animator = _animate
 	_busy = true
@@ -148,11 +151,54 @@ func _add_enemy(enemy: BaseEnemy) -> void:
 	_intent_labels.insert(i, intent_label)
 
 
+## Shrinks the enemies' grids and sprites by the same factor until the row fits beside the player's side,
+## so a crowded fight (summons, Split) never pushes anything off screen. Enemies with shrinks = false
+## (the Lich) keep their size.
+func _fit_enemies() -> void:
+	var margin: MarginContainer = $Margin
+	var room := get_viewport_rect().size.x - margin.get_theme_constant("margin_left") - margin.get_theme_constant("margin_right") \
+		- _player_side.get_combined_minimum_size().x - 2 * _arena.get_theme_constant("separation")
+	var factor := 1.0
+	for attempt in 8:  # the grids' padding doesn't scale, so close in over a few tries
+		var widths := _enemies_width(factor)  # fixed, shrinking
+		if widths.x + widths.y <= room or widths.y <= 0.0:
+			break
+		factor *= maxf(0.1, (room - widths.x) / widths.y) * 0.98
+
+
+## The enemy row's width with the shrinking grids and sprites at factor of their own size:
+## x = the part that doesn't shrink (fixed enemies, gaps), y = the part that does.
+func _enemies_width(factor: float) -> Vector2:
+	var widths := Vector2.ZERO
+	var shown := 0
+	for i in combat.enemies.size():
+		var enemy := combat.enemies[i] as BaseEnemy
+		var view := _enemy_views[i]
+		var slot := _enemy_images[i].get_parent() as Control
+		var f := factor if enemy.shrinks else 1.0
+		view.scale_factor = enemy.grid_scale * f
+		view.refresh()
+		slot.custom_minimum_size = enemy.image_size * f
+		var side := view.get_parent() as HBoxContainer
+		if not side.visible:
+			continue
+		var width := slot.custom_minimum_size.x + view.custom_minimum_size.x
+		if enemy.shrinks:
+			widths.y += width
+		else:
+			widths.x += width
+		widths.x += side.get_theme_constant("separation")
+		shown += 1
+	widths.x += maxi(0, shown - 1) * _enemies_box.get_theme_constant("separation")
+	return widths
+
+
 ## A spawned enemy appears with a flash, in in_place_of's place if it has one.
 func _on_enemy_spawned(enemy: CombatUnit, in_place_of: CombatUnit) -> void:
 	_add_enemy(enemy)
 	if in_place_of:
 		_view_for(in_place_of).get_parent().hide()
+	_fit_enemies()
 	_flash_sprite(_sprite_for(enemy))
 
 

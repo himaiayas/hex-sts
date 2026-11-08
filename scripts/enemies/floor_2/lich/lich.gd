@@ -51,6 +51,7 @@ func _init() -> void:
 	statuses.append(RegenPower.new(REGEN))
 	mimic = Mimic.new(self)
 	companions = [mimic]
+	shrinks = false
 
 
 func _choose_actions() -> Array[BaseEnemyAction]:

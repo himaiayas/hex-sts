@@ -4,6 +4,8 @@ extends CombatUnit
 var sprite: Texture2D
 var idle_frames: Array[Texture2D] = []  # looped instead of sprite when set (bosses)
 var image_size := Vector2(300, 300)  # the sprite's slot in combat
+var grid_scale := 1.0  # its grid's size; summoned minions are smaller (HealthGridView.scale_factor)
+var shrinks := true  # false: a crowded enemy row never shrinks it (the Lich stays the player's size)
 var tint := Color.WHITE  # multiplies the sprite, e.g. the Warewolf's Wolf form
 var companions: Array[CombatUnit] = []  # fought beside it from the start (the Lich's Mimic)
 ## Where its moves' hit images play, in global coords at 1920x1080. Empty = over the target's grid.

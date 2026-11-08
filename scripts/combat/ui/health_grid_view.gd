@@ -63,6 +63,7 @@ var shake := Vector2.ZERO: # offset everything is drawn at while the grid shakes
 var _hover := NO_CELL
 var _origin := Vector2.ZERO
 var _hex := HEX_SIZE  # current hex radius
+var scale_factor := 1.0  # shrinks HEX_SIZE and MAX_GRID_SIZE: a small minion, or a crowded enemy row
 var _info_cell := NO_CELL  # tile under the mouse, for the info panels (any grid, clickable or not)
 var _info_power := -1  # index in unit.statuses of the power badge under the mouse
 var _info_timer := 0.0
@@ -104,7 +105,8 @@ func refresh() -> void:
 		min_p = Vector2.ZERO
 		max_p = Vector2.ZERO
 	var extent := max_p - min_p + Vector2(2.0, 2.0)  # plus one hex of padding each side
-	_hex = minf(HEX_SIZE, minf(MAX_GRID_SIZE.x / extent.x, MAX_GRID_SIZE.y / extent.y))
+	var fit := MAX_GRID_SIZE * scale_factor
+	_hex = minf(HEX_SIZE * scale_factor, minf(fit.x / extent.x, fit.y / extent.y))
 	min_p *= _hex
 	max_p *= _hex
 	for key in _particles:  # rebuilt at the new size by _sync_particles

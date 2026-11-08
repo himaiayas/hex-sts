@@ -15,6 +15,7 @@ func _init(lich: BaseEnemy) -> void:
 	super("Mimic", CombatUnit.make_hex_health(coords))
 	sprite = preload("res://assets/enemies/floor_2/mimic.png")
 	image_size = Vector2(150, 150)  # half the usual
+	grid_scale = 0.5
 	_lich = weakref(lich)
 
 
