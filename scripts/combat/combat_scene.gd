@@ -722,10 +722,17 @@ func _room_type() -> Enum.RoomType:
 
 ## The enemy being built, fought in every normal and elite room (and on F6) until it's done.
 ## null = the usual line-ups.
-static var testing: Script = null
+static var testing: Script = Skeleton
+
+## Each floor's monsters: NORMALS[0] / ELITES[0] are floor 1. Floors past the end reuse the last one.
+## ponytail: floor 2 elites are still the Hydra until Frangenstein and the Lich are built.
+static var NORMALS: Array = [
+	[Slime, Goblin, Vermin, Hound, Ogre, MagicGolem, DarkElf, Griffin],
+	[Skeleton],
+]
+static var ELITES: Array = [[Hydra], [Hydra]]
 
 
-## Placeholder line-ups until there are more enemies.
 func _enemies_for(room_type: Enum.RoomType) -> Array[CombatUnit]:
 	var enemies: Array[CombatUnit] = []
 	if room_type == Enum.RoomType.BOSS_COMBAT:
@@ -734,10 +741,8 @@ func _enemies_for(room_type: Enum.RoomType) -> Array[CombatUnit]:
 	if testing:
 		enemies.append(testing.new())
 		return enemies
-	if room_type == Enum.RoomType.ELITE_COMBAT:
-		enemies.append(Hydra.new())
-		return enemies
-	enemies.append([Slime, Goblin, Vermin, Hound, Ogre, MagicGolem, DarkElf, Griffin].pick_random().new())
+	var pools: Array = ELITES if room_type == Enum.RoomType.ELITE_COMBAT else NORMALS
+	enemies.append(pools[mini(RunState.dungeon_floor, pools.size()) - 1].pick_random().new())
 	return enemies
 
 
