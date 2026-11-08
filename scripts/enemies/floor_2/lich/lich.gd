@@ -33,7 +33,12 @@ func _init() -> void:
 		Vector2i(1, 6), Vector2i(2, 6),
 	]
 	super("Lich", CombatUnit.make_hex_health(coords))
-	sprite = preload("res://assets/enemies/floor_2/lich.png")
+	# Without the art's empty left side, so it stands closer to the player; still 300 tall like them.
+	var art := AtlasTexture.new()
+	art.atlas = preload("res://assets/enemies/floor_2/lich.png")
+	art.region = Rect2(220, 0, 804, 1024)
+	sprite = art
+	image_size = Vector2(300.0 * 804 / 1024, 300)
 	var fracture: Array[BaseActionTile] = [ApplyEffectTile.new(Vector2i.ZERO, FractureTileEffect.new())]
 	_soul_drain = EnemyHit.new("Soul Drain", "Fracture 4 random tiles.", fracture, 4)
 	_soul_drain.action_type = Enum.BaseEnemyActionEnum.DEBUFF
