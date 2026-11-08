@@ -77,6 +77,7 @@ var _aim: TextureRect  # an enemy's sight on the player's sprite, while a move w
 var _rewards: CombatRewards
 var _over := false  # won or lost: ignore combat input
 var _busy := false  # a card or a turn is playing out: ignore combat input until it's done
+var _hovered_enemy := -1  # index in combat.enemies under the mouse: only its intents show at full strength
 
 
 func _ready() -> void:
@@ -149,6 +150,18 @@ func _add_enemy(enemy: BaseEnemy) -> void:
 	_enemy_views.insert(i, view)
 	_enemy_images.insert(i, image)
 	_intent_labels.insert(i, intent_label)
+
+
+## Which enemy's sprite or grid is under the mouse; the others' intents on the player's grid fade.
+func _update_hovered_enemy() -> void:
+	var hovered := -1
+	for i in _enemy_views.size():
+		var side := _enemy_views[i].get_parent() as Control
+		if side.visible and side.get_global_rect().has_point(get_global_mouse_position()):
+			hovered = i
+	if hovered != _hovered_enemy:
+		_hovered_enemy = hovered
+		_refresh()
 
 
 ## Shrinks the enemies' grids and sprites by the same factor until the row fits beside the player's side,
@@ -400,6 +413,8 @@ func _on_win_combat_pressed()->void:
 
 ## _input, not _unhandled_input: the grids and this root stop mouse events, so right-clicks never arrive unhandled.
 func _input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		_update_hovered_enemy()
 	if _over or _busy or _top_bar.is_modal_open():
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
@@ -672,7 +687,7 @@ func _refresh() -> void:
 			if action.aim_vfx:
 				aim = action.aim_vfx
 			for part in action.parts:
-				var intent := {cell = part.cell, tiles = part.tiles}
+				var intent := {cell = part.cell, tiles = part.tiles, faded = _hovered_enemy != -1 and _hovered_enemy != i}
 				if part.side == Enum.Side.PLAYER:
 					player_intents.append(intent)
 				else:

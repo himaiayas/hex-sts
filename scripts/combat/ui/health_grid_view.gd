@@ -15,6 +15,7 @@ const NAME_HEIGHT := 40.0
 const NO_CELL := Vector2i(999999, 999999)  # not (0,0): that's a real cell
 const INTENT_PERIOD := 1.4  # seconds per pulse
 const FLICKER_PERIOD := 0.4  # random targets: faster than intents so the two read differently
+const INTENT_FADE := 0.25  # a faded intent's alpha, relative: another enemy is hovered
 const PLACED_PERIOD := 1.2  # grid actions already clicked: a slow flash of the whole tile
 const PLACED_FILL := 0.6  # strongest fill of that flash
 const ICON_SIZE := 40.0  # action icons on targeted tiles (a hex is ~62 wide)
@@ -48,7 +49,7 @@ const COLOR_NEW := Color("#ffe9a8")
 var unit: CombatUnit
 var clickable := false
 var preview: Dictionary[Vector2i, BaseActionTile] = {} # next grid action of the selected card, rotated: offset from cursor -> tile
-var intents: Array = [] # enemy attacks aimed at this grid: [{cell: Vector2i, tiles: Array[BaseActionTile]}]
+var intents: Array = [] # enemy attacks aimed at this grid: [{cell: Vector2i, tiles: Array[BaseActionTile], faded: bool}]
 var placed: Array = [] # selected card's grid actions already clicked on this grid: [{cell: Vector2i, tiles: Dictionary[Vector2i, BaseActionTile]}]
 var random_target: BaseActionTile = null # selected card's next grid action hits random tiles of a grid: this whole grid flickers
 var pick_tile: BaseActionTile = null # pick step (e.g. Heal): previewed under the mouse on tiles it can go on
@@ -237,10 +238,11 @@ func _draw() -> void:
 	var wave := 0.5 + 0.5 * sin(TAU * Time.get_ticks_msec() / 1000.0 / INTENT_PERIOD)
 	var pulse := lerpf(ICON_ALPHA_MIN, ICON_ALPHA_MAX, wave)
 	for intent in intents:
+		var alpha := pulse * (INTENT_FADE if intent.get("faded", false) else 1.0)
 		for t: BaseActionTile in intent.tiles:
 			var cell: Vector2i = intent.cell + t.coords
 			if unit.health.has(cell):
-				_draw_action(t, cell, pulse)
+				_draw_action(t, cell, alpha)
 
 	var flash := 0.5 + 0.5 * sin(TAU * Time.get_ticks_msec() / 1000.0 / PLACED_PERIOD)
 	for p in placed:
