@@ -9,13 +9,26 @@ extends Control
 
 const RenderCard := preload("res://scripts/cards/render_card.gd")
 const CARD_SIZE := HandView.CARD_SIZE
-const ENEMY_IMAGE_SIZE := Vector2(300, 300)
 const LUNGE_DISTANCE := 40.0  # px toward the target
+const LUNGE_TIME := 0.1  # out to the target; the hit flashes when it gets there
+const LUNGE_BACK_TIME := 0.15
+const VFX_SCALE := 1.25  # an enemy move's hit image, relative to its area
+const RIPPLES := 3
+const RIPPLE_GAP := 0.2  # seconds between rings
+const RIPPLE_TIME := 1.0  # each ring, from RIPPLE_START to full size
+const RIPPLE_START := 0.3
+const RIPPLE_WIDTH := 1800.0  # px, a ring at full size
+const AIM_SIZE := Vector2(200, 200)
+const AIM_DRIFT := 30.0  # px the sight wanders from the middle of the player's sprite
+const AIM_LOOP_TIME := 3.0
 const LUNGE_TIME := 0.06  # out to the target; the hit flashes when it gets there
 const LUNGE_BACK_TIME := 0.1
 const SHAKE_AMOUNT := 8.0  # px, the first jolt; later ones get smaller
 const SHAKE_STEPS := 6
-const SHAKE_TIME := 0.15
+const SHAKE_TIME := 0.25
+const PROJECTILE_WIDTH := 200.0  # px; its height keeps the texture's aspect
+const PROJECTILE_SPEED := 2400.0  # px per second, steady
+const SPRITE_FLASH := Color(2.5, 2.5, 2.5)  # a sprite's brightest, fading back over the hex flash
 
 var combat: CombatState
 var selected: BaseCard = null
@@ -29,8 +42,9 @@ var _picks: Array[BaseCard] = []  # cards picked for _choice, from the hand or t
 var _pile_picking := false  # the pile viewer is open for _choice
 
 var _enemy_views: Array[HealthGridView] = []
-var _enemy_images: Array[TextureRect] = []  # one per enemy, same order as _enemy_views
+var _enemy_images: Array[UnitImage] = []  # one per enemy, same order as _enemy_views
 var _intent_labels: Array[Label] = []
+var _aim: TextureRect  # an enemy's sight on the player's sprite, while a move with aim_vfx is in its intent
 
 @onready var _top_bar: TopBar = %TopBar
 @onready var _floor_background: TextureRect = %FloorBackground
@@ -38,8 +52,10 @@ var _hover_info := HoverInfo.new()  # keywords of cards in the pile viewer and c
 @onready var _status_label: Label = %StatusLabel
 @onready var _hint_label: Label = %HintLabel
 @onready var _player_view: HealthGridView = %PlayerGrid
-@onready var _player_image: PlayerImage = %PlayerImage
+@onready var _player_image: UnitImage = %PlayerImage
 @onready var _enemies_box: HBoxContainer = %Enemies
+@onready var _arena: HBoxContainer = $Margin/Layout/Arena
+@onready var _player_side: HBoxContainer = $Margin/Layout/Arena/Player
 @onready var _hand: HandView = %Hand
 @onready var _deck_button: Button = %DeckButton
 @onready var _draw_button: Button = %DrawPileButton
@@ -65,12 +81,15 @@ var _hover_info := HoverInfo.new()  # keywords of cards in the pile viewer and c
 var _rewards: CombatRewards
 var _over := false  # won or lost: ignore combat input
 var _busy := false  # a card or a turn is playing out: ignore combat input until it's done
+var _hovered_enemy := -1  # index in combat.enemies under the mouse: only its intents show at full strength
 
 
 func _ready() -> void:
 	if RunState.deck.is_empty():
 		RunState.start_new_run()
 	_floor_background.texture = RunState.combat_background()
+	if testing and _room_type() != Enum.RoomType.BOSS_COMBAT and _floor_of(testing) > 0:
+		_floor_background.texture = RunState.FLOOR_COMBAT_BACKGROUNDS[_floor_of(testing) - 1]  # the test monster's floor
 	_hover_info.is_blocked = _top_bar.is_modal_open
 	add_child(_hover_info)
 	combat = RunState.start_combat()
@@ -79,47 +98,127 @@ func _ready() -> void:
 
 	_hand.card_clicked.connect(_on_card_clicked)
 	_hand.card_cast.connect(_on_card_cast)
+	_hand.cost_of = combat.cost_of
 	_player_view.setup(combat.player, true)
 	_player_view.cell_clicked.connect(_on_cell_clicked)
 	combat.player.blocked.connect(_on_player_blocked)
+	combat.enemy_spawned.connect(_on_enemy_spawned)
 	for enemy in combat.enemies:
-		var view := HealthGridView.new()
-		view.setup(enemy, true)
-		view.cell_clicked.connect(_on_cell_clicked)
-		var intent_label := Label.new()
-		intent_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		var box := VBoxContainer.new()
-		box.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		box.add_child(view)
-		box.add_child(intent_label)
-		# Enemy image on the left, its health grid on the right.
-		var side := HBoxContainer.new()
-		side.add_theme_constant_override("separation", 24)
-		# The image sits in a plain slot, so it can lunge and shake without the HBox putting it back.
-		var slot := Control.new()
-		slot.custom_minimum_size = ENEMY_IMAGE_SIZE
-		slot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var image := TextureRect.new()
-		image.texture = enemy.sprite
-		image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		image.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		image.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		slot.add_child(image)
-		side.add_child(slot)
-		side.add_child(box)
-		_enemies_box.add_child(side)
-		_enemy_views.append(view)
-		_enemy_images.append(image)
-		_intent_labels.append(intent_label)
+		_add_enemy(enemy)
+	_fit_enemies()
 
 	combat.animator = _animate
-	combat.chooser = _choose
 	_busy = true
 	await combat.start_turn()
 	_busy = false
 	_refresh()
+
+
+## Builds an enemy's sprite slot, grid and intent label, at its place in combat.enemies.
+func _add_enemy(enemy: BaseEnemy) -> void:
+	var view := HealthGridView.new()
+	view.setup(enemy, true)
+	view.cell_clicked.connect(_on_cell_clicked)
+	view.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	# The intent hangs under the grid, as wide as it, and grows down only,
+	# so a longer or shorter intent never moves the enemy.
+	var intent_label := Label.new()
+	intent_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	intent_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	intent_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	view.add_child(intent_label)
+	intent_label.anchor_top = 1.0
+	intent_label.anchor_bottom = 1.0
+	intent_label.anchor_right = 1.0
+	intent_label.grow_vertical = Control.GROW_DIRECTION_END
+	# Enemy image on the left, its health grid on the right.
+	var side := HBoxContainer.new()
+	side.add_theme_constant_override("separation", 24)
+	# The image sits in a plain slot, so it can lunge and shake without the HBox putting it back.
+	var slot := Control.new()
+	slot.custom_minimum_size = enemy.image_size
+	slot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var image := UnitImage.new()
+	image.idle_frames = enemy.idle_frames
+	if image.idle_frames.is_empty():
+		image.idle_frames = [enemy.sprite]
+	image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	image.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	slot.add_child(image)
+	side.add_child(slot)
+	side.add_child(view)
+	var i := combat.enemies.find(enemy)
+	_enemies_box.add_child(side)
+	_enemies_box.move_child(side, i)
+	_enemy_views.insert(i, view)
+	_enemy_images.insert(i, image)
+	_intent_labels.insert(i, intent_label)
+
+
+## Which enemy's sprite or grid is under the mouse; the others' intents on the player's grid fade.
+func _update_hovered_enemy() -> void:
+	var hovered := -1
+	for i in _enemy_views.size():
+		var side := _enemy_views[i].get_parent() as Control
+		if side.visible and side.get_global_rect().has_point(get_global_mouse_position()):
+			hovered = i
+	if hovered != _hovered_enemy:
+		_hovered_enemy = hovered
+		_refresh()
+
+
+## Shrinks the enemies' grids and sprites by the same factor until the row fits beside the player's side,
+## so a crowded fight (summons, Split) never pushes anything off screen. Enemies with shrinks = false
+## (the Lich) keep their size.
+func _fit_enemies() -> void:
+	var margin: MarginContainer = $Margin
+	var room := get_viewport_rect().size.x - margin.get_theme_constant("margin_left") - margin.get_theme_constant("margin_right") \
+		- _player_side.get_combined_minimum_size().x - 2 * _arena.get_theme_constant("separation")
+	var factor := 1.0
+	for attempt in 8:  # the grids' padding doesn't scale, so close in over a few tries
+		var widths := _enemies_width(factor)  # fixed, shrinking
+		if widths.x + widths.y <= room or widths.y <= 0.0:
+			break
+		factor *= maxf(0.1, (room - widths.x) / widths.y) * 0.98
+
+
+## The enemy row's width with the shrinking grids and sprites at factor of their own size:
+## x = the part that doesn't shrink (fixed enemies, gaps), y = the part that does.
+func _enemies_width(factor: float) -> Vector2:
+	var widths := Vector2.ZERO
+	var shown := 0
+	for i in combat.enemies.size():
+		var enemy := combat.enemies[i] as BaseEnemy
+		var view := _enemy_views[i]
+		var slot := _enemy_images[i].get_parent() as Control
+		var f := factor if enemy.shrinks else 1.0
+		view.scale_factor = enemy.grid_scale * f
+		view.refresh()
+		slot.custom_minimum_size = enemy.image_size * f
+		var side := view.get_parent() as HBoxContainer
+		if not side.visible:
+			continue
+		var width := slot.custom_minimum_size.x + view.custom_minimum_size.x
+		if enemy.shrinks:
+			widths.y += width
+		else:
+			widths.x += width
+		widths.x += side.get_theme_constant("separation")
+		shown += 1
+	widths.x += maxi(0, shown - 1) * _enemies_box.get_theme_constant("separation")
+	return widths
+
+
+## A spawned enemy appears with a flash, in in_place_of's place if it has one.
+func _on_enemy_spawned(enemy: CombatUnit, in_place_of: CombatUnit) -> void:
+	_add_enemy(enemy)
+	if in_place_of:
+		_view_for(in_place_of).get_parent().hide()
+	_fit_enemies()
+	_flash_sprite(_sprite_for(enemy))
 
 
 # --- Input -------------------------------------------------------------------
@@ -140,7 +239,7 @@ func _on_card_clicked(card: BaseCard) -> void:
 		return
 	else:
 		_select(card)
-		if card.clicks(combat.energy) == 0:  # an X-cost card with no energy left
+		if card.clicks(combat.x_energy()) == 0:  # an X-cost card with no energy left
 			_play_selected()
 			return
 	_refresh()
@@ -174,7 +273,7 @@ func _on_cell_clicked(unit: CombatUnit, cell: Vector2i) -> void:
 	_units.append(unit)
 	_cells.append(cell)
 	_rotations.append(_rotation)
-	if _cells.size() < selected.clicks(combat.energy): #store intents in _cells, when all grid has been chosen, this condition reeturn false
+	if _cells.size() < selected.clicks(combat.x_energy()): #store intents in _cells, when all grid has been chosen, this condition reeturn false
 		_refresh()
 		return
 	_play_selected()
@@ -219,8 +318,8 @@ func _play_selected() -> void:
 	_refresh()
 	_busy = true
 	if card.type == Enum.CardType.ATTACK:
-		_player_image.show_pose(PlayerImage.ATTACK)
-	await combat.play_card(card, units, cells, rotations)
+		_player_image.show_pose(UnitImage.PLAYER_ATTACK)
+	await combat.play_card(card, units, cells, rotations, picks, tile_picks)
 	_busy = false
 	_refresh()
 	_check_combat_end()
@@ -245,7 +344,7 @@ func _on_end_turn_pressed() -> void:
 ## Only enemy hits count, not the player's own Poison at turn start.
 func _on_player_blocked(_coords: Vector2i) -> void:
 	if not combat.player.in_turn:
-		_player_image.show_pose(PlayerImage.GUARD)
+		_player_image.show_pose(UnitImage.PLAYER_GUARD)
 
 
 func _on_deck_pressed() -> void:
@@ -287,6 +386,8 @@ func _on_win_combat_pressed()->void:
 
 ## _input, not _unhandled_input: the grids and this root stop mouse events, so right-clicks never arrive unhandled.
 func _input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		_update_hovered_enemy()
 	if _over or _busy or _top_bar.is_modal_open():
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
@@ -321,7 +422,8 @@ func _rotation_step(event: InputEvent) -> int:
 # --- Refresh -----------------------------------------------------------------
 
 ## combat.animator: shows the new state, then plays the batch and waits for it. If the batch hits
-## the other side, the acting unit lunges at it first. On impact every change flashes at once,
+## the other side, the acting unit lunges at it first, in its move's pose if it has one. On impact
+## the move's hit image fades over the target's grid, every change flashes at once,
 ## and every unit that took damage shakes: an enemy's sprite, or the player's grid.
 func _animate(batch: Array[Dictionary]) -> void:
 	_refresh()
@@ -335,18 +437,46 @@ func _animate(batch: Array[Dictionary]) -> void:
 		if target == null and attacker and unit.is_player != attacker.is_player \
 				and change.kind in [Enum.Change.DAMAGE, Enum.Change.BLOCK]:
 			target = unit
+	var enemy := attacker as BaseEnemy
+	var action: BaseEnemyAction = enemy.acting_action if enemy else null
 	if target:
 		var sprite := _sprite_for(attacker)
+		if action and action.pose:
+			sprite.show_pose(action.pose)
 		_lunge(sprite, _center(_sprite_for(target)) - _center(sprite))
 		await get_tree().create_timer(LUNGE_TIME).timeout
+		if action and action.projectile_vfx:
+			await _shoot(action.projectile_vfx, sprite, _sprite_for(target))
+		if action and action.hit_vfx:
+			var area := enemy.hit_vfx_area if enemy.hit_vfx_area.has_area() else _view_for(target).get_global_rect()
+			_show_vfx(action.hit_vfx, area)
+	if action and action.ripple_vfx and batch.any(func(c: Dictionary) -> bool: return c.unit == attacker):
+		_ripple(action.ripple_vfx, _center(_sprite_for(attacker)))
 	for change in batch:
 		_view_for(change.unit).flash(change.cell, change.kind, change.effect)
+		if change.effect is MultiHeadPower or change.effect is RisePower:  # a Hydra head was cut, a Zombie rose
+			_flash_sprite(_sprite_for(change.unit))
 	for unit in damaged:
 		if unit == combat.player:
 			_shake(_player_view, "shake")
 		else:
 			_shake(_sprite_for(unit), "position")
 	await get_tree().create_timer(HealthGridView.FLASH_TIME).timeout
+	_hide_departed()
+
+
+## Takes enemies with leaves_when_dead off the screen once they're dead (the Mimic), after their last
+## hit has played. They stay in combat.enemies, dead, so the views keep their order.
+func _hide_departed() -> void:
+	var changed := false
+	for i in combat.enemies.size():
+		var enemy := combat.enemies[i] as BaseEnemy
+		var side := _enemy_views[i].get_parent() as Control
+		if enemy and enemy.leaves_when_dead and enemy.is_dead() and side.visible:
+			side.hide()
+			changed = true
+	if changed:
+		_fit_enemies()
 
 
 ## Moves node LUNGE_DISTANCE toward a point, then back. node rests at ZERO inside its slot.
@@ -354,6 +484,94 @@ func _lunge(node: Control, toward: Vector2) -> void:
 	var tween := create_tween().set_trans(Tween.TRANS_QUAD)
 	tween.tween_property(node, "position", toward.normalized() * LUNGE_DISTANCE, LUNGE_TIME).set_ease(Tween.EASE_OUT)
 	tween.tween_property(node, "position", Vector2.ZERO, LUNGE_BACK_TIME).set_ease(Tween.EASE_IN_OUT)
+
+
+## Fades an enemy move's hit image out, as long as the hex flash. It's drawn VFX_SCALE times the
+## size of area (global coords), centered on it.
+func _show_vfx(texture: Texture2D, area: Rect2) -> void:
+	var size := area.size * VFX_SCALE
+	var vfx := _add_vfx(texture, Rect2(area.get_center() - size / 2.0, size))
+	var tween := vfx.create_tween()
+	tween.tween_property(vfx, "modulate:a", 0.0, HealthGridView.FLASH_TIME)
+	tween.tween_callback(vfx.queue_free)
+
+
+## Flies texture left at PROJECTILE_SPEED, from from's left edge until its tip passes to's right edge,
+## at a random height both sprites share.
+func _shoot(texture: Texture2D, from: Control, to: Control) -> void:
+	var size := Vector2(PROJECTILE_WIDTH, PROJECTILE_WIDTH * texture.get_height() / texture.get_width())
+	var a := from.get_global_rect()
+	var b := to.get_global_rect()
+	var top := maxf(a.position.y, b.position.y)
+	var bottom := maxf(top, minf(a.end.y, b.end.y) - size.y)
+	var start := Vector2(a.position.x - size.x, randf_range(top, bottom))
+	var vfx := _add_vfx(texture, Rect2(start, size))
+	var tween := vfx.create_tween()
+	tween.tween_property(vfx, "global_position:x", b.end.x, absf(start.x - b.end.x) / PROJECTILE_SPEED)
+	tween.tween_callback(vfx.queue_free)
+	await tween.finished
+
+
+## RIPPLES rings of texture spreading out from center (global coords) like water: each grows from
+## RIPPLE_START to RIPPLE_WIDTH wide and fades, RIPPLE_GAP after the last. Drawn under the arena.
+func _ripple(texture: Texture2D, center: Vector2) -> void:
+	var size := Vector2(RIPPLE_WIDTH, RIPPLE_WIDTH * texture.get_height() / texture.get_width())
+	for i in RIPPLES:
+		var ring := _add_vfx(texture, Rect2(center - size / 2.0, size), true)
+		ring.pivot_offset = size / 2.0
+		ring.scale = Vector2.ONE * RIPPLE_START
+		ring.modulate.a = 0.0  # hidden until its turn
+		var tween := ring.create_tween().set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_QUAD)
+		tween.tween_interval(RIPPLE_GAP * i)
+		tween.tween_property(ring, "modulate:a", 1.0, 0.0)
+		tween.tween_property(ring, "scale", Vector2.ONE, RIPPLE_TIME)
+		tween.parallel().tween_property(ring, "modulate:a", 0.0, RIPPLE_TIME)
+		tween.tween_callback(ring.queue_free)
+
+
+## An image over rect (global coords), above the arena but under the top bar and panels,
+## or just above the floor under the whole arena.
+func _add_vfx(texture: Texture2D, rect: Rect2, under_arena := false) -> TextureRect:
+	var vfx := TextureRect.new()
+	vfx.texture = texture
+	vfx.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	vfx.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	vfx.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(vfx)
+	move_child(vfx, $Margin.get_index() + (0 if under_arena else 1))
+	vfx.size = rect.size
+	vfx.global_position = rect.position
+	return vfx
+
+
+## Shows texture as a sight wandering over the player's sprite (a figure 8, AIM_DRIFT px out),
+## or removes it when texture is null.
+func _set_aim(texture: Texture2D) -> void:
+	if texture == null:
+		if _aim:
+			_aim.queue_free()
+			_aim = null
+		return
+	if _aim:
+		_aim.texture = texture
+		return
+	var aim := TextureRect.new()
+	aim.texture = texture
+	aim.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	aim.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	aim.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	aim.size = AIM_SIZE
+	_player_image.add_child(aim)
+	var tween := aim.create_tween().set_loops()
+	tween.tween_method(func(t: float) -> void:
+		aim.position = (_player_image.size - AIM_SIZE) / 2.0 + Vector2(sin(t), sin(2.0 * t) * 0.6) * AIM_DRIFT, 0.0, TAU, AIM_LOOP_TIME)
+	_aim = aim
+
+
+## Brightens a unit's sprite to SPRITE_FLASH and fades it back, as long as the hex flash.
+func _flash_sprite(sprite: Control) -> void:
+	sprite.self_modulate = SPRITE_FLASH
+	sprite.create_tween().tween_property(sprite, "self_modulate", Color.WHITE, HealthGridView.FLASH_TIME)
 
 
 ## Jolts a Vector2 property that rests at ZERO in random directions, smaller each time, then back to ZERO.
@@ -366,7 +584,7 @@ func _shake(node: Object, property: String) -> void:
 	tween.tween_property(node, property, Vector2.ZERO, step)
 
 
-func _sprite_for(unit: CombatUnit) -> Control:
+func _sprite_for(unit: CombatUnit) -> UnitImage:
 	if unit == combat.player:
 		return _player_image
 	return _enemy_images[combat.enemies.find(unit)]
@@ -392,8 +610,8 @@ func _refresh() -> void:
 		_hint_label.text = _choice.prompt
 	elif selected:
 		var step := ""
-		if selected.clicks(combat.energy) > 1:
-			step = " (pattern %d/%d)" % [_cells.size() + 1, selected.clicks(combat.energy)]
+		if selected.clicks(combat.x_energy()) > 1:
+			step = " (pattern %d/%d)" % [_cells.size() + 1, selected.clicks(combat.x_energy())]
 		if _next_grid_action() is RandomGridAction:
 			_hint_label.text = "Click %s%s. Right-click to cancel." % ["your grid" if _targets_player() else "an enemy", step]
 		else:
@@ -438,27 +656,35 @@ func _refresh() -> void:
 
 	# Intents blink on the grid each part targets: attacks on the player, shields on the enemy itself.
 	var player_intents: Array = []
+	var aim: Texture2D = null
 	for i in combat.enemies.size():
 		var enemy := combat.enemies[i] as BaseEnemy
-		var action: BaseEnemyAction = enemy.intent_action if enemy else null
+		var actions: Array[BaseEnemyAction] = []
+		if enemy:
+			actions = enemy.intent_actions
 		var self_intents: Array = []
-		_intent_labels[i].text = "Intent: %s" % action.action_name if action else ""
-		if action:
+		_intent_labels[i].text = "\n".join(PackedStringArray(actions.map(func(a: BaseEnemyAction) -> String: return a.intent_text())))
+		for action in actions:
+			if action.aim_vfx:
+				aim = action.aim_vfx
 			for part in action.parts:
-				var intent := {cell = part.cell, tiles = part.tiles}
+				var intent := {cell = part.cell, tiles = part.tiles, faded = _hovered_enemy != -1 and _hovered_enemy != i}
 				if part.side == Enum.Side.PLAYER:
 					player_intents.append(intent)
 				else:
 					self_intents.append(intent)
 		_enemy_views[i].intents = self_intents
 		_enemy_views[i].refresh()
+		if enemy:
+			_enemy_images[i].modulate = enemy.tint
 	_player_view.intents = player_intents
+	_set_aim(aim)
 	_player_view.refresh()
 
 
 ## The selected card's grid action the next click places, or null.
 func _next_grid_action() -> GridAction:
-	if selected and _cells.size() < selected.clicks(combat.energy):
+	if selected and _cells.size() < selected.clicks(combat.x_energy()):
 		return selected.grid_action(_cells.size())
 	return null
 
@@ -480,7 +706,7 @@ func _select(card: BaseCard) -> void:
 ## Whether the next click goes on the player's grid: the current grid action's target, or the card's.
 func _targets_player() -> bool:
 	var target := selected.target
-	if _cells.size() < selected.clicks(combat.energy):
+	if _cells.size() < selected.clicks(combat.x_energy()):
 		target = selected.grid_action(_cells.size()).target
 	return target == Enum.TargetType.PLAYER
 
@@ -541,15 +767,38 @@ func _room_type() -> Enum.RoomType:
 	return Enum.RoomType.NORMAL_COMBAT
 
 
-## Placeholder line-ups until there are more enemies.
+## The enemy being built, fought in every normal and elite room (and on F6) until it's done.
+## null = the usual line-ups.
+static var testing: Script = null
+
+## Each floor's monsters: NORMALS[0] / ELITES[0] are floor 1. Floors past the end reuse the last one.
+static var NORMALS: Array = [
+	[Slime, Goblin, Vermin, Hound, Ogre, MagicGolem, DarkElf, Griffin],
+	[Skeleton, Bat, Zombie, JackOLantern, LilGhost, Mummy, Warewolf],
+]
+static var ELITES: Array = [[Hydra], [Frangenstein, Lich]]
+
+
+## The floor whose monster lists have script, or 0.
+func _floor_of(script: Script) -> int:
+	for i in NORMALS.size():
+		if script in NORMALS[i] or script in ELITES[i]:
+			return i + 1
+	return 0
+
+
 func _enemies_for(room_type: Enum.RoomType) -> Array[CombatUnit]:
 	var enemies: Array[CombatUnit] = []
 	if room_type == Enum.RoomType.BOSS_COMBAT:
 		enemies.append(RunState.floor_boss())
 		return enemies
-	var count := 2 if room_type == Enum.RoomType.ELITE_COMBAT else 1
-	for i in count:
-		enemies.append(Slime.new())
+	if testing:
+		enemies.append(testing.new())
+		enemies.append_array(enemies[0].companions)
+		return enemies
+	var pools: Array = ELITES if room_type == Enum.RoomType.ELITE_COMBAT else NORMALS
+	enemies.append(pools[mini(RunState.dungeon_floor, pools.size()) - 1].pick_random().new())
+	enemies.append_array(enemies[0].companions)
 	return enemies
 
 

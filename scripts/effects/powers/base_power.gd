@@ -6,6 +6,7 @@ extends BaseEffect
 ## amount = stacks: applying a power the unit already has adds to it.
 
 var amount := 1
+var show_amount := true  # false: no number on the badge or in the tooltip title (Full Moon)
 
 func _init(_name: String, _description: String, _amount := 1, _turns := -1) -> void:
 	super(_name, _description, _turns)
@@ -13,6 +14,27 @@ func _init(_name: String, _description: String, _amount := 1, _turns := -1) -> v
 
 
 @abstract func get_color() -> Color
+
+
+## The badge tooltip, with this power's amount filled in. description stays the generic
+## per-stack text for card keywords.
+func get_description() -> String:
+	return description
+
+
+## True if a hit on one of the owner's live tiles misses (Aerial, Ethereal). Asked for every hit.
+func dodges(_combat: CombatState, _unit: CombatUnit) -> bool:
+	return false
+
+
+## Called on the player's powers after each card they play finishes.
+func on_card_played(_combat: CombatState, _unit: CombatUnit, _card: BaseCard) -> void:
+	pass
+
+
+## "1 tile", "3 tiles".
+static func plural(n: int, word: String) -> String:
+	return "%d %s%s" % [n, word, "" if n == 1 else "s"]
 
 ## Badge art. ponytail: placeholder until each power has its own icon.
 func get_icon() -> Texture2D:

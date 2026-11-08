@@ -10,6 +10,10 @@ func _init(_amount := 1) -> void:
 	super("Retaliate", "When your Shield absorbs a hit, damage 1 random tile of the attacker per Retaliate. Ends at the start of your next turn.", _amount)
 
 
+func get_description() -> String:
+	return "When your Shield absorbs a hit, damage %s of the attacker. Ends at the start of your next turn." % plural(amount, "random tile")
+
+
 func on_trigger(trigger: Enum.Trigger, combat: CombatState, unit: CombatUnit, _cell: Vector2i) -> void:
 	match trigger:
 		Enum.Trigger.TURN_START:

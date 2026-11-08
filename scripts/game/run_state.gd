@@ -18,13 +18,19 @@ const MENU_SCENE := "res://scenes/mainmenu.tscn"
 const BOSS_INTRO := preload("res://scenes/ui/boss_intro.tscn")
 
 ## Boss of each floor: FLOOR_BOSSES[0] is floor 1. Floors past the end reuse the last one.
-static var FLOOR_BOSSES: Array = [TheDragon]
+static var FLOOR_BOSSES: Array = [Dragon, Dracula, Ramiel]
 
-## Combat room background of each floor: [0] is floor 1. All the same for now.
+## Combat room background of each floor: [0] is floor 1 (medieval, halloween, sci-fi).
 const FLOOR_COMBAT_BACKGROUNDS: Array[Texture2D] = [
-	preload("res://assets/rooms/bg_medieval.jpg"),
-	preload("res://assets/rooms/bg_medieval.jpg"),
-	preload("res://assets/rooms/bg_medieval.jpg"),
+	preload("res://assets/rooms/background/floor_1_medieval.jpg"),
+	preload("res://assets/rooms/background/floor_2_halloween.jpg"),
+	preload("res://assets/rooms/background/floor_3_sci_fi.jpg"),
+]
+## The boss room's. Unused alternatives are named *_alt_N.
+const FLOOR_BOSS_BACKGROUNDS: Array[Texture2D] = [
+	preload("res://assets/rooms/background/floor_1_medieval_boss.jpg"),
+	preload("res://assets/rooms/background/floor_2_halloween_boss.jpg"),
+	preload("res://assets/rooms/background/floor_3_sci_fi_boss.jpg"),
 ]
 
 ## EXP needed for each level-up: LEVEL_XP[0] takes level 0 to 1, ... LEVEL_XP[8] takes 8 to 9 (max).
@@ -43,16 +49,12 @@ var combat: CombatState = null
 
 
 func start_new_run() -> void:
-	health = CombatUnit.make_hex_health([
-		Vector2i(0, 0), 
-		Vector2i(1, 0), 
-		Vector2i(0, 1), 
-		Vector2i(-1, 1), 
-		Vector2i(-1, 0), 
-		Vector2i(0, -1), 
-		Vector2i(1, -1),
-		
-	])
+	# Radius-2 hexagon: 19 tiles, the sheet's starting health.
+	var coords: Array[Vector2i] = []
+	for q in range(-2, 3):
+		for r in range(maxi(-2, -q - 2), mini(2, -q + 2) + 1):
+			coords.append(Vector2i(q, r))
+	health = CombatUnit.make_hex_health(coords)
 	gold = 0
 	deck = []
 	artifacts = []
@@ -109,7 +111,9 @@ func leave_room() -> void:
 
 
 func combat_background() -> Texture2D:
-	return FLOOR_COMBAT_BACKGROUNDS[clampi(dungeon_floor, 1, FLOOR_COMBAT_BACKGROUNDS.size()) - 1]
+	var boss := current_room != null and current_room.type == Enum.RoomType.BOSS_COMBAT
+	var backgrounds := FLOOR_BOSS_BACKGROUNDS if boss else FLOOR_COMBAT_BACKGROUNDS
+	return backgrounds[clampi(dungeon_floor, 1, backgrounds.size()) - 1]
 
 
 ## A new instance of this floor's boss.

@@ -28,15 +28,23 @@ func shield_health_tile(combat: CombatState, coords:Vector2i)->void:
 	var tile: HealthTile = health[coords]
 
 	if tile and tile.hp>Enum.HealthTileEnum.DAMAGED:
+		if CurseWrapPower.fizzles(combat, self):
+			return
 		if tile.hp == Enum.HealthTileEnum.UNDAMAGED:
 			combat.record(self, coords, Enum.Change.SHIELD)
 		tile.hp = Enum.HealthTileEnum.SHIELDED
 	
 
-## Shield absorbs the hit first (ON_BLOCK), unless it pierces; otherwise the tile is damaged (ON_HIT).
+## A power can make the hit miss (Aerial, Ethereal: it flashes like a block, with no trigger). Otherwise Shield absorbs it
+## first (ON_BLOCK), unless it pierces, and then the tile is damaged (ON_HIT).
 ## Returns true if the tile was damaged.
 func damage_health_tile(combat: CombatState, coords: Vector2i, pierce := false)->bool:
 	var tile: HealthTile = health[coords]
+	if tile.hp > Enum.HealthTileEnum.DAMAGED:
+		for power in statuses:
+			if power is BasePower and power.dodges(combat, self):
+				combat.record(self, coords, Enum.Change.BLOCK)
+				return false
 	if tile.hp == Enum.HealthTileEnum.SHIELDED and not pierce:
 		tile.hp = Enum.HealthTileEnum.UNDAMAGED
 		combat.record(self, coords, Enum.Change.BLOCK)
@@ -62,6 +70,8 @@ func heal_health_tile(combat: CombatState, coords: Vector2i) -> bool:
 func apply_effect_health_tile(combat: CombatState, coords:Vector2i, effect:BaseTileEffect)->void:
 	var tile: HealthTile = health[coords]
 	if tile and (tile.hp > Enum.HealthTileEnum.DAMAGED or effect.allow_damaged):
+		if effect is PlateTileEffect and CurseWrapPower.fizzles(combat, self):
+			return
 		_add_or_stack(tile.status_effects, effect)
 		combat.record(self, coords, Enum.Change.EFFECT, effect)
 

@@ -15,6 +15,8 @@ const NAME_HEIGHT := 40.0
 const NO_CELL := Vector2i(999999, 999999)  # not (0,0): that's a real cell
 const INTENT_PERIOD := 1.4  # seconds per pulse
 const FLICKER_PERIOD := 0.4  # random targets: faster than intents so the two read differently
+const INTENT_FADE := 0.25  # a faded intent's alpha, relative: another enemy is hovered
+const NAME_SCREEN_MARGIN := 27.0  # a spilled name stays this far from the screen's sides (the combat Margin's)
 const PLACED_PERIOD := 1.2  # grid actions already clicked: a slow flash of the whole tile
 const PLACED_FILL := 0.6  # strongest fill of that flash
 const ICON_SIZE := 40.0  # action icons on targeted tiles (a hex is ~62 wide)
@@ -47,7 +49,7 @@ const COLOR_NEW := Color("#ffe9a8")
 var unit: CombatUnit
 var clickable := false
 var preview: Dictionary[Vector2i, BaseActionTile] = {} # next grid action of the selected card, rotated: offset from cursor -> tile
-var intents: Array = [] # enemy attacks aimed at this grid: [{cell: Vector2i, tiles: Array[BaseActionTile]}]
+var intents: Array = [] # enemy attacks aimed at this grid: [{cell: Vector2i, tiles: Array[BaseActionTile], faded: bool}]
 var placed: Array = [] # selected card's grid actions already clicked on this grid: [{cell: Vector2i, tiles: Dictionary[Vector2i, BaseActionTile]}]
 var random_target: BaseActionTile = null # selected card's next grid action hits random tiles of a grid: this whole grid flickers
 var candidates: Array[Vector2i] = [] # empty cells drawn as outlines and clickable (level-up tile placement)
@@ -60,6 +62,7 @@ var shake := Vector2.ZERO: # offset everything is drawn at while the grid shakes
 var _hover := NO_CELL
 var _origin := Vector2.ZERO
 var _hex := HEX_SIZE  # current hex radius
+var scale_factor := 1.0  # shrinks HEX_SIZE and MAX_GRID_SIZE: a small minion, or a crowded enemy row
 var _info_cell := NO_CELL  # tile under the mouse, for the info panels (any grid, clickable or not)
 var _info_power := -1  # index in unit.statuses of the power badge under the mouse
 var _info_timer := 0.0
@@ -101,7 +104,8 @@ func refresh() -> void:
 		min_p = Vector2.ZERO
 		max_p = Vector2.ZERO
 	var extent := max_p - min_p + Vector2(2.0, 2.0)  # plus one hex of padding each side
-	_hex = minf(HEX_SIZE, minf(MAX_GRID_SIZE.x / extent.x, MAX_GRID_SIZE.y / extent.y))
+	var fit := MAX_GRID_SIZE * scale_factor
+	_hex = minf(HEX_SIZE * scale_factor, minf(fit.x / extent.x, fit.y / extent.y))
 	min_p *= _hex
 	max_p *= _hex
 	for key in _particles:  # rebuilt at the new size by _sync_particles
@@ -111,7 +115,8 @@ func refresh() -> void:
 	_origin = -min_p + pad + Vector2(0, NAME_HEIGHT)
 	custom_minimum_size = max_p - min_p + pad * 2 + Vector2(0, NAME_HEIGHT)
 	_powers_y = custom_minimum_size.y
-	if not unit.statuses.is_empty():
+	# Enemies always keep the row, so their first power doesn't move the grid.
+	if not unit.is_player or not unit.statuses.is_empty():
 		custom_minimum_size.y += POWER_SIZE + POWER_GAP
 	queue_redraw()
 
@@ -231,10 +236,11 @@ func _draw() -> void:
 	var wave := 0.5 + 0.5 * sin(TAU * Time.get_ticks_msec() / 1000.0 / INTENT_PERIOD)
 	var pulse := lerpf(ICON_ALPHA_MIN, ICON_ALPHA_MAX, wave)
 	for intent in intents:
+		var alpha := pulse * (INTENT_FADE if intent.get("faded", false) else 1.0)
 		for t: BaseActionTile in intent.tiles:
 			var cell: Vector2i = intent.cell + t.coords
 			if unit.health.has(cell):
-				_draw_action(t, cell, pulse)
+				_draw_action(t, cell, alpha)
 
 	var flash := 0.5 + 0.5 * sin(TAU * Time.get_ticks_msec() / 1000.0 / PLACED_PERIOD)
 	for p in placed:
@@ -262,7 +268,13 @@ func _draw() -> void:
 
 	var font := ThemeDB.fallback_font
 	var title := "%s  %d/%d" % [unit.display_name, alive, coords.size()]
-	draw_string(font, Vector2(0, 27), title, HORIZONTAL_ALIGNMENT_CENTER, size.x, 27, COLOR_TEXT)
+	# Centred over the grid; a small grid's name spills past its sides instead of being cut,
+	# but stays NAME_SCREEN_MARGIN inside the screen.
+	var title_width := font.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, 27).x
+	var title_x := (size.x - title_width) / 2.0
+	title_x = clampf(title_x, NAME_SCREEN_MARGIN - global_position.x,
+		get_viewport_rect().size.x - NAME_SCREEN_MARGIN - global_position.x - title_width)
+	draw_string(font, Vector2(title_x, 27), title, HORIZONTAL_ALIGNMENT_LEFT, -1, 27, COLOR_TEXT)
 
 	# Power badges: icon with its stack count in the corner.
 	for i in unit.statuses.size():
@@ -271,6 +283,8 @@ func _draw() -> void:
 			continue
 		var rect := _power_rect(i)
 		draw_texture_rect(power.get_icon(), rect, false)
+		if not power.show_amount:
+			continue
 		var corner := rect.end - Vector2(rect.size.x, 2)
 		draw_string_outline(font, corner, str(power.amount), HORIZONTAL_ALIGNMENT_RIGHT, rect.size.x, 20, 4, Color.BLACK)
 		draw_string(font, corner, str(power.amount), HORIZONTAL_ALIGNMENT_RIGHT, rect.size.x, 20, power.get_color())
@@ -298,7 +312,7 @@ func flash(cell: Vector2i, kind: Enum.Change, effect: BaseEffect) -> void:
 			color = COLOR_PREVIEW
 		Enum.Change.BLOCK, Enum.Change.SHIELD:
 			color = COLOR_SHIELDED
-		Enum.Change.EFFECT, Enum.Change.POWER:
+		Enum.Change.EFFECT, Enum.Change.EFFECT_LOST, Enum.Change.POWER:
 			color = effect.get_color()
 		Enum.Change.HEAL:
 			color = COLOR_HEAL
@@ -354,7 +368,8 @@ func _show_power_info(i: int) -> void:
 	var power := unit.statuses[i] as BasePower
 	if power == null:
 		return
-	_info_box.add_child(InfoPanel.make("%s %d" % [power.name, power.amount], power.description, power.get_color()))
+	var title := "%s %d" % [power.name, power.amount] if power.show_amount else power.name
+	_info_box.add_child(InfoPanel.make(title, power.get_description(), power.get_color()))
 	_info_box.reset_size()
 	var rect := get_global_transform() * _power_rect(i)
 	var pos := Vector2(rect.end.x + InfoPanel.GAP, rect.position.y)

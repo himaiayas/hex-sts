@@ -10,9 +10,17 @@ func _init(_amount := 1) -> void:
 	super("Ward", "At the start of your turn, Shield 1 random tile per Ward.", _amount)
 
 
+func get_description() -> String:
+	return "At the start of your turn, Shield %s." % plural(amount, "random tile")
+
+
 func on_trigger(trigger: Enum.Trigger, combat: CombatState, unit: CombatUnit, _cell: Vector2i) -> void:
-	if trigger != Enum.Trigger.TURN_START:
-		return
+	if trigger == Enum.Trigger.TURN_START:
+		shield_tiles(combat, unit)
+
+
+## Shields amount random undamaged, unshielded tiles of unit.
+func shield_tiles(combat: CombatState, unit: CombatUnit) -> void:
 	var shield := ShieldTile.new(Vector2i.ZERO)
 	var open := unit.health.keys().filter(func(c: Vector2i) -> bool: return shield.can_inflict(unit, c))
 	open.shuffle()

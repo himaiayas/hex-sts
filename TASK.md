@@ -77,6 +77,7 @@
 - **Owner:** Pakkapao
 - **Requirement/Prereq:** -
 - **Brief Description:** Implement the keywords and mechanics from the sheet that the code doesn't have yet (Bind, which replaces Exhaust, plus Retaliate, Sacrifice, Retain, Heal, Pierce, etc.). The full list is in issue #19. Needed before the cards in #13.
+- [x] Done ✅: In #22, closing #19. Every mechanic the confirmed cards use, each with an example card in the pool and starting deck: Exhaust (kept the name; the sheet's Bind), Exhaust X from hand, "exhausted this turn", Retain, Heal, Sacrifice, Retaliate, Pierce, whole-row patterns, back to the top of the draw pile, discard to the top of the draw pile, Strength this turn, Echo, Foresight, Ward, Fracture, Cost X, and Poison reworked to explode after 2 turns. Picking cards or your own tiles uses a Confirm / Cancel step. Rules are in `KEYWORDS.md`. Mechanics only unconfirmed cards use, and Heroic, moved to #24. Check: `action_check.gd` and `effect_check.gd`.
 
 ### 22. Action animations
 
@@ -112,16 +113,19 @@
 
 - **Requirement/Prereq:** 1, 2
 - **Brief Description:** Enemy classes implemented with Polymorphism concept of OOP: name, health grid shape, sprite, and a list of actions/pattern.
+- [x] Done ✅: `BaseEnemy` subclasses for every floor 1 monster from the sheet, each with its moves, plus the Mini Slime from Split. Common moves are `EnemyHit` (Hit X, optionally several scattered hits) and `EnemyShieldSelf` (Block X); the rest are small subclasses. Passives are powers (Rune Armor, Aerial, Multi-head, Regen). Normal rooms pick a random floor 1 monster, elite rooms are the Hydra. `combat_scene.testing` puts one monster in every non-boss fight while it's being built. Check: `enemy_check.gd`.
 
 ### 11. Enemy turn and AI
 
 - **Requirement/Prereq:** 10
 - **Brief Description:** Run enemy actions in `CombatState.end_turn()` with the same action/tile classes (`execute(combat, unit, cell)`).
+- [x] Done ✅: `end_turn` runs each living enemy's planned moves with `GridAction`. Moves follow `p1_cycle` (and `p2_cycle` for bosses) or `_choose_actions` overrides. `CombatState.spawn()` adds enemies mid-fight; they act from the next enemy turn.
 
 ### 12. Enemy intents
 
 - **Requirement/Prereq:** 10 / UI design
 - **Brief Description:** Choose the next action ahead of time and show it on screen
+- [x] Done ✅: `plan()` locks every move's cells at the start of the player's turn; the player's grid blinks them and the label under the enemy names each move. An intent can change mid-turn (Hydra losing a head, Slime about to Split, Ramiel's interrupt). Each move has a short `description` for a future tooltip.
 
 ## Cards and content
 

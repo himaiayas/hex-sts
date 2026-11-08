@@ -54,6 +54,7 @@ enum Change { # what CombatState.record() saw, so the views know what to animate
 	BLOCK,  # a shield absorbed a hit
 	SHIELD, # a tile got a shield
 	EFFECT, # a tile effect went on a tile
+	EFFECT_LOST, # a tile effect was taken off a tile (Smash)
 	POWER,  # a unit gained a power
 	HEAL,   # a damaged tile got its health back
 }

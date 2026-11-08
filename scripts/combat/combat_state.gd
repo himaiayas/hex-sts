@@ -1,6 +1,8 @@
 class_name CombatState
 extends RefCounted
 
+signal enemy_spawned(enemy: CombatUnit, in_place_of: CombatUnit)  # the scene shows it in in_place_of's slot, or beside when null
+
 
 # Temporary state for combat encounter
 const HAND_LIMIT := 10
@@ -23,6 +25,7 @@ var max_energy := 3
 var energy := 0
 var turn := 0
 var exhausted_this_turn := 0  # cards exhausted since the player's turn started
+var playing: BaseCard  # the card whose effect is running now, for powers that react per card
 
 
 func _init(run: Node) -> void:
@@ -89,7 +92,7 @@ func start_turn() -> void:
 	if turn == 1:
 		await player.fire(Enum.Trigger.COMBAT_START, self)
 	await player.on_turn_start(self)
-	draw(DRAW_PER_TURN)
+	draw(DRAW_PER_TURN - player.power_amount(ScreechPower))
 	for e in enemies:
 		var enemy := e as BaseEnemy
 		if enemy and not enemy.is_dead():
@@ -99,7 +102,7 @@ func start_turn() -> void:
 func end_turn() -> void:
 	discard_hand()
 	await player.on_turn_end(self)
-	for e in enemies:
+	for e in enemies.duplicate():  # enemies spawned this turn wait for the next one
 		if is_lost():
 			return  # the fight is lost; don't start another turn
 		var enemy := e as BaseEnemy
@@ -114,9 +117,17 @@ func end_turn() -> void:
 	await start_turn()
 
 
+## Adds enemy mid-fight, right after next_to. With replace, next_to leaves the field (Slime's Split);
+## without, it stays (Lich's Summon). The new enemy plans its first move at the next player turn.
+func spawn(enemy: CombatUnit, next_to: CombatUnit, replace := true) -> void:
+	enemies.insert(enemies.find(next_to) + 1, enemy)
+	enemy_spawned.emit(enemy, next_to if replace else null)
+
+
+
 ## In hand, affordable, and every must_land pattern fits somewhere it can go.
 func can_play(card: BaseCard) -> bool:
-	if card not in hand or not (card.x_cost or card.cost <= energy):
+	if card not in hand or not (card.x_cost or cost_of(card) <= energy):
 		return false
 	for action in card.placements():
 		var units: Array[CombatUnit] = [player]
@@ -127,6 +138,16 @@ func can_play(card: BaseCard) -> bool:
 	return true
 
 
+## What card costs now: Shiver adds 1 to the next card.
+func cost_of(card: BaseCard) -> int:
+	return card.cost + player.power_amount(ShiverPower)
+
+
+## Energy an X-cost card gets to use: all of it, minus Shiver's extra 1.
+func x_energy() -> int:
+	return maxi(0, energy - player.power_amount(ShiverPower))
+
+
 ## Pays the cost, runs each grid action on units[i] at cells[i], then discards the card.
 ## Exhaust cards go to the exhaust pile instead, and to_draw_top cards on top of the draw pile.
 ## Power cards go to no pile: they stay in play for the rest of the fight. With Echo, an Attack runs twice.
@@ -134,11 +155,25 @@ func can_play(card: BaseCard) -> bool:
 func play_card(card: BaseCard, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int]) -> bool:
 	if not can_play(card):
 		return false
-	energy -= energy if card.x_cost else card.cost
+	energy = 0 if card.x_cost else energy - cost_of(card)
 	hand.erase(card)
+	for pick in picks:
+		if card.pick_from_discard > 0:
+			discard_pile.erase(pick)
+			draw_pile.append(pick)  # draw() takes from the back
+		else:
+			exhaust(pick)
+	for cell in tile_picks:
+		card.pick_tile.inflict(self, player, cell)
+	await flush()
+	playing = card
 	await card.execute(self, units, cells, rotations)
 	if card.type == Enum.CardType.ATTACK and EchoPower.use(player):
 		await card.execute(self, units, cells, rotations)
+	playing = null
+	for power in player.statuses.duplicate():
+		if power is BasePower:
+			power.on_card_played(self, player, card)
 	if card.exhaust:
 		exhaust(card)
 	elif card.to_draw_top:

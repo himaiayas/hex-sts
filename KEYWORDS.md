@@ -91,12 +91,12 @@ Agreed with Mai in issue #8, and for issue #19. Where this differs from the shee
 - So there's no Shield on the turn it's cast. The first one comes at the owner's next turn start, if the tile wasn't attacked in between.
 - It's removed when its tile's hp reaches 0 (ON_HIT). Hitting a Plated hex that has Shield twice in one turn breaks the Shield and then removes the Plate.
 - Plate can't go on a damaged hex.
-- Not implemented, sheet draft only: the 20-hex cap and Smash / Shred / Corrode.
-- Slime Harden and Guarded Bash's self-shield use Plate.
+- Not implemented, sheet draft only: the 20-hex cap and Shred / Corrode. Smash (Ogre) removes Plate from every tile it covers.
 
 **Pierce**
 - A Pierce hit goes through both Shield and Plate: the tile is damaged even if it has Shield.
 - Plate on that tile is removed as usual (ON_HIT). There's one kind of Pierce, for both the player and enemies.
+- The Dragon's P2 Inferno is Fire Breath with Pierce. The sheet's "Plate only blocks half" is dropped, since Pierce already goes through Plate.
 
 **Strength**
 - Each attack also damages X random tiles next to the cells it landed on (`StrengthPower`). The player doesn't place them.
@@ -128,7 +128,9 @@ Agreed with Mai in issue #8, and for issue #19. Where this differs from the shee
 - The player chooses X damaged hexes of their own to restore. If fewer are damaged, all of them are restored.
 
 **Stun / Regen**
-- Powers. Not implemented.
+- Powers. Stun isn't implemented.
+- Regen is `RegenPower`: at the start of its owner's turn it heals X random damaged tiles. An optional guard skips the heal if the owner lost that many tiles since its last turn (Hydra: Regen 3, guard 8).
+- Ramiel's stun is its own move instead: an interrupted Charge becomes a "Stunned" turn that does nothing.
 
 **Triggers** (task #8, already on main)
 - Effects override `on_trigger(Enum.Trigger, combat, unit, cell)`. Each unit fires TURN_START / TURN_END on its own turn, and ON_HIT / ON_BLOCK when one of its tiles is hit.
@@ -144,7 +146,7 @@ Agreed with Mai in issue #8, and for issue #19. Where this differs from the shee
 - Sacrifice is the cost (destroy your own hexes). Fracture is the tile effect above. The Card tab's "Trade 2" / "Sacifice 3" mean Sacrifice.
 - Tooltips: Shield, Exhaust, Retain and Sacrifice get one from a small list in `keywords.gd` (they aren't effects). Plate and Poison get theirs from their effect class. Draw and Cost X get none.
 - The "Shield" card keeps its name.
-- Rune Armor / Bone Armor / Armor Plating / Absolute Terror Field are ignored for now.
+- Rune Armor / Bone Armor / Armor Plating / Absolute Terror Field: enemy Block is Shield on the enemy's own tiles (Pakkapao's decision). Only Ramiel's Absolute Terror Field is built: it starts with 20 Shields and tops them back up to 20 every 3rd turn, on tiles marked in its intent. The others aren't built yet.
 - Numbers that don't fit the grids (Block 12 and Plate 15 on a 7-hex player, Slime 12 HP vs 17 hexes, bosses up to 170 HP) stay as they are for now.
 
 ## Open

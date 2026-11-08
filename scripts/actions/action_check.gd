@@ -165,7 +165,7 @@ func _initialize() -> void:
 	_reset(HEX)
 	_strengthen(_combat.player, 1)
 	await GridAction.new(Enum.TargetType.PLAYER, one).execute(_combat, _combat.player, Vector2i.ZERO)
-	_check(_alive(_combat.player) == 6, "Strength spread on your own grid")
+	_check(_alive(_combat.player) == _combat.player.health.size() - 1, "Strength spread on your own grid")
 
 	# Only the acting unit's Strength counts: an enemy's on its turn, not the player's.
 	_reset(HEX)
@@ -174,7 +174,7 @@ func _initialize() -> void:
 	_strengthen(_combat.enemies[0], 1)
 	_combat.enemies[0].in_turn = true
 	await GridAction.new(Enum.TargetType.PLAYER, one).execute(_combat, _combat.player, Vector2i.ZERO)
-	_check(_alive(_combat.player) == 5, "enemy Strength didn't spread on its turn")
+	_check(_alive(_combat.player) == _combat.player.health.size() - 2, "enemy Strength didn't spread on its turn")
 	_combat.enemies[0].statuses.clear()
 	await GridAction.new(Enum.TargetType.ENEMY, one).execute(_combat, _combat.enemies[0], Vector2i.ZERO)
 	_check(_alive(_combat.enemies[0]) == 6, "player Strength spread on the enemy's turn")
@@ -330,7 +330,7 @@ func _initialize() -> void:
 	for cell in LINE:
 		_combat.enemies[0].health[cell].hp = SHIELDED
 	await _play(DoubleTime.new(), no_units, no_cells)
-	await _play(Strike.new(), [_combat.enemies[0]], [LINE[1]])
+	await _play(CinderStrike.new(), [_combat.enemies[0]], [LINE[1]])
 	_check(_alive(_combat.enemies[0]) == 0, "Echo didn't play the Attack twice")
 	_check(_combat.player.power_amount(EchoPower) == 0, "Echo wasn't used up")
 

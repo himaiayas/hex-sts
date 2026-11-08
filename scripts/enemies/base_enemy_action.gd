@@ -6,14 +6,25 @@
 
 var action_type: Enum.BaseEnemyActionEnum # used to determine the intent graphic, init in subclass
 var action_name: String # Apply for some big action, like "Cyborg uses 'NeoArmstrongCycloneJetArmstrongCannon'!"
+var description: String # a short line on what the move does, set in subclass _init()
 var probability: float # init in BaseEnemy (when instancing the action)
 var parts: Array[EnemyActionPart] = [] # set in subclass _init()
+var pose: Texture2D # optional, shown on the enemy while it attacks
+var hit_vfx: Texture2D # optional, faded over the target's grid when the hit lands
+var ripple_vfx: Texture2D # optional, one ring that ripples out from the enemy, under the arena, when the move changes its grid
+var aim_vfx: Texture2D # optional, a sight drifting over the player's sprite while the move is in the intent
+var projectile_vfx: Texture2D # optional, flies left from the enemy's sprite to the player's before the hit lands
 
 
 func _init(_action_type: Enum.BaseEnemyActionEnum,_action_name: String, _probability: float) -> void:
     action_type = _action_type
     action_name = _action_name
     probability = _probability
+
+
+## Its row in the intent label.
+func intent_text() -> String:
+    return action_name
 
 
 ## Called at the start of the player's turn: choose a cell for every part.
@@ -72,3 +83,31 @@ func score_cell(part: EnemyActionPart, cell: Vector2i, target: CombatUnit) -> in
         else:
             score += 1
     return score
+
+
+## A random cell where the part covers at least one tile that isn't damaged, for scattered hits.
+## Tiles the earlier parts of this move will damage don't count (a Shield there only breaks),
+## so every hit lands on something. Cells that cover more open tiles are more likely.
+func pick_random_cell(part: EnemyActionPart, target: CombatUnit) -> Vector2i:
+    var taken := {}
+    for earlier: EnemyActionPart in parts.slice(0, parts.find(part)):
+        for t in earlier.tiles:
+            var c: Vector2i = earlier.cell + t.coords
+            if target.health.has(c) and target.health[c].hp != Enum.HealthTileEnum.SHIELDED:
+                taken[c] = true
+    var cells: Array[Vector2i] = []
+    for cell in target.health:
+        if target.health[cell].hp > Enum.HealthTileEnum.DAMAGED and not taken.has(cell):
+            for t in part.tiles:
+                cells.append(cell - t.coords)
+    return cells.pick_random() if not cells.is_empty() else Vector2i.ZERO
+
+
+## Inflicts tile on amount random tiles of the owner's own grid that it can change (heal, shield).
+## Picked when the move runs, so it uses the grid as the player's turn left it.
+func inflict_random_own(combat: CombatState, owner: CombatUnit, tile: BaseActionTile, amount: int) -> void:
+    var cells: Array = owner.health.keys().filter(func(c: Vector2i) -> bool: return tile.can_inflict(owner, c))
+    cells.shuffle()
+    for cell in cells.slice(0, amount):
+        tile.inflict(combat, owner, cell)
+    await combat.flush()
