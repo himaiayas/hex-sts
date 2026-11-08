@@ -21,6 +21,11 @@ func get_description() -> String:
 	return description
 
 
+## True if a hit on one of the owner's live tiles misses (Aerial, Ethereal). Asked for every hit.
+func dodges(_combat: CombatState, _unit: CombatUnit) -> bool:
+	return false
+
+
 ## "1 tile", "3 tiles".
 static func plural(n: int, word: String) -> String:
 	return "%d %s%s" % [n, word, "" if n == 1 else "s"]
