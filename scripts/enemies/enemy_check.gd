@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Headless check for BaseEnemy / Slime / Dragon / Dracula / Ramiel. Exit code = number of failures.
+## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Ogre / Magic Golem / Dark Elf / Griffin / Hydra / Dragon / Dracula / Ramiel. Exit code = number of failures.
 ## godot --headless --path . -s res://scripts/enemies/enemy_check.gd
 
 var _failures := 0
@@ -13,42 +13,36 @@ func _initialize() -> void:
 	var slime := Slime.new()
 	combat.enemies.append(slime)
 
-	var seen := {}
-	for i in 60:
+	# Splat -> Goo, looped. Splat damages exactly the tiles its intent shows; Goo shields 4 of its own.
+	var names: Array[String] = []
+	for i in 6:
 		_heal(combat.player)
 		_heal(slime)
 		slime.plan(combat)
 		var action := slime.intent_actions[0]
-		seen[action.action_name] = true
-
-		# What the intent shows, per grid.
+		names.append(action.action_name)
 		var expect_damaged := {}
-		var expect_plated := {}
 		for part in action.parts:
-			var target: CombatUnit = combat.player if part.side == Enum.Side.PLAYER else slime
-			for t in part.tiles:
-				var cell := part.cell + t.coords
-				if not target.health.has(cell):
-					continue
-				if t is DamageTile:
-					expect_damaged[cell] = true
-				elif t is ApplyEffectTile and t.effect is PlateTileEffect:
-					expect_plated[cell] = true
-
+			for cell in _covered(combat.player, part):
+				expect_damaged[cell] = true
 		await slime.take_turn(combat)
-
-		# What actually happened must match the intent exactly.
 		var damaged := _cells_with(combat.player, Enum.HealthTileEnum.DAMAGED)
-		var plated := slime.health.values().filter(func(t: HealthTile) -> bool: return t.has_effect(PlateTileEffect)).size()
-		_check(damaged == expect_damaged.keys().size() and _all_in(combat.player, expect_damaged, Enum.HealthTileEnum.DAMAGED),
+		_check(damaged == expect_damaged.size() and _all_in(combat.player, expect_damaged, Enum.HealthTileEnum.DAMAGED),
 			"turn %d (%s): player damage doesn't match intent" % [i, action.action_name])
-		_check(plated == expect_plated.keys().size() and expect_plated.keys().all(func(c: Vector2i) -> bool: return slime.health[c].has_effect(PlateTileEffect)),
-			"turn %d (%s): self plate doesn't match intent" % [i, action.action_name])
+		if action is EnemyShieldSelf:
+			_check(_cells_with(slime, Enum.HealthTileEnum.SHIELDED) == 4, "goo should shield 4")
 		_check(slime.intent_actions.is_empty(), "turn %d: intent not cleared after take_turn" % i)
+	_check(names == ["Splat", "Goo", "Splat", "Goo", "Splat", "Goo"], "slime order: %s" % [names])
 
-	for name in ["Slime Attack 1", "Harden", "Guarded Bash"]:
-		_check(seen.has(name), "action %s never chosen in 60 plans" % name)
-
+	await _check_slime_split(combat)
+	await _check_goblin(combat)
+	await _check_vermin(combat)
+	await _check_hound(combat)
+	await _check_ogre(combat)
+	await _check_golem(combat)
+	await _check_dark_elf(combat)
+	await _check_griffin(combat)
+	await _check_hydra(combat)
 	await _check_dragon(combat)
 	await _check_dracula(combat)
 	await _check_ramiel(combat)
@@ -56,6 +50,324 @@ func _initialize() -> void:
 	run.free()
 	print("enemy_check: %s" % ("OK" if _failures == 0 else "%d failure(s)" % _failures))
 	quit(_failures)
+
+
+func _check_slime_split(combat: CombatState) -> void:
+	var player := combat.player
+
+	# 7 tiles left: still Splat. The 6th left turns the intent into Split at once.
+	var slime := Slime.new()
+	combat.enemies = [slime]
+	var cells: Array = slime.health.keys()
+	slime.plan(combat)
+	for i in 5:
+		slime.damage_health_tile(combat, cells[i])
+	_check(_rows(slime) == "Splat", "7 tiles left should still Splat: %s" % _rows(slime))
+	slime.damage_health_tile(combat, cells[5])
+	_check(_rows(slime) == "Split", "6 tiles left should Split: %s" % _rows(slime))
+
+	# On its turn it splits instead of attacking: gone, with 2 Mini Slimes of 3 tiles in its place.
+	# They don't act that turn, then plan Tiny Splat for the next one.
+	_heal(player)
+	await combat.end_turn()
+	_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == 0, "split turn shouldn't attack")
+	_check(slime.is_dead() and combat.enemies.size() == 3 and combat.enemies.slice(1).all(func(e: CombatUnit) -> bool: return e is MiniSlime and e.health.size() == 3),
+		"slime should become 2 mini slimes: %s" % [combat.enemies])
+	_check(not combat.is_won(), "won with the mini slimes still alive")
+	var minis := combat.enemies.slice(1)
+	_check(minis.all(func(m: MiniSlime) -> bool: return _rows(m) == "Tiny Splat"), "mini slimes should plan Tiny Splat")
+	for mini in minis:
+		for cell in mini.health:
+			mini.damage_health_tile(combat, cell)
+	_check(combat.is_won(), "killing both mini slimes should win")
+
+	# Destroyed outright, it doesn't split.
+	slime = Slime.new()
+	combat.enemies = [slime]
+	slime.plan(combat)
+	for cell in slime.health:
+		slime.damage_health_tile(combat, cell)
+	await combat.end_turn()
+	_check(combat.enemies.size() == 1, "a destroyed slime split")
+
+
+
+func _check_goblin(combat: CombatState) -> void:
+	var goblin := Goblin.new()
+	combat.enemies = [goblin]
+	var player := combat.player
+
+	# Stab -> Backstab, looped. Stab hits 5 open tiles; Backstab pierces Shield.
+	var names: Array[String] = []
+	for i in 4:
+		_heal(player)
+		for tile in player.health.values():
+			tile.hp = Enum.HealthTileEnum.SHIELDED if i % 2 else Enum.HealthTileEnum.UNDAMAGED
+		goblin.plan(combat)
+		var action := goblin.intent_actions[0]
+		names.append(action.action_name)
+		var hit := _covered(player, action.parts[0])
+		await goblin.take_turn(combat)
+		_check(hit.size() == (5 if i % 2 == 0 else 3) and _cells_with(player, Enum.HealthTileEnum.DAMAGED) == hit.size(),
+			"goblin %s should damage %d tiles, damaged %d" % [action.action_name, 5 if i % 2 == 0 else 3, _cells_with(player, Enum.HealthTileEnum.DAMAGED)])
+	_check(names == ["Stab", "Backstab", "Stab", "Backstab"], "goblin order: %s" % [names])
+
+
+
+func _check_vermin(combat: CombatState) -> void:
+	var vermin := Vermin.new()
+	combat.enemies = [vermin]
+	var player := combat.player
+
+	# Gnaw -> Gnaw -> Skitter, looped. Each Gnaw lands two bites on tiles that aren't damaged yet.
+	var names: Array[String] = []
+	for i in 6:
+		_heal(player)
+		_heal(vermin)
+		for cell in player.health.keys().slice(0, 12):
+			player.health[cell].hp = Enum.HealthTileEnum.DAMAGED
+		vermin.plan(combat)
+		var action := vermin.intent_actions[0]
+		names.append(action.action_name)
+		if action is EnemyHit:
+			for part in action.parts:
+				_check(_covered(player, part).any(func(c: Vector2i) -> bool: return player.health[c].hp > Enum.HealthTileEnum.DAMAGED),
+					"gnaw put a bite where nothing is left")
+		await vermin.take_turn(combat)
+		if action is EnemyShieldSelf:
+			_check(_cells_with(vermin, Enum.HealthTileEnum.SHIELDED) == 5, "skitter should shield 5")
+	_check(names == ["Gnaw", "Gnaw", "Skitter", "Gnaw", "Gnaw", "Skitter"], "vermin order: %s" % [names])
+
+
+
+func _check_hound(combat: CombatState) -> void:
+	var hound := Hound.new()
+	combat.enemies = [hound]
+	var player := combat.player
+
+	# Bite (2 hits), Bite, Lunge, looped. With 3 tiles left, the two hits can't land on the same one.
+	var names: Array[String] = []
+	for i in 6:
+		_heal(player)
+		for cell in player.health.keys().slice(0, 16):
+			player.health[cell].hp = Enum.HealthTileEnum.DAMAGED
+		hound.plan(combat)
+		var action := hound.intent_actions[0]
+		names.append(action.action_name)
+		var expect := {}
+		for part in action.parts:
+			for cell in _covered(player, part):
+				if player.health[cell].hp > Enum.HealthTileEnum.DAMAGED:
+					expect[cell] = true
+		await hound.take_turn(combat)
+		if action.parts.size() == 2:
+			_check(expect.size() >= 2, "the two bites landed on the same open tile")
+		_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == 16 + expect.size(), "hound turn %d didn't damage what its intent showed" % i)
+	_check(names == ["Bite", "Bite", "Lunge", "Bite", "Bite", "Lunge"], "hound order: %s" % [names])
+
+
+
+func _check_ogre(combat: CombatState) -> void:
+	var ogre := Ogre.new()
+	combat.enemies = [ogre]
+	var player := combat.player
+
+	# Wind-up aims without attacking; Smash lands there and strips Plate even where Shield blocks.
+	var names: Array[String] = []
+	for i in 4:
+		_heal(player)
+		for tile in player.health.values():
+			tile.hp = Enum.HealthTileEnum.SHIELDED
+			tile.status_effects.append(PlateTileEffect.new())
+		ogre.plan(combat)
+		var action := ogre.intent_actions[0]
+		names.append(action.action_name)
+		var aimed := _covered(player, action.parts[0])
+		await ogre.take_turn(combat)
+		var stripped := player.health.keys().filter(func(c: Vector2i) -> bool: return not player.health[c].has_effect(PlateTileEffect))
+		stripped.sort()
+		if action is OgreWindUp:
+			_check(stripped.is_empty() and _cells_with(player, Enum.HealthTileEnum.SHIELDED) == player.health.size(), "wind-up touched the player")
+		else:
+			_check(aimed.size() == 12 and stripped == aimed, "smash should strip Plate from the 12 aimed tiles, stripped %d" % stripped.size())
+			_check(_cells_with(player, Enum.HealthTileEnum.UNDAMAGED) == 12, "smash should break the 12 shields")
+	_check(names == ["Wind-up", "Smash", "Wind-up", "Smash"], "ogre order: %s" % [names])
+
+
+
+func _check_golem(combat: CombatState) -> void:
+	var golem := MagicGolem.new()
+	combat.enemies = [golem]
+	var player := combat.player
+	_check(_cells_with(golem, Enum.HealthTileEnum.SHIELDED) == MagicGolem.RUNE_START, "golem should start with %d shields" % MagicGolem.RUNE_START)
+	_check(golem.power_amount(RuneArmorPower) == MagicGolem.RUNE_EVERY_TURN, "golem should start with Rune Armor %d" % MagicGolem.RUNE_EVERY_TURN)
+
+	# Arcane Bolt -> Charge -> Overload, looped, with Rune Armor's 5 Shields before each move.
+	var names: Array[String] = []
+	for i in 6:
+		_heal(player)
+		_heal(golem)
+		golem.plan(combat)
+		var action := golem.intent_actions[0]
+		names.append(action.action_name)
+		await golem.on_turn_start(combat)
+		_check(_cells_with(golem, Enum.HealthTileEnum.SHIELDED) == MagicGolem.RUNE_EVERY_TURN, "rune armor should shield %d before the move" % MagicGolem.RUNE_EVERY_TURN)
+		await golem.take_turn(combat)
+		await golem.on_turn_end(combat)
+		if action is EnemyHit:
+			_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == _covered(player, action.parts[0]).size(), "%s didn't damage what its intent showed" % action.action_name)
+		else:
+			_check(_cells_with(golem, Enum.HealthTileEnum.SHIELDED) == MagicGolem.RUNE_EVERY_TURN + 8, "charge should shield 8 more")
+	_check(names == ["Arcane Bolt", "Charge", "Overload", "Arcane Bolt", "Charge", "Overload"], "golem order: %s" % [names])
+	_check(golem.actions[0].parts[0].tiles.size() == 6 and golem.actions[2].parts[0].tiles.size() == 14, "golem patterns should be 6 and 14 tiles")
+
+
+
+func _check_dark_elf(combat: CombatState) -> void:
+	var elf := DarkElf.new()
+	combat.enemies = [elf]
+	var player := combat.player
+
+	# Poison Dart -> Shadow Step, looped. The dart damages its line and poisons the tile past its tip;
+	# Shadow Step shields 5 of its own and damages its slash.
+	var names: Array[String] = []
+	for i in 4:
+		_heal(player)
+		_heal(elf)
+		elf.plan(combat)
+		var action := elf.intent_actions[0]
+		names.append(action.action_name)
+		var expect_damaged := {}
+		var expect_poisoned := {}
+		for t in action.parts[0].tiles:
+			var cell: Vector2i = action.parts[0].cell + t.coords
+			if not player.health.has(cell):
+				continue
+			if t is DamageTile:
+				expect_damaged[cell] = true
+			else:
+				expect_poisoned[cell] = true
+		await elf.take_turn(combat)
+		var poisoned := player.health.keys().filter(func(c: Vector2i) -> bool: return player.health[c].has_effect(PoisonTileEffect))
+		_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == expect_damaged.size() and _all_in(player, expect_damaged, Enum.HealthTileEnum.DAMAGED),
+			"%s didn't damage what its intent showed" % action.action_name)
+		_check(poisoned.size() == expect_poisoned.size() and poisoned.all(func(c: Vector2i) -> bool: return expect_poisoned.has(c)),
+			"%s didn't poison what its intent showed" % action.action_name)
+		if action is DarkElfShadowStep:
+			_check(_cells_with(elf, Enum.HealthTileEnum.SHIELDED) == DarkElfShadowStep.SHIELDS, "shadow step should shield %d" % DarkElfShadowStep.SHIELDS)
+		else:
+			_check(not expect_poisoned.is_empty(), "poison dart poisoned nothing")
+	_check(names == ["Poison Dart", "Shadow Step", "Poison Dart", "Shadow Step"], "dark elf order: %s" % [names])
+
+
+
+func _check_griffin(combat: CombatState) -> void:
+	var griffin := Griffin.new()
+	combat.enemies = [griffin]
+	var player := combat.player
+
+	# Talon (2 hits) -> Wing Gust -> Dive, looped. Each attack damages what its intent showed.
+	var names: Array[String] = []
+	for i in 6:
+		_heal(player)
+		_heal(griffin)
+		griffin.plan(combat)
+		var action := griffin.intent_actions[0]
+		names.append(action.action_name)
+		var expect := {}
+		for part in action.parts:
+			for cell in _covered(player, part):
+				expect[cell] = true
+		await griffin.take_turn(combat)
+		if action is EnemyHit:
+			_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == expect.size(), "%s didn't damage what its intent showed" % action.action_name)
+		else:
+			_check(_cells_with(griffin, Enum.HealthTileEnum.SHIELDED) == 6, "wing gust should shield 6")
+	_check(names == ["Talon", "Wing Gust", "Dive", "Talon", "Wing Gust", "Dive"], "griffin order: %s" % [names])
+	_check(griffin.actions[0].parts[0].tiles.size() == 5 and griffin.actions[2].parts[0].tiles.size() == 9, "griffin patterns should be 5 and 9 tiles")
+
+	# Aerial: the first 3 hits each player turn miss, even on a Shield or with Pierce; the 4th lands.
+	# Hits during its own turn always land, and its turn end gets the 3 misses back.
+	_check(griffin.power_amount(AerialPower) == Griffin.AERIAL, "griffin should start with Aerial %d" % Griffin.AERIAL)
+	_heal(griffin)
+	await griffin.on_turn_end(combat)
+	var cells := griffin.health.keys()
+	griffin.health[cells[0]].hp = Enum.HealthTileEnum.SHIELDED
+	var landed: Array[bool] = []
+	for i in 4:
+		landed.append(griffin.damage_health_tile(combat, cells[i], i == 1))
+	_check(landed == [false, false, false, true], "aerial hits: %s" % [landed])
+	_check(griffin.health[cells[0]].hp == Enum.HealthTileEnum.SHIELDED, "aerial should keep the Shield")
+	await griffin.on_turn_start(combat)
+	_check(griffin.damage_health_tile(combat, cells[4]), "aerial cancelled a hit during its own turn")
+	await griffin.on_turn_end(combat)
+	_check(not griffin.damage_health_tile(combat, cells[5]), "aerial should miss again after its turn")
+
+
+
+func _check_hydra(combat: CombatState) -> void:
+	var hydra := Hydra.new()
+	combat.enemies = [hydra]
+	var player := combat.player
+	var cells: Array = hydra.health.keys()
+	_check(hydra.power_amount(MultiHeadPower) == 3 and hydra.power_amount(RegenPower) == 3, "hydra should start with 3 heads and Regen 3")
+
+	# 9 lost tiles in the player's turn keep 3 heads; the 10th cuts one at once. The intent drops a bite,
+	# keeps the other two where they were aimed, and stops counting. 10 more that turn cut nothing.
+	_heal(player)
+	hydra.plan(combat)
+	var planned: Array = hydra.intent_actions[0].parts.map(func(p: EnemyActionPart) -> Vector2i: return p.cell)
+	_check(_rows(hydra) == "Bite (0/10)" and planned.size() == 3, "3 heads should plan 3 bites: %s" % _rows(hydra))
+	for i in 9:
+		hydra.damage_health_tile(combat, cells[i])
+	_check(hydra.power_amount(MultiHeadPower) == 3 and _rows(hydra) == "Bite (9/10)", "9 lost tiles: %s" % _rows(hydra))
+	hydra.damage_health_tile(combat, cells[9])
+	var bite := hydra.intent_actions[0]
+	_check(hydra.power_amount(MultiHeadPower) == 2 and _rows(hydra) == "Bite", "10 lost tiles should cut a head: %s" % _rows(hydra))
+	_check(bite.parts.size() == 2 and bite.parts[0].cell == planned[0] and bite.parts[1].cell == planned[1], "the cut bite moved the others")
+	_check(hydra.idle_frames[0] == Hydra.ART[2], "the sprite should show 2 heads")
+	for i in range(10, 20):
+		hydra.damage_health_tile(combat, cells[i])
+	_check(hydra.power_amount(MultiHeadPower) == 2, "a second head went in the same turn")
+
+	# Lost 8+: no Regen. Then the 2 bites land where the intent showed.
+	await hydra.on_turn_start(combat)
+	_check(_cells_with(hydra, Enum.HealthTileEnum.DAMAGED) == 20, "regen healed after a heavy turn")
+	var expect := {}
+	for part in bite.parts:
+		for cell in _covered(player, part):
+			expect[cell] = true
+	await hydra.take_turn(combat)
+	_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == expect.size(), "hydra bites didn't damage what the intent showed")
+	await hydra.on_turn_end(combat)
+
+	# A light turn: 3 lost, no cut, Regen heals 3. Hits during its own turn don't count.
+	hydra.plan(combat)
+	_check(_rows(hydra) == "Bite (0/10)" and hydra.intent_actions[0].parts.size() == 2, "2 heads next turn: %s" % _rows(hydra))
+	for i in range(20, 23):
+		hydra.damage_health_tile(combat, cells[i])
+	await hydra.on_turn_start(combat)
+	_check(_cells_with(hydra, Enum.HealthTileEnum.DAMAGED) == 20, "regen should heal 3 after a light turn")
+	for i in range(30, 45):
+		hydra.damage_health_tile(combat, cells[i])
+	_check(hydra.power_amount(MultiHeadPower) == 2, "tiles lost in its own turn cut a head")
+	await hydra.on_turn_end(combat)
+
+	# Two more heavy turns leave no heads: no intent, no attack.
+	_heal(hydra)
+	for turn in 2:
+		hydra.plan(combat)
+		for i in 10:
+			hydra.damage_health_tile(combat, cells[turn * 10 + i])
+		await hydra.on_turn_start(combat)
+		await hydra.on_turn_end(combat)
+	hydra.plan(combat)
+	_check(hydra.power_amount(MultiHeadPower) == 0 and hydra.intent_actions.is_empty(), "no heads should mean no intent")
+	_check(hydra.idle_frames[0] == Hydra.ART[0], "the sprite should show no heads")
+	_heal(player)
+	await hydra.take_turn(combat)
+	_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == 0, "a headless hydra attacked")
+
 
 
 func _check_dragon(combat: CombatState) -> void:

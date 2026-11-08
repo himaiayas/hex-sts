@@ -91,8 +91,7 @@ Agreed with Mai in issue #8, and for issue #19. Where this differs from the shee
 - So there's no Shield on the turn it's cast. The first one comes at the owner's next turn start, if the tile wasn't attacked in between.
 - It's removed when its tile's hp reaches 0 (ON_HIT). Hitting a Plated hex that has Shield twice in one turn breaks the Shield and then removes the Plate.
 - Plate can't go on a damaged hex.
-- Not implemented, sheet draft only: the 20-hex cap and Smash / Shred / Corrode.
-- Slime Harden and Guarded Bash's self-shield use Plate.
+- Not implemented, sheet draft only: the 20-hex cap and Shred / Corrode. Smash (Ogre) removes Plate from every tile it covers.
 
 **Pierce**
 - A Pierce hit goes through both Shield and Plate: the tile is damaged even if it has Shield.
@@ -129,7 +128,8 @@ Agreed with Mai in issue #8, and for issue #19. Where this differs from the shee
 - The player chooses X damaged hexes of their own to restore. If fewer are damaged, all of them are restored.
 
 **Stun / Regen**
-- Powers. Not implemented.
+- Powers. Stun isn't implemented.
+- Regen is `RegenPower`: at the start of its owner's turn it heals X random damaged tiles. An optional guard skips the heal if the owner lost that many tiles since its last turn (Hydra: Regen 3, guard 8).
 - Ramiel's stun is its own move instead: an interrupted Charge becomes a "Stunned" turn that does nothing.
 
 **Triggers** (task #8, already on main)

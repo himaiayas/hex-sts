@@ -113,16 +113,19 @@
 
 - **Requirement/Prereq:** 1, 2
 - **Brief Description:** Enemy classes implemented with Polymorphism concept of OOP: name, health grid shape, sprite, and a list of actions/pattern.
+- [x] Done ✅: `BaseEnemy` subclasses for every floor 1 monster from the sheet, each with its moves, plus the Mini Slime from Split. Common moves are `EnemyHit` (Hit X, optionally several scattered hits) and `EnemyShieldSelf` (Block X); the rest are small subclasses. Passives are powers (Rune Armor, Aerial, Multi-head, Regen). Normal rooms pick a random floor 1 monster, elite rooms are the Hydra. `combat_scene.testing` puts one monster in every non-boss fight while it's being built. Check: `enemy_check.gd`.
 
 ### 11. Enemy turn and AI
 
 - **Requirement/Prereq:** 10
 - **Brief Description:** Run enemy actions in `CombatState.end_turn()` with the same action/tile classes (`execute(combat, unit, cell)`).
+- [x] Done ✅: `end_turn` runs each living enemy's planned moves with `GridAction`. Moves follow `p1_cycle` (and `p2_cycle` for bosses) or `_choose_actions` overrides. `CombatState.spawn()` adds enemies mid-fight; they act from the next enemy turn.
 
 ### 12. Enemy intents
 
 - **Requirement/Prereq:** 10 / UI design
 - **Brief Description:** Choose the next action ahead of time and show it on screen
+- [x] Done ✅: `plan()` locks every move's cells at the start of the player's turn; the player's grid blinks them and the label under the enemy names each move. An intent can change mid-turn (Hydra losing a head, Slime about to Split, Ramiel's interrupt). Each move has a short `description` for a future tooltip.
 
 ## Cards and content
 

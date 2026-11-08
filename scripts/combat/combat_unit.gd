@@ -33,10 +33,16 @@ func shield_health_tile(combat: CombatState, coords:Vector2i)->void:
 		tile.hp = Enum.HealthTileEnum.SHIELDED
 	
 
-## Shield absorbs the hit first (ON_BLOCK), unless it pierces; otherwise the tile is damaged (ON_HIT).
+## Aerial makes the hit miss (it flashes like a block, with no trigger). Otherwise Shield absorbs it
+## first (ON_BLOCK), unless it pierces, and then the tile is damaged (ON_HIT).
 ## Returns true if the tile was damaged.
 func damage_health_tile(combat: CombatState, coords: Vector2i, pierce := false)->bool:
 	var tile: HealthTile = health[coords]
+	if tile.hp > Enum.HealthTileEnum.DAMAGED:
+		for power in statuses:
+			if power is AerialPower and power.dodges(self):
+				combat.record(self, coords, Enum.Change.BLOCK)
+				return false
 	if tile.hp == Enum.HealthTileEnum.SHIELDED and not pierce:
 		tile.hp = Enum.HealthTileEnum.UNDAMAGED
 		combat.record(self, coords, Enum.Change.BLOCK)

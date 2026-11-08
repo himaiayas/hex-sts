@@ -1,7 +1,7 @@
 class_name Ogre
 extends BaseEnemy
 
-## Floor 1, Normal.
+## Floor 1, Normal. Cycles Wind-up -> Smash.
 
 
 func _init() -> void:
@@ -15,4 +15,6 @@ func _init() -> void:
 	]
 	super("Ogre", CombatUnit.make_hex_health(coords))
 	sprite = preload("res://assets/enemies/floor_1/slime.png")  # placeholder until the Ogre art is drawn
-	actions = []
+	var smash := OgreSmash.new()
+	actions = [OgreWindUp.new(smash), smash]
+	p1_cycle = [0, 1]
