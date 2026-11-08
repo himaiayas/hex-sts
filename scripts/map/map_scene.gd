@@ -46,7 +46,7 @@ func _fit_to_window() -> void:
 
 
 func _refresh() -> void:
-	_steps_label.text = "Steps  %d / %d" % [map.steps, MapState.START_STEPS]
+	_steps_label.text = "%d / %d" % [map.steps, MapState.START_STEPS]
 
 
 func _on_map_view_cell_clicked(cell: Vector2i) -> void:
@@ -99,8 +99,9 @@ func _on_restart_pressed() -> void:
 	get_tree().change_scene_to_file(RunState.MENU_SCENE)
 
 
+## Out of steps, or (only if a fully walled-in spot made _ensure_exit impossible) nowhere left to build.
 func _check_out_of_steps() -> void:
-	if map.steps <= 0:
+	if map.steps <= 0 or map.frontier().is_empty():
 		_busy = true
 		RunState.start_boss()
 
