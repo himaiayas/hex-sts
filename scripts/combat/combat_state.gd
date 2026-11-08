@@ -16,6 +16,9 @@ var hand: Array[BaseCard] = []
 var discard_pile: Array[BaseCard] = []
 var exhaust_pile: Array[BaseCard] = []
 var animator: Callable  # set by the combat scene: plays one batch of changes, awaited by flush()
+## Set by the combat scene: lets the player pick cards, awaited by choose_cards().
+## Gets {cards, in_hand, count, prompt}; returns the picked cards.
+var chooser: Callable
 var _changes: Array[Dictionary] = []  # recorded since the last flush
 
 var max_energy := 3
@@ -47,6 +50,20 @@ func flush() -> void:
 	_changes = []
 	if animator.is_valid():
 		await animator.call(batch)
+
+
+## The player picks count of these cards (fewer if there aren't that many). in_hand: they're
+## picked in the hand, otherwise in the pile viewer. Without a chooser (headless) the first ones.
+func choose_cards(cards: Array[BaseCard], count: int, prompt: String, in_hand: bool) -> Array[BaseCard]:
+	count = mini(count, cards.size())
+	var picked: Array[BaseCard] = []
+	if count == 0:
+		return picked
+	if not chooser.is_valid():
+		picked.assign(cards.slice(0, count))
+		return picked
+	picked.assign(await chooser.call({cards = cards, in_hand = in_hand, count = count, prompt = prompt}))
+	return picked
 
 
 func draw(amount: int) -> void:
@@ -107,8 +124,18 @@ func spawn(enemy: CombatUnit, next_to: CombatUnit, replace := true) -> void:
 	enemy_spawned.emit(enemy, next_to if replace else null)
 
 
+
+## In hand, affordable, and every must_land pattern fits somewhere it can go.
 func can_play(card: BaseCard) -> bool:
-	return card in hand and (card.x_cost or cost_of(card) <= energy)
+	if card not in hand or not (card.x_cost or cost_of(card) <= energy):
+		return false
+	for action in card.placements():
+		var units: Array[CombatUnit] = [player]
+		if action.target == Enum.TargetType.ENEMY:
+			units = enemies.filter(func(e: CombatUnit) -> bool: return not e.is_dead())
+		if not units.any(func(u: CombatUnit) -> bool: return action.can_place_anywhere(u)):
+			return false
+	return true
 
 
 ## What card costs now: Shiver adds 1 to the next card.
@@ -124,23 +151,12 @@ func x_energy() -> int:
 ## Pays the cost, runs each grid action on units[i] at cells[i], then discards the card.
 ## Exhaust cards go to the exhaust pile instead, and to_draw_top cards on top of the draw pile.
 ## Power cards go to no pile: they stay in play for the rest of the fight. With Echo, an Attack runs twice.
-## picks = the cards chosen to exhaust from hand (card.exhaust_from_hand), or to put on top of the draw pile
-## from the discard pile (card.pick_from_discard). Moved before the card's effect.
-## tile_picks = the player's tiles chosen for card.pick_tile, inflicted before the card's effect too.
-func play_card(card: BaseCard, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int], picks: Array[BaseCard] = [], tile_picks: Array[Vector2i] = []) -> bool:
+## Anything the card has the player pick (cards, tiles) is asked for while it resolves, through chooser.
+func play_card(card: BaseCard, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int]) -> bool:
 	if not can_play(card):
 		return false
 	energy = 0 if card.x_cost else energy - cost_of(card)
 	hand.erase(card)
-	for pick in picks:
-		if card.pick_from_discard > 0:
-			discard_pile.erase(pick)
-			draw_pile.append(pick)  # draw() takes from the back
-		else:
-			exhaust(pick)
-	for cell in tile_picks:
-		card.pick_tile.inflict(self, player, cell)
-	await flush()
 	playing = card
 	await card.execute(self, units, cells, rotations)
 	if card.type == Enum.CardType.ATTACK and EchoPower.use(player):
@@ -156,6 +172,12 @@ func play_card(card: BaseCard, units: Array[CombatUnit], cells: Array[Vector2i],
 	elif card.type != Enum.CardType.POWER:
 		discard_pile.append(card)
 	return true
+
+
+## Moves card from the hand to the discard pile.
+func discard(card: BaseCard) -> void:
+	hand.erase(card)
+	discard_pile.append(card)
 
 
 ## Moves card from wherever it is to the exhaust pile, and counts it for this turn.

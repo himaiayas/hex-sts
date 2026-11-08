@@ -32,7 +32,7 @@ const PARTICLE_SPEED := Vector2(8, 16)  # min/max px per second, drifting up
 const PARTICLE_SPREAD := 18.0  # px from the tile centre where they appear
 const POWER_SIZE := 36.0  # power badges, in a row under the grid
 const POWER_GAP := 8.0
-const FLASH_TIME := 0.3  # seconds per animated change
+const FLASH_TIME := 0.18  # seconds per animated change
 const FLASH_POP := 0.15  # the flash grows this much bigger than its hex, then shrinks back
 
 const COLOR_ALIVE := Color("#ffffff")
@@ -43,7 +43,6 @@ const COLOR_TEXT := Color("#e8e0c8")
 const COLOR_SHIELDED := Color("#a0e5f6")
 const COLOR_PLATE := Color("#8a96a3")
 const COLOR_HEAL := Color("#7ee08a")
-const PICKED_GREY := 0.45  # how far picked tiles fade from pick_tile's colour toward COLOR_DAMAGED
 const COLOR_CANDIDATE := Color("#ffd45a")
 const COLOR_NEW := Color("#ffe9a8")
 
@@ -53,8 +52,6 @@ var preview: Dictionary[Vector2i, BaseActionTile] = {} # next grid action of the
 var intents: Array = [] # enemy attacks aimed at this grid: [{cell: Vector2i, tiles: Array[BaseActionTile], faded: bool}]
 var placed: Array = [] # selected card's grid actions already clicked on this grid: [{cell: Vector2i, tiles: Dictionary[Vector2i, BaseActionTile]}]
 var random_target: BaseActionTile = null # selected card's next grid action hits random tiles of a grid: this whole grid flickers
-var pick_tile: BaseActionTile = null # pick step (e.g. Heal): previewed under the mouse on tiles it can go on
-var picked: Array[Vector2i] = [] # tiles picked in the pick step, drawn in pick_tile's colour, greyed
 var candidates: Array[Vector2i] = [] # empty cells drawn as outlines and clickable (level-up tile placement)
 var new_cells: Array[Vector2i] = [] # health cells drawn in COLOR_NEW (tiles just placed)
 var shake := Vector2.ZERO: # offset everything is drawn at while the grid shakes (set by the combat scene)
@@ -268,12 +265,6 @@ func _draw() -> void:
 		var cell := _hover + offset
 		if unit.health.has(cell):
 			_draw_action(preview[offset], cell, PREVIEW_ALPHA)
-
-	if pick_tile:
-		for cell in picked:
-			draw_colored_polygon(hex_corners(cell_position(cell), _hex - 2.5), pick_tile.get_color().lerp(COLOR_DAMAGED, PICKED_GREY))
-		if _hover not in picked and pick_tile.can_pick(unit, _hover, picked):
-			_draw_action(pick_tile, _hover, PREVIEW_ALPHA)
 
 	var font := ThemeDB.fallback_font
 	var title := "%s  %d/%d" % [unit.display_name, alive, coords.size()]

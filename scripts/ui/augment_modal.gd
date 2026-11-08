@@ -17,6 +17,7 @@ var augment: BaseAugment
 var _card: BaseCard = null
 var _action: GridAction = null
 var _tile: BaseActionTile = null  # placed in _action.tiles while previewing; removed if changed
+var _hover_info := HoverInfo.new()  # keywords of the cards shown
 
 @onready var _icon: TextureRect = %AugmentIcon
 @onready var _title: Label = %Title
@@ -30,6 +31,10 @@ var _tile: BaseActionTile = null  # placed in _action.tiles while previewing; re
 @onready var _preview: Control = %Preview
 @onready var _back_button: Button = %BackButton
 @onready var _confirm_button: Button = %ConfirmButton
+
+
+func _ready() -> void:
+	add_child(_hover_info)
 
 
 func open(_augment: BaseAugment) -> void:
@@ -49,6 +54,7 @@ func _show_cards() -> void:
 	_card_page.show()
 	_edit_page.hide()
 	_back_button.hide()
+	_hover_info.clear()
 	_clear(_card_grid)
 	var any := false
 	for card in RunState.deck:
@@ -64,6 +70,7 @@ func _show_cards() -> void:
 			slot.modulate = COLOR_DIM
 			panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_card_grid.add_child(slot)
+		_hover_info.add_card(slot, card, _card_page)
 	_hint.text = "%s\nChoose a card for it." % augment.description if any \
 		else "No card in your deck can take this augment."
 	_confirm_button.text = "Confirm" if any else "Continue"
@@ -161,6 +168,8 @@ func _remove_tile() -> void:
 
 
 func _refresh_preview() -> void:
+	_hover_info.clear()
+	_hover_info.add_card(_preview, _card)
 	_clear(_preview)
 	var view := RenderCard.create_card(_card)
 	view.scale = Vector2(PREVIEW_SCALE, PREVIEW_SCALE)
@@ -179,6 +188,7 @@ func _on_confirm_pressed() -> void:
 	if _card:
 		_card.augments.append(augment)
 		_tile = null  # keep it: it's part of the card now
+	_hover_info.clear()
 	hide()
 	finished.emit(_card)
 

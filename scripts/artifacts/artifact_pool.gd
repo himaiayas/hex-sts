@@ -36,3 +36,16 @@ static func random_artifact(owned: Array[BaseArtifact]) -> BaseArtifact:
 		if roll <= 0:
 			return by_rarity[rarity].pick_random()
 	return null
+
+
+## Up to count different artifacts the player doesn't own; fewer if the pool runs out.
+static func random_artifacts(count: int, owned: Array[BaseArtifact]) -> Array[BaseArtifact]:
+	var result: Array[BaseArtifact] = []
+	var taken := owned.duplicate()
+	for i in count:
+		var artifact := random_artifact(taken)
+		if artifact == null:
+			break
+		result.append(artifact)
+		taken.append(artifact)
+	return result

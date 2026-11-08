@@ -11,3 +11,6 @@ func _init() -> void:
 
 func has_effect(type: Script) -> bool:
 	return status_effects.any(func(e: BaseTileEffect) -> bool: return e.get_script() == type)
+
+func is_shielded() -> bool:
+	return hp == Enum.HealthTileEnum.SHIELDED

@@ -8,6 +8,10 @@ func _init() -> void:
 	type = Enum.CardType.SKILL
 	target = Enum.TargetType.PLAYER
 	exhaust = true
-	pick_tiles = 2
-	pick_tile = HealTile.new(Vector2i.ZERO)
-	description = "{keyword:Heal} 2 of your tiles.\n{keyword:Exhaust}."
+	description = "{render:0}\n{keyword:Exhaust}."
+	grid_actions = [
+		GridAction.new(Enum.TargetType.PLAYER, [
+			HealTile.new(Vector2i(0,0)),
+			HealTile.new(Vector2i(1,0))
+		]),
+	]

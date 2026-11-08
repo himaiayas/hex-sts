@@ -29,21 +29,21 @@ const ART_REGION := Rect2(167, 218, 700, 1000)
 ## Per card type. All the same for now.
 const BACKGROUNDS := {
 	Enum.CardType.ATTACK: preload("res://assets/cards/Card_red.png"),
-	Enum.CardType.DEFENSE: preload("res://assets/cards/Card_red.png"),
-	Enum.CardType.SKILL: preload("res://assets/cards/Card_red.png"),
-	Enum.CardType.POWER: preload("res://assets/cards/Card_red.png"),
+	Enum.CardType.DEFENSE: preload("res://assets/cards/Card_blue.png"),
+	Enum.CardType.SKILL: preload("res://assets/cards/Card_green.png"),
+	Enum.CardType.POWER: preload("res://assets/cards/Card_purple.png"),
 }
 const OUTLINES := {
 	Enum.CardType.ATTACK: preload("res://assets/cards/OutlineR.png"),
-	Enum.CardType.DEFENSE: preload("res://assets/cards/OutlineR.png"),
-	Enum.CardType.SKILL: preload("res://assets/cards/OutlineR.png"),
-	Enum.CardType.POWER: preload("res://assets/cards/OutlineR.png"),
+	Enum.CardType.DEFENSE: preload("res://assets/cards/OutlineB.png"),
+	Enum.CardType.SKILL: preload("res://assets/cards/OutlineG.png"),
+	Enum.CardType.POWER: preload("res://assets/cards/OutlineP.png"),
 }
 const COST_FRAMES := {
 	Enum.CardType.ATTACK: preload("res://assets/cards/CostR.png"),
-	Enum.CardType.DEFENSE: preload("res://assets/cards/CostR.png"),
-	Enum.CardType.SKILL: preload("res://assets/cards/CostR.png"),
-	Enum.CardType.POWER: preload("res://assets/cards/CostR.png"),
+	Enum.CardType.DEFENSE: preload("res://assets/cards/CostB.png"),
+	Enum.CardType.SKILL: preload("res://assets/cards/CostG.png"),
+	Enum.CardType.POWER: preload("res://assets/cards/CostP.png"),
 }
 const NAME_FRAME := preload("res://assets/cards/card_name_frame.png")
 const STAR := preload("res://assets/cards/rarity_star.png")
@@ -58,7 +58,7 @@ static var _render_regex := RegEx.create_from_string("^\\{render:(\\d+)\\}$")
 ## {render:N} anywhere in a line.
 static var _inline_render_regex := RegEx.create_from_string("\\{render:(\\d+)\\}")
 
-var card_data: BaseCard = Strike.new()
+var card_data: BaseCard = Slash.new()
 
 
 func _ready() -> void:
@@ -204,7 +204,7 @@ static func _fill_description(box: VBoxContainer, data: BaseCard) -> void:
 
 static func _grid_action(data: BaseCard, index: int) -> GridAction:
 	if index < data.grid_actions.size():
-		return data.grid_actions[index]
+		return data.pattern(index)
 	push_warning("%s has no grid action %d" % [data.card_name, index])
 	return null
 
@@ -228,5 +228,5 @@ static func _text_label(text: String, wrap: bool) -> RichTextLabel:
 	label.add_theme_font_size_override("normal_font_size", FONT_SIZE)
 	label.add_theme_font_size_override("bold_font_size", FONT_SIZE)
 	label.add_theme_color_override("default_color", COLOR_DESCRIPTION)
-	label.text = _keyword_regex.sub(text, "[b][color=#%s]$1[/color][/b]" % COLOR_KEYWORD.to_html(false), true)
+	label.text = _keyword_regex.sub(text, "[color=#%s]$1[/color]" % COLOR_KEYWORD.to_html(false), true)
 	return label

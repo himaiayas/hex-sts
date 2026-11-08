@@ -15,7 +15,7 @@ const ROOM_WEIGHTS := {
 	Enum.RoomType.ELITE_COMBAT: 10,
 	Enum.RoomType.BOSS_COMBAT: 0, # not drafted; reserved for the end of the floor
 	Enum.RoomType.CAMPFIRE: 10,
-	Enum.RoomType.CARD_SHOP: 10,
+	Enum.RoomType.MERCHANT: 10,
 	Enum.RoomType.BLACKSMITH: 10,
 	Enum.RoomType.TREASURE: 10,
 	Enum.RoomType.EVENT: 20,

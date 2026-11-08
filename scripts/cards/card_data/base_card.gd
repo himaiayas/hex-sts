@@ -13,11 +13,7 @@ var rarity: Enum.CardRarity = Enum.CardRarity.COMMON
 var exhaust := false  # goes to the exhaust pile after it's played, gone until the next fight
 var retain := false  # stays in hand at the end of the turn
 var to_draw_top := false  # goes on top of the draw pile after it's played, instead of the discard pile
-var exhaust_from_hand := 0  # cards in hand the player picks to exhaust when playing it
-var pick_from_discard := 0  # cards in the discard pile the player picks to put on top of the draw pile
-var pick_tiles := 0  # tiles of yours the player picks when playing it, and pick_tile is inflicted on each
-var pick_tile: BaseActionTile = null
-var grid_actions: Array[GridAction] = []  # each is its own pattern, drawn with {render:N}
+var grid_actions: Array[BaseAction] = []  # each a GridAction, or a RepeatAction around one; drawn with {render:N}
 var augments: Array[BaseAugment] = []  # applied upgrades, shown as icons above the card
 var max_augments := 1  # raise for cards that say they hold more
 
@@ -32,14 +28,30 @@ func execute(combat: CombatState, units: Array[CombatUnit], cells: Array[Vector2
 	return hits
 
 
-## The grid action click i places: grid_actions[i], or the only one, again, on an X-cost card.
+## The grid action click i places: placements()[i], or the only one, again, on an X-cost card.
 func grid_action(i: int) -> GridAction:
-	return grid_actions[0] if x_cost else grid_actions[i]
+	return pattern(0) if x_cost else placements()[i]
 
 
-## Clicks it takes to play with energy left: one per grid action, or one per energy on an X-cost card.
+## The pattern of grid_actions[i]: the action itself, or the GridAction a RepeatAction repeats.
+func pattern(i: int) -> GridAction:
+	var action := grid_actions[i]
+	return action.action if action is RepeatAction else action
+
+
+## Clicks it takes to play with energy left: one per placement, or one per energy on an X-cost card.
 func clicks(energy: int) -> int:
-	return energy if x_cost else grid_actions.size()
+	return energy if x_cost else placements().size()
+
+
+## grid_actions in click order, with each RepeatAction's action listed once per repeat.
+func placements() -> Array[GridAction]:
+	var result: Array[GridAction] = []
+	for i in grid_actions.size():
+		var times: int = grid_actions[i].times if grid_actions[i] is RepeatAction else 1
+		for t in times:
+			result.append(pattern(i))
+	return result
 
 
 func get_description() -> String:

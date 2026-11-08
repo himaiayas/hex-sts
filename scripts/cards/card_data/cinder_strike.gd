@@ -9,9 +9,9 @@ func _init() -> void:
 	description = "{render:0}\nIf you {keyword:Exhaust}ed a card this turn, damage 2 more random enemy tiles."
 	grid_actions = [
 		GridAction.new(Enum.TargetType.ENEMY, [
-			DamageTile.new(Vector2i(-1,0)),
-			DamageTile.new(Vector2i(0,0)),
 			DamageTile.new(Vector2i(1,0)),
+			DamageTile.new(Vector2i(0,0)),
+			DamageTile.new(Vector2i(0,1)),
 		]),
 	]
 

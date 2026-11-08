@@ -17,10 +17,6 @@ func can_inflict(unit: CombatUnit, cell: Vector2i)->bool:
 @abstract
 func get_color()->Color
 
-## Whether the player can pick cell in a pick step (e.g. Heal), with picked already chosen.
-func can_pick(unit: CombatUnit, cell: Vector2i, _picked: Array[Vector2i])->bool:
-	return can_inflict(unit, cell)
-
 ## Drawn on targeted health tiles (intents, previews). Null: draw get_color() instead.
 func get_icon() -> Texture2D:
 	return null
