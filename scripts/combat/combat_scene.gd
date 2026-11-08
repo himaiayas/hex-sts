@@ -148,10 +148,11 @@ func _add_enemy(enemy: BaseEnemy) -> void:
 	_intent_labels.insert(i, intent_label)
 
 
-## A spawned enemy takes in_place_of's place on screen, with a flash.
+## A spawned enemy appears with a flash, in in_place_of's place if it has one.
 func _on_enemy_spawned(enemy: CombatUnit, in_place_of: CombatUnit) -> void:
 	_add_enemy(enemy)
-	_view_for(in_place_of).get_parent().hide()
+	if in_place_of:
+		_view_for(in_place_of).get_parent().hide()
 	_flash_sprite(_sprite_for(enemy))
 
 
@@ -727,14 +728,14 @@ func _room_type() -> Enum.RoomType:
 
 ## The enemy being built, fought in every normal and elite room (and on F6) until it's done.
 ## null = the usual line-ups.
-static var testing: Script = Warewolf
+static var testing: Script = Lich
 
 ## Each floor's monsters: NORMALS[0] / ELITES[0] are floor 1. Floors past the end reuse the last one.
 static var NORMALS: Array = [
 	[Slime, Goblin, Vermin, Hound, Ogre, MagicGolem, DarkElf, Griffin],
 	[Skeleton, Bat, Zombie, JackOLantern, LilGhost, Mummy, Warewolf],
 ]
-static var ELITES: Array = [[Hydra], [Frangenstein]]
+static var ELITES: Array = [[Hydra], [Frangenstein, Lich]]
 
 
 ## The floor whose monster lists have script, or 0.
@@ -752,9 +753,11 @@ func _enemies_for(room_type: Enum.RoomType) -> Array[CombatUnit]:
 		return enemies
 	if testing:
 		enemies.append(testing.new())
+		enemies.append_array(enemies[0].companions)
 		return enemies
 	var pools: Array = ELITES if room_type == Enum.RoomType.ELITE_COMBAT else NORMALS
 	enemies.append(pools[mini(RunState.dungeon_floor, pools.size()) - 1].pick_random().new())
+	enemies.append_array(enemies[0].companions)
 	return enemies
 
 

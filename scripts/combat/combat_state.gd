@@ -1,7 +1,7 @@
 class_name CombatState
 extends RefCounted
 
-signal enemy_spawned(enemy: CombatUnit, in_place_of: CombatUnit)  # the scene shows it in in_place_of's slot
+signal enemy_spawned(enemy: CombatUnit, in_place_of: CombatUnit)  # the scene shows it in in_place_of's slot, or beside when null
 
 
 # Temporary state for combat encounter
@@ -100,11 +100,11 @@ func end_turn() -> void:
 	await start_turn()
 
 
-## Adds enemy mid-fight, right after in_place_of, which leaves the field (Slime's Split).
-## It plans its first move at the next player turn.
-func spawn(enemy: CombatUnit, in_place_of: CombatUnit) -> void:
-	enemies.insert(enemies.find(in_place_of) + 1, enemy)
-	enemy_spawned.emit(enemy, in_place_of)
+## Adds enemy mid-fight, right after next_to. With replace, next_to leaves the field (Slime's Split);
+## without, it stays (Lich's Summon). The new enemy plans its first move at the next player turn.
+func spawn(enemy: CombatUnit, next_to: CombatUnit, replace := true) -> void:
+	enemies.insert(enemies.find(next_to) + 1, enemy)
+	enemy_spawned.emit(enemy, next_to if replace else null)
 
 
 func can_play(card: BaseCard) -> bool:

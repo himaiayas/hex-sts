@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Ogre / Magic Golem / Dark Elf / Griffin / Hydra / Skeleton / Bat / Zombie / Frangenstein / Jack O Lantern / Lil Ghost / Mummy / Warewolf / Dragon / Dracula / Ramiel. Exit code = number of failures.
+## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Ogre / Magic Golem / Dark Elf / Griffin / Hydra / Skeleton / Bat / Zombie / Frangenstein / Jack O Lantern / Lil Ghost / Mummy / Warewolf / Lich / Dragon / Dracula / Ramiel. Exit code = number of failures.
 ## godot --headless --path . -s res://scripts/enemies/enemy_check.gd
 
 var _failures := 0
@@ -51,6 +51,7 @@ func _initialize() -> void:
 	await _check_lil_ghost(combat)
 	await _check_mummy(combat)
 	await _check_warewolf(combat)
+	await _check_lich(combat)
 	await _check_dragon(combat)
 	await _check_dracula(combat)
 	await _check_ramiel(combat)
@@ -784,6 +785,58 @@ func _check_warewolf(combat: CombatState) -> void:
 	combat.playing = null
 	_check(_cells_with(wolf, Enum.HealthTileEnum.DAMAGED) == before + 2 + FullMoonPower.EXTRA, "a new Attack card should add the extra hits again")
 	_check(not FullMoonPower.new().show_amount and not NewMoonPower.new().show_amount, "moon badges shouldn't show an amount")
+
+
+
+func _check_lich(combat: CombatState) -> void:
+	var lich := Lich.new()
+	combat.enemies = [lich, lich.mimic]
+	var player := combat.player
+	_check(lich.companions == [lich.mimic] and lich.mimic.health.size() == 20, "the lich should bring a 20-tile Mimic")
+	_check(lich.power_amount(RegenPower) == Lich.REGEN, "the lich should start with Regen %d" % Lich.REGEN)
+
+	# Summon (a Lil Ghost beside it) -> Soul Drain (Fracture 4) -> Bone Storm (3 hits).
+	var names: Array[String] = []
+	for i in 3:
+		_heal(player)
+		lich.plan(combat)
+		var action := lich.intent_actions[0]
+		names.append(action.action_name)
+		var expect := {}
+		for part in action.parts:
+			for cell in _covered(player, part):
+				expect[cell] = true
+		await lich.take_turn(combat)
+		if action is LichSummon:
+			_check(combat.enemies.size() == 3 and combat.enemies[1] is LilGhost and lich.summons.size() == 1, "summon should add a Lil Ghost beside the lich")
+		elif action.action_name == "Soul Drain":
+			var fractured := player.health.values().filter(func(t: HealthTile) -> bool: return t.has_effect(FractureTileEffect)).size()
+			_check(fractured == 4, "soul drain should fracture 4, fractured %d" % fractured)
+		else:
+			_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == expect.size(), "bone storm didn't damage what its intent showed")
+	_check(names == ["Summon Lil Ghost", "Soul Drain", "Bone Storm"], "lich order: %s" % [names])
+
+	# While its ghost is alive, Soul Drain replaces the Summon.
+	lich.plan(combat)
+	_check(lich.intent_actions[0].action_name == "Soul Drain", "a live ghost should skip the summon: %s" % _rows(lich))
+
+	# Regen heals 5 while the Mimic stands; destroying the Mimic takes it away.
+	_heal(lich)
+	var cells: Array = lich.health.keys()
+	for i in 10:
+		lich.health[cells[i]].hp = Enum.HealthTileEnum.DAMAGED
+	await lich.on_turn_start(combat)
+	await lich.on_turn_end(combat)
+	_check(_cells_with(lich, Enum.HealthTileEnum.DAMAGED) == 10 - Lich.REGEN, "regen should heal %d" % Lich.REGEN)
+	for cell in lich.mimic.health:
+		lich.mimic.damage_health_tile(combat, cell)
+	_check(lich.power_amount(RegenPower) == 0, "destroying the mimic should end the regen")
+
+	# The lich's death takes its ghosts and Mimic with it: the fight is won.
+	_check(not combat.is_won(), "won with the lich alive")
+	for cell in lich.health:
+		lich.damage_health_tile(combat, cell)
+	_check(combat.is_won(), "killing the lich should win the fight")
 
 
 

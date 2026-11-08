@@ -1,7 +1,17 @@
 class_name Lich
 extends BaseEnemy
 
-## Floor 2, Elite.
+## Floor 2, Elite. Cycles Summon Lil Ghost -> Soul Drain -> Bone Storm; while its ghost is alive,
+## Soul Drain replaces the Summon. Phylactery: a Mimic fights beside it, and while the Mimic
+## stands it has Regen REGEN. When the Lich dies, the Mimic and its ghosts die with it.
+
+const MAX_GHOSTS := 1
+const REGEN := 5
+
+var mimic: Mimic
+var summons: Array[LilGhost] = []
+
+var _soul_drain: EnemyHit
 
 
 func _init() -> void:
@@ -24,4 +34,39 @@ func _init() -> void:
 	]
 	super("Lich", CombatUnit.make_hex_health(coords))
 	sprite = preload("res://assets/enemies/floor_2/lich.png")
-	actions = []
+	var fracture: Array[BaseActionTile] = [ApplyEffectTile.new(Vector2i.ZERO, FractureTileEffect.new())]
+	_soul_drain = EnemyHit.new("Soul Drain", "Fracture 4 random tiles.", fracture, 4)
+	_soul_drain.action_type = Enum.BaseEnemyActionEnum.DEBUFF
+	# Two rows of 4.
+	var bones: Array[BaseActionTile] = []
+	for r in 2:
+		for q in 4:
+			bones.append(DamageTile.new(Vector2i(q - r, r)))
+	actions = [
+		LichSummon.new(),
+		_soul_drain,
+		EnemyHit.new("Bone Storm", "Hit 8 tiles 3 times.", bones, 3),
+	]
+	p1_cycle = [0, 1, 2]
+	statuses.append(RegenPower.new(REGEN))
+	mimic = Mimic.new(self)
+	companions = [mimic]
+
+
+func _choose_actions() -> Array[BaseEnemyAction]:
+	var chosen := super()
+	if chosen[0] is LichSummon and summons.filter(func(g: LilGhost) -> bool: return not g.is_dead()).size() >= MAX_GHOSTS:
+		return [_soul_drain]
+	return chosen
+
+
+## When it dies, its Mimic and ghosts go with it: gone, not hit, so no animation and no triggers.
+func fire_at(trigger: Enum.Trigger, combat: CombatState, cell: Vector2i) -> void:
+	super(trigger, combat, cell)
+	if trigger != Enum.Trigger.ON_HIT or not is_dead():
+		return
+	var linked: Array[CombatUnit] = [mimic]
+	linked.append_array(summons)
+	for unit in linked:
+		for tile in unit.health.values():
+			tile.hp = Enum.HealthTileEnum.DAMAGED
