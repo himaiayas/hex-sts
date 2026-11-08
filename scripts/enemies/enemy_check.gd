@@ -34,6 +34,7 @@ func _initialize() -> void:
 		_check(slime.intent_actions.is_empty(), "turn %d: intent not cleared after take_turn" % i)
 	_check(names == ["Splat", "Goo", "Splat", "Goo", "Splat", "Goo"], "slime order: %s" % [names])
 
+	await _check_slime_split(combat)
 	await _check_goblin(combat)
 	await _check_vermin(combat)
 	await _check_hound(combat)
@@ -49,6 +50,46 @@ func _initialize() -> void:
 	run.free()
 	print("enemy_check: %s" % ("OK" if _failures == 0 else "%d failure(s)" % _failures))
 	quit(_failures)
+
+
+func _check_slime_split(combat: CombatState) -> void:
+	var player := combat.player
+
+	# 7 tiles left: still Splat. The 6th left turns the intent into Split at once.
+	var slime := Slime.new()
+	combat.enemies = [slime]
+	var cells: Array = slime.health.keys()
+	slime.plan(combat)
+	for i in 5:
+		slime.damage_health_tile(combat, cells[i])
+	_check(_rows(slime) == "Splat", "7 tiles left should still Splat: %s" % _rows(slime))
+	slime.damage_health_tile(combat, cells[5])
+	_check(_rows(slime) == "Split", "6 tiles left should Split: %s" % _rows(slime))
+
+	# On its turn it splits instead of attacking: gone, with 2 Mini Slimes of 3 tiles in its place.
+	# They don't act that turn, then plan Tiny Splat for the next one.
+	_heal(player)
+	await combat.end_turn()
+	_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == 0, "split turn shouldn't attack")
+	_check(slime.is_dead() and combat.enemies.size() == 3 and combat.enemies.slice(1).all(func(e: CombatUnit) -> bool: return e is MiniSlime and e.health.size() == 3),
+		"slime should become 2 mini slimes: %s" % [combat.enemies])
+	_check(not combat.is_won(), "won with the mini slimes still alive")
+	var minis := combat.enemies.slice(1)
+	_check(minis.all(func(m: MiniSlime) -> bool: return _rows(m) == "Tiny Splat"), "mini slimes should plan Tiny Splat")
+	for mini in minis:
+		for cell in mini.health:
+			mini.damage_health_tile(combat, cell)
+	_check(combat.is_won(), "killing both mini slimes should win")
+
+	# Destroyed outright, it doesn't split.
+	slime = Slime.new()
+	combat.enemies = [slime]
+	slime.plan(combat)
+	for cell in slime.health:
+		slime.damage_health_tile(combat, cell)
+	await combat.end_turn()
+	_check(combat.enemies.size() == 1, "a destroyed slime split")
+
 
 
 func _check_goblin(combat: CombatState) -> void:

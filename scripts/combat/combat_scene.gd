@@ -90,51 +90,66 @@ func _ready() -> void:
 	_player_view.setup(combat.player, true)
 	_player_view.cell_clicked.connect(_on_cell_clicked)
 	combat.player.blocked.connect(_on_player_blocked)
+	combat.enemy_spawned.connect(_on_enemy_spawned)
 	for enemy in combat.enemies:
-		var view := HealthGridView.new()
-		view.setup(enemy, true)
-		view.cell_clicked.connect(_on_cell_clicked)
-		view.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		# The intent hangs under the grid, as wide as it, and grows down only,
-		# so a longer or shorter intent never moves the enemy.
-		var intent_label := Label.new()
-		intent_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		intent_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		intent_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		view.add_child(intent_label)
-		intent_label.anchor_top = 1.0
-		intent_label.anchor_bottom = 1.0
-		intent_label.anchor_right = 1.0
-		intent_label.grow_vertical = Control.GROW_DIRECTION_END
-		# Enemy image on the left, its health grid on the right.
-		var side := HBoxContainer.new()
-		side.add_theme_constant_override("separation", 24)
-		# The image sits in a plain slot, so it can lunge and shake without the HBox putting it back.
-		var slot := Control.new()
-		slot.custom_minimum_size = enemy.image_size
-		slot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-		slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var image := UnitImage.new()
-		image.idle_frames = enemy.idle_frames
-		if image.idle_frames.is_empty():
-			image.idle_frames = [enemy.sprite]
-		image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		image.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		image.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		slot.add_child(image)
-		side.add_child(slot)
-		side.add_child(view)
-		_enemies_box.add_child(side)
-		_enemy_views.append(view)
-		_enemy_images.append(image)
-		_intent_labels.append(intent_label)
+		_add_enemy(enemy)
 
 	combat.animator = _animate
 	_busy = true
 	await combat.start_turn()
 	_busy = false
 	_refresh()
+
+
+## Builds an enemy's sprite slot, grid and intent label, at its place in combat.enemies.
+func _add_enemy(enemy: BaseEnemy) -> void:
+	var view := HealthGridView.new()
+	view.setup(enemy, true)
+	view.cell_clicked.connect(_on_cell_clicked)
+	view.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	# The intent hangs under the grid, as wide as it, and grows down only,
+	# so a longer or shorter intent never moves the enemy.
+	var intent_label := Label.new()
+	intent_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	intent_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	intent_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	view.add_child(intent_label)
+	intent_label.anchor_top = 1.0
+	intent_label.anchor_bottom = 1.0
+	intent_label.anchor_right = 1.0
+	intent_label.grow_vertical = Control.GROW_DIRECTION_END
+	# Enemy image on the left, its health grid on the right.
+	var side := HBoxContainer.new()
+	side.add_theme_constant_override("separation", 24)
+	# The image sits in a plain slot, so it can lunge and shake without the HBox putting it back.
+	var slot := Control.new()
+	slot.custom_minimum_size = enemy.image_size
+	slot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	slot.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var image := UnitImage.new()
+	image.idle_frames = enemy.idle_frames
+	if image.idle_frames.is_empty():
+		image.idle_frames = [enemy.sprite]
+	image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	image.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	slot.add_child(image)
+	side.add_child(slot)
+	side.add_child(view)
+	var i := combat.enemies.find(enemy)
+	_enemies_box.add_child(side)
+	_enemies_box.move_child(side, i)
+	_enemy_views.insert(i, view)
+	_enemy_images.insert(i, image)
+	_intent_labels.insert(i, intent_label)
+
+
+## A spawned enemy takes in_place_of's place on screen, with a flash.
+func _on_enemy_spawned(enemy: CombatUnit, in_place_of: CombatUnit) -> void:
+	_add_enemy(enemy)
+	_view_for(in_place_of).get_parent().hide()
+	_flash_sprite(_sprite_for(enemy))
 
 
 # --- Input -------------------------------------------------------------------
@@ -707,7 +722,7 @@ func _room_type() -> Enum.RoomType:
 
 ## The enemy being built, fought in every normal and elite room (and on F6) until it's done.
 ## null = the usual line-ups.
-static var testing: Script = Hydra
+static var testing: Script = Slime
 
 
 ## Placeholder line-ups until there are more enemies.
