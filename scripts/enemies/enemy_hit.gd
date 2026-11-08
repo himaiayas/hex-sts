@@ -6,6 +6,7 @@ extends BaseEnemyAction
 ## so they don't all land on the same best spot. Pierce goes in the tiles (DamageTile's flag).
 
 var scattered: bool
+var aimed := false  # an EnemyWindUp already locked the cell, so plan() leaves it
 
 
 func _init(_name: String, _description: String, tiles: Array[BaseActionTile], times := 1, _scattered := false) -> void:
@@ -14,6 +15,11 @@ func _init(_name: String, _description: String, tiles: Array[BaseActionTile], ti
 	scattered = _scattered or times > 1
 	for i in times:
 		parts.append(EnemyActionPart.new(Enum.Side.PLAYER, tiles))
+
+
+func plan(combat: CombatState, owner: CombatUnit) -> void:
+	if not aimed:
+		super(combat, owner)
 
 
 func pick_cell(part: EnemyActionPart, target: CombatUnit) -> Vector2i:

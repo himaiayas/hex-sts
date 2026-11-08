@@ -1,7 +1,7 @@
 class_name PlasmaTurret
 extends BaseEnemy
 
-## Floor 3, Normal.
+## Floor 3, Normal. Cycles Chip -> Charge -> Plasma Burst. Charge aims the Burst without attacking.
 
 
 func _init() -> void:
@@ -16,4 +16,22 @@ func _init() -> void:
 	]
 	super("Plasma Turret", CombatUnit.make_hex_health(coords))
 	sprite = preload("res://assets/enemies/floor_3/plasma_turret.png")
-	actions = []
+	var chip: Array[BaseActionTile] = [
+		DamageTile.new(Vector2i(0, -1)),
+		DamageTile.new(Vector2i(-1, 0)),
+		DamageTile.new(Vector2i(0, 0)),
+		DamageTile.new(Vector2i(1, 0)),
+		DamageTile.new(Vector2i(0, 1)),
+	]
+	var block: Array[BaseActionTile] = []
+	for r in 5:
+		for q in 4:
+			block.append(DamageTile.new(Vector2i(q - floori(r / 2.0), r)))  # rows line up, not slant
+	var burst := EnemyHit.new("Plasma Burst", "Hit 20 tiles in a 5x4 block.", block)
+	burst.aimed = true
+	actions = [
+		EnemyHit.new("Chip", "Hit 5 tiles.", chip),
+		EnemyWindUp.new("Charge", "No attack. Aims the next Plasma Burst.", burst),
+		burst,
+	]
+	p1_cycle = [0, 1, 2]

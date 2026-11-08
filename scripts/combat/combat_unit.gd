@@ -86,10 +86,10 @@ func add_power(combat: CombatState, power: BaseEffect) -> void:
 	combat.record(self, Vector2i.ZERO, Enum.Change.POWER, power)
 
 
-## Stacks of the power with this script, 0 if the unit doesn't have it.
+## Stacks of the power with this script or one extending it (Lockdown is a Shiver), 0 if the unit doesn't have it.
 func power_amount(script: Script) -> int:
 	for power in statuses:
-		if power.get_script() == script and power is BasePower:
+		if is_instance_of(power, script) and power is BasePower:
 			return power.amount
 	return 0
 

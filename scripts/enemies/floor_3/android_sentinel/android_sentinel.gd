@@ -1,7 +1,7 @@
 class_name AndroidSentinel
 extends BaseEnemy
 
-## Floor 3, Normal.
+## Floor 3, Normal. Cycles Aim -> Snipe. Aim locks where the Snipe lands without attacking.
 
 
 func _init() -> void:
@@ -22,4 +22,10 @@ func _init() -> void:
 	]
 	super("Android Sentinel", CombatUnit.make_hex_health(coords))
 	sprite = preload("res://assets/enemies/floor_3/android_sentinel.png")
-	actions = []
+	var line: Array[BaseActionTile] = []
+	for q in 10:
+		line.append(DamageTile.new(Vector2i(q, 0), true))
+	var snipe := EnemyHit.new("Snipe", "Hit 10 tiles in a line with Pierce.", line)
+	snipe.aimed = true
+	actions = [EnemyWindUp.new("Aim", "No attack. Aims the next Snipe.", snipe), snipe]
+	p1_cycle = [0, 1]

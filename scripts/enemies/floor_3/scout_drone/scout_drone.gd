@@ -1,7 +1,14 @@
 class_name ScoutDrone
 extends BaseEnemy
 
-## Floor 3, Normal.
+## Floor 3, Normal. Laser Ping, then Scan, looped. Scan aims the next Laser Ping's first hit and
+## makes it 4 tiles bigger. Hover (a power): the first HOVER hits it takes each player turn miss.
+
+const HOVER := 2
+
+var _ping := ScoutDroneLaserPing.new(false)
+var _scanned_ping := ScoutDroneLaserPing.new(true)
+var _scan := EnemyWindUp.new("Scan", "No attack. Locks on: its next Laser Ping hits 4 more tiles there.", _scanned_ping)
 
 
 func _init() -> void:
@@ -16,4 +23,12 @@ func _init() -> void:
 	]
 	super("Scout Drone", CombatUnit.make_hex_health(coords))
 	sprite = preload("res://assets/enemies/floor_3/scout_drone.png")
-	actions = []
+	actions = [_ping, _scan, _scanned_ping]
+	statuses.append(HoverPower.new(HOVER))
+
+
+func _choose_actions() -> Array[BaseEnemyAction]:
+	_turn += 1
+	if _turn % 2 == 0:
+		return [_scan]
+	return [_ping if _turn == 1 else _scanned_ping]

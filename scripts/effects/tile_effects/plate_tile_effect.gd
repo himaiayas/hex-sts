@@ -1,7 +1,7 @@
 class_name PlateTileEffect
 extends BaseTileEffect
 
-## Not implemented yet (sheet draft only): the 20-hex cap and Shred / Corrode. Smash is OgreSmash.
+## Not implemented yet (sheet draft only): the 20-hex cap. Smash, Shred and Corrode use strip().
 
 var attacked := false  # hit during the opponent's turn, so no Shield next turn
 
@@ -30,3 +30,15 @@ func get_color() -> Color:
 
 func get_icon() -> Texture2D:
 	return preload("res://assets/grid_effects/plate.png")
+
+
+## Takes Plate off unit's tile at cell, if it has any (Smash, Shred, Corrode). Returns whether it did.
+static func strip(combat: CombatState, unit: CombatUnit, cell: Vector2i) -> bool:
+	if not unit.health.has(cell):
+		return false
+	for effect in unit.health[cell].status_effects.duplicate():
+		if effect is PlateTileEffect:
+			unit.health[cell].status_effects.erase(effect)
+			combat.record(unit, cell, Enum.Change.EFFECT_LOST, effect)
+			return true
+	return false

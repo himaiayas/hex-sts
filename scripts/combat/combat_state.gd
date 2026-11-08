@@ -138,6 +138,8 @@ func start_turn(replan := true) -> void:
 		await player.fire(Enum.Trigger.COMBAT_START, self)
 	await player.on_turn_start(self)
 	draw(DRAW_PER_TURN - player.power_amount(ScreechPower))
+	if player.power_amount(HackedPower) > 0 and not hand.is_empty():
+		exhaust(hand.pick_random())
 	if not replan:
 		return
 	for e in enemies:

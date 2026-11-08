@@ -1,7 +1,14 @@
 class_name MechWalker
 extends BaseEnemy
 
-## Floor 3, Elite.
+## Floor 3, Elite. Cycles Missile Salvo -> Stomp -> Shield Up. Armor Plating: starts with ARMOR
+## Shields and tops them back up every ARMOR_EVERY turns, before its move.
+
+const ARMOR := 20
+const ARMOR_EVERY := 3
+
+var _armor := EnemyField.new("Armor Plating", ARMOR)
+var _turns := 0  # turns planned, for Armor Plating
 
 
 func _init() -> void:
@@ -24,4 +31,30 @@ func _init() -> void:
 	]
 	super("Mech Walker", CombatUnit.make_hex_health(coords))
 	sprite = preload("res://assets/enemies/floor_3/mech_walker.png")
-	actions = []
+	var missile: Array[BaseActionTile] = [
+		DamageTile.new(Vector2i(0, 0)),
+		DamageTile.new(Vector2i(1, 0)),
+		DamageTile.new(Vector2i(-1, 1)),
+		DamageTile.new(Vector2i(0, 1)),
+	]
+	var foot: Array[BaseActionTile] = []
+	for r in 3:
+		for q in 3:
+			foot.append(DamageTile.new(Vector2i(q - floori(r / 2.0), r)))  # rows line up, not slant
+	actions = [
+		EnemyHit.new("Missile Salvo", "Hit 4 tiles 4 times.", missile, 4),
+		EnemyHit.new("Stomp", "Hit 9 tiles in a 3x3 block.", foot),
+		EnemyShieldSelf.new("Shield Up", 12, "Shield 12 random tiles of its own."),
+		_armor,
+	]
+	p1_cycle = [0, 1, 2]
+	EnemyField.shield_start(self, ARMOR)
+
+
+func _choose_actions() -> Array[BaseEnemyAction]:
+	_turns += 1
+	var rows: Array[BaseEnemyAction] = []
+	if _turns % ARMOR_EVERY == 0 and EnemyField.shields(self) < ARMOR:
+		rows.append(_armor)
+	rows.append(_choose_action())
+	return rows
