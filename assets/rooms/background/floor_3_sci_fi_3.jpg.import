@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://db031rvbqc0ma"
-path="res://.godot/imported/floor_3_sci_fi_alt_1.jpg-d912aad807b804c31e05edcadec15ced.ctex"
+uid="uid://4hac0sahm1xt"
+path="res://.godot/imported/floor_3_sci_fi_3.jpg-1d9e2086f9875ed4e891366a382795e6.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/rooms/background/floor_3_sci_fi_alt_1.jpg"
-dest_files=["res://.godot/imported/floor_3_sci_fi_alt_1.jpg-d912aad807b804c31e05edcadec15ced.ctex"]
+source_file="res://assets/rooms/background/floor_3_sci_fi_3.jpg"
+dest_files=["res://.godot/imported/floor_3_sci_fi_3.jpg-1d9e2086f9875ed4e891366a382795e6.ctex"]
 
 [params]
 

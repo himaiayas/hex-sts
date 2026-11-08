@@ -90,7 +90,9 @@ func _ready() -> void:
 		RunState.start_new_run()
 	_floor_background.texture = RunState.combat_background()
 	if testing and _room_type() != Enum.RoomType.BOSS_COMBAT and _floor_of(testing) > 0:
-		_floor_background.texture = RunState.FLOOR_COMBAT_BACKGROUNDS[_floor_of(testing) - 1]  # the test monster's floor
+		_floor_background.texture = RunState.FLOOR_COMBAT_BACKGROUNDS[_floor_of(testing) - 1].pick_random()  # the test monster's floor
+	if RunState.BACKGROUND_FLICKERS.has(_floor_background.texture):
+		_flicker_lights(_floor_background.texture, RunState.BACKGROUND_FLICKERS[_floor_background.texture])
 	_hover_info.is_blocked = _top_bar.is_modal_open
 	add_child(_hover_info)
 	_intent_info.is_blocked = func() -> bool: return _top_bar.is_modal_open() or _pile_viewer.visible or _over
@@ -161,6 +163,17 @@ func _add_enemy(enemy: BaseEnemy) -> void:
 	_enemy_views.insert(i, view)
 	_enemy_images.insert(i, image)
 	_intent_labels.insert(i, intent_label)
+
+
+## Forever: every 2-5 s the lights flicker 1-3 times, each a quick flash of the flicker image.
+func _flicker_lights(lit: Texture2D, flicker: Texture2D) -> void:
+	while true:
+		await get_tree().create_timer(randf_range(2.0, 5.0)).timeout
+		for i in randi_range(1, 3):
+			_floor_background.texture = flicker
+			await get_tree().create_timer(randf_range(0.06, 0.12)).timeout
+			_floor_background.texture = lit
+			await get_tree().create_timer(randf_range(0.05, 0.15)).timeout
 
 
 ## Which enemy's sprite or grid is under the mouse; the others' intents on the player's grid fade.
@@ -722,8 +735,8 @@ func _refresh() -> void:
 					self_intents.append(intent)
 		_enemy_views[i].intents = self_intents
 		_enemy_views[i].refresh()
-		if enemy:
-			_enemy_images[i].modulate = enemy.tint
+		if enemy and not enemy.idle_frames.is_empty():
+			_enemy_images[i].idle_frames = enemy.idle_frames  # it can change form (the Werewolf)
 	_player_view.intents = player_intents
 	_set_aim(aim)
 	_player_view.refresh()
@@ -821,7 +834,7 @@ static var testing: Script = null
 ## Each floor's monsters: NORMALS[0] / ELITES[0] are floor 1. Floors past the end reuse the last one.
 static var NORMALS: Array = [
 	[Slime, Goblin, Vermin, Hound, Ogre, MagicGolem, DarkElf, Griffin],
-	[Skeleton, Bat, Zombie, JackOLantern, LilGhost, Mummy, Warewolf],
+	[Skeleton, Bat, Zombie, JackOLantern, LilGhost, Mummy, Werewolf],
 ]
 static var ELITES: Array = [[Hydra], [Frangenstein, Lich]]
 

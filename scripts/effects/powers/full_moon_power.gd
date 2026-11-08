@@ -1,7 +1,7 @@
 class_name FullMoonPower
 extends BasePower
 
-## The Warewolf's Wolf form: the first hit of each Attack card also hits EXTRA random tiles of its own
+## The Werewolf's Wolf form: the first hit of each Attack card also hits EXTRA random tiles of its own
 ## that aren't damaged. It swaps this for New Moon when it plans a Human move.
 
 const EXTRA := 3

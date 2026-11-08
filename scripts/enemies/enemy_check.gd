@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Ogre / Magic Golem / Dark Elf / Griffin / Hydra / Skeleton / Bat / Zombie / Frangenstein / Jack O Lantern / Lil Ghost / Mummy / Warewolf / Lich / Dragon / Dracula / Ramiel. Exit code = number of failures.
+## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Ogre / Magic Golem / Dark Elf / Griffin / Hydra / Skeleton / Bat / Zombie / Frangenstein / Jack O Lantern / Lil Ghost / Mummy / Werewolf / Lich / Dragon / Dracula / Ramiel. Exit code = number of failures.
 ## godot --headless --path . -s res://scripts/enemies/enemy_check.gd
 
 var _failures := 0
@@ -50,7 +50,7 @@ func _initialize() -> void:
 	await _check_jack(combat)
 	await _check_lil_ghost(combat)
 	await _check_mummy(combat)
-	await _check_warewolf(combat)
+	await _check_werewolf(combat)
 	await _check_lich(combat)
 	await _check_dragon(combat)
 	await _check_dracula(combat)
@@ -738,12 +738,12 @@ func _check_mummy(combat: CombatState) -> void:
 
 
 
-func _check_warewolf(combat: CombatState) -> void:
-	var wolf := Warewolf.new()
+func _check_werewolf(combat: CombatState) -> void:
+	var wolf := Werewolf.new()
 	combat.enemies = [wolf]
 	var player := combat.player
 
-	# Guard (Shield 10 + Hit 5, normal colour) -> Howl & Maul (Strength 1, then Hit 12, red), looped.
+	# Guard (Shield 10 + Hit 5, Human art) -> Howl & Maul (Strength 1, then Hit 12, Wolf art), looped.
 	var names: Array[String] = []
 	for i in 4:
 		_heal(player)
@@ -753,17 +753,17 @@ func _check_warewolf(combat: CombatState) -> void:
 		names.append(action.action_name)
 		var hit := _covered(player, action.parts[0])
 		var strength := wolf.power_amount(StrengthPower)
-		_check(wolf.tint == (Warewolf.WOLF_TINT if action is WarewolfWolf else Color.WHITE), "warewolf tint doesn't match its form")
-		var full := action is WarewolfWolf
-		_check(wolf.power_amount(FullMoonPower) == int(full) and wolf.power_amount(NewMoonPower) == int(not full), "warewolf should have only %s" % ("Full Moon" if full else "New Moon"))
+		_check(wolf.idle_frames == [Werewolf.WOLF_ART if action is WerewolfWolf else Werewolf.HUMAN_ART], "werewolf art doesn't match its form")
+		var full := action is WerewolfWolf
+		_check(wolf.power_amount(FullMoonPower) == int(full) and wolf.power_amount(NewMoonPower) == int(not full), "werewolf should have only %s" % ("Full Moon" if full else "New Moon"))
 		await wolf.take_turn(combat)
-		if action is WarewolfHuman:
-			_check(_cells_with(wolf, Enum.HealthTileEnum.SHIELDED) == WarewolfHuman.SHIELDS, "guard should shield 10")
+		if action is WerewolfHuman:
+			_check(_cells_with(wolf, Enum.HealthTileEnum.SHIELDED) == WerewolfHuman.SHIELDS, "guard should shield 10")
 			_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == hit.size(), "guard didn't damage what its intent showed")
 		else:
-			_check(wolf.power_amount(StrengthPower) == strength + WarewolfWolf.HOWL, "howl should give 1 Strength")
+			_check(wolf.power_amount(StrengthPower) == strength + WerewolfWolf.HOWL, "howl should give 1 Strength")
 			_check(hit.all(func(c: Vector2i) -> bool: return player.health[c].hp == Enum.HealthTileEnum.DAMAGED), "maul missed its intent")
-	_check(names == ["Guard", "Howl & Maul", "Guard", "Howl & Maul"], "warewolf order: %s" % [names])
+	_check(names == ["Guard", "Howl & Maul", "Guard", "Howl & Maul"], "werewolf order: %s" % [names])
 
 	# Wolf form: the first hit of each Attack card also hits 3 more tiles. Not in Human form, not other cards.
 	var cells: Array = wolf.health.keys()
@@ -1084,7 +1084,7 @@ func _check_descriptions() -> void:
 	var enemies: Array[BaseEnemy] = [Slime.new(), MiniSlime.new(), Goblin.new(), Vermin.new(), Hound.new(),
 		Ogre.new(), MagicGolem.new(), DarkElf.new(), Griffin.new(), Hydra.new(), Dragon.new(), Bat.new(),
 		Skeleton.new(), Zombie.new(), Frangenstein.new(), JackOLantern.new(), LilGhost.new(), Mummy.new(),
-		Warewolf.new(), Lich.new(), Dracula.new(), AndroidSentinel.new(), CleanerBot.new(), CyberHound.new(),
+		Werewolf.new(), Lich.new(), Dracula.new(), AndroidSentinel.new(), CleanerBot.new(), CyberHound.new(),
 		HackerAI.new(), MechWalker.new(), NanoSwarm.new(), PlasmaTurret.new(), ScoutDrone.new(),
 		Terminator.new(), Ramiel.new()]
 	enemies.append((enemies[19] as Lich).mimic)
