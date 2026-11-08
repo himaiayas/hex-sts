@@ -65,7 +65,7 @@ The last sections, "Decided" and "Open", are not from the sheet. They say how th
 | Rune Armor / Bone Armor / Armor Plating / Absolute Terror Field | The enemy has its own Block, which damage must wear down before HP goes down. It recharges on the stated cycle. | Magic Golem, Skeleton, Mech Walker, Ramiel |
 | Rise | Revives once after dying, with the stated HP. | Zombie |
 | Burning Head | If the player hits it with an Attack that meets the condition, the damage is reflected back. | Jack O Lantern |
-| Moon Phase | Switches between two modes every turn, each with different rules and actions. | Warewolf |
+| Moon Phase | Switches between two modes every turn, each with different rules and actions. | Werewolf |
 | Stitched | Starts with some Plate. | Frangenstein |
 | Phylactery | A separate object with its own HP. While it stands, the main body heals every turn. | Lich |
 | Multi-head | Several hits per turn. A head can be cut off by dealing enough damage in one turn. | Hydra |

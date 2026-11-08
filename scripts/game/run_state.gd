@@ -20,13 +20,22 @@ const BOSS_INTRO := preload("res://scenes/ui/boss_intro.tscn")
 ## Boss of each floor: FLOOR_BOSSES[0] is floor 1. Floors past the end reuse the last one.
 static var FLOOR_BOSSES: Array = [Dragon, Dracula, Ramiel]
 
-## Combat room background of each floor: [0] is floor 1 (medieval, halloween, sci-fi).
-const FLOOR_COMBAT_BACKGROUNDS: Array[Texture2D] = [
-	preload("res://assets/rooms/background/floor_1_medieval.jpg"),
-	preload("res://assets/rooms/background/floor_2_halloween.jpg"),
-	preload("res://assets/rooms/background/floor_3_sci_fi.jpg"),
+## Combat room backgrounds of each floor: [0] is floor 1 (medieval, halloween, sci-fi).
+## Each room picks one at random.
+const FLOOR_COMBAT_BACKGROUNDS: Array = [
+	[preload("res://assets/rooms/background/floor_1_medieval.jpg")],
+	[preload("res://assets/rooms/background/floor_2_halloween.jpg")],
+	[
+		preload("res://assets/rooms/background/floor_3_sci_fi_1.jpg"),
+		preload("res://assets/rooms/background/floor_3_sci_fi_2.jpg"),
+		preload("res://assets/rooms/background/floor_3_sci_fi_3.jpg"),
+	],
 ]
-## The boss room's. Unused alternatives are named *_alt_N.
+## A background whose lights flicker now and then -> the image they flicker to.
+const BACKGROUND_FLICKERS := {
+	preload("res://assets/rooms/background/floor_2_halloween.jpg"): preload("res://assets/rooms/background/floor_2_halloween_flicker.jpg"),
+}
+## The boss room's.
 const FLOOR_BOSS_BACKGROUNDS: Array[Texture2D] = [
 	preload("res://assets/rooms/background/floor_1_medieval_boss.jpg"),
 	preload("res://assets/rooms/background/floor_2_halloween_boss.jpg"),
@@ -111,9 +120,9 @@ func leave_room() -> void:
 
 
 func combat_background() -> Texture2D:
-	var boss := current_room != null and current_room.type == Enum.RoomType.BOSS_COMBAT
-	var backgrounds := FLOOR_BOSS_BACKGROUNDS if boss else FLOOR_COMBAT_BACKGROUNDS
-	return backgrounds[clampi(dungeon_floor, 1, backgrounds.size()) - 1]
+	if current_room != null and current_room.type == Enum.RoomType.BOSS_COMBAT:
+		return FLOOR_BOSS_BACKGROUNDS[clampi(dungeon_floor, 1, FLOOR_BOSS_BACKGROUNDS.size()) - 1]
+	return FLOOR_COMBAT_BACKGROUNDS[clampi(dungeon_floor, 1, FLOOR_COMBAT_BACKGROUNDS.size()) - 1].pick_random()
 
 
 ## A new instance of this floor's boss.

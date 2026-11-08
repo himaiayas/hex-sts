@@ -6,6 +6,7 @@ extends BaseEnemyAction
 
 func _init(charge: RamielCharge) -> void:
 	super(Enum.BaseEnemyActionEnum.ATTACK, "Particle Beam", 1.0)
+	description = "Hit 30 tiles in a 3x10 band with Pierce."
 	hit_vfx = preload("res://assets/enemies/floor_3/ramiel_beam.png")
 	parts = [charge.parts[0]]
 

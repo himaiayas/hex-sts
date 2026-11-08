@@ -9,6 +9,7 @@ var heal: int
 
 func _init(_heal: int) -> void:
 	super(Enum.BaseEnemyActionEnum.ATTACK, "Bite", 1.0)
+	description = "Hit 8 tiles in two fang marks, then heal %d of its own." % _heal
 	heal = _heal
 	hit_vfx = preload("res://assets/enemies/floor_2/dracula_attack_bite.png")
 	var fangs: Array[BaseActionTile] = []

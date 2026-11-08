@@ -1,4 +1,4 @@
-class_name WarewolfWolf
+class_name WerewolfWolf
 extends EnemyHit
 
 ## Wolf form: Howl (gain 1 Strength), then Hit 12 in a 3 x 4 block.

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ed6b8b4vu77d"
-path="res://.godot/imported/floor_2_halloween_alt_1.jpg-766525ad51d4b0f4e458c30f8c9bd780.ctex"
+uid="uid://jn24wsaxh6k4"
+path="res://.godot/imported/floor_3_sci_fi_2.jpg-581eaa3971b5e7c10e7ef7c1e5f4c924.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/rooms/background/floor_2_halloween_alt_1.jpg"
-dest_files=["res://.godot/imported/floor_2_halloween_alt_1.jpg-766525ad51d4b0f4e458c30f8c9bd780.ctex"]
+source_file="res://assets/rooms/background/floor_3_sci_fi_2.jpg"
+dest_files=["res://.godot/imported/floor_3_sci_fi_2.jpg-581eaa3971b5e7c10e7ef7c1e5f4c924.ctex"]
 
 [params]
 

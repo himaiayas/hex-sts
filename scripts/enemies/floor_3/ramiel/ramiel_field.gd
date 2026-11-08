@@ -9,6 +9,7 @@ const SHIELDS := 20
 
 func _init() -> void:
 	super(Enum.BaseEnemyActionEnum.DEFEND, "Absolute Terror Field", 1.0)
+	description = "Shield its own tiles until it has %d Shields." % SHIELDS
 	parts = [EnemyActionPart.new(Enum.Side.SELF, [])]
 
 

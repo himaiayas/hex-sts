@@ -8,6 +8,7 @@ const HITS := 8
 
 func _init() -> void:
 	super(Enum.BaseEnemyActionEnum.ATTACK, "Claw", 1.0)
+	description = "Hit the %d best tiles, wherever they are." % HITS
 	hit_vfx = preload("res://assets/enemies/floor_1/dragon_attack_claw.png")
 	parts = [EnemyActionPart.new(Enum.Side.PLAYER, [])]
 

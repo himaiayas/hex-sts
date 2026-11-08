@@ -13,7 +13,7 @@ const ICON_SIZE := 40.0  # a pattern tile's hex in its panel
 ## Optional: return true to show nothing (e.g. a modal covers these controls).
 var is_blocked := Callable()
 
-var _targets: Dictionary[Control, Dictionary] = {}  # control -> {entries, above, clip}
+var _targets: Dictionary[Control, Dictionary] = {}  # control -> {entries, above, clip, below}
 var _box := InfoPanel.make_box()
 var _current: Control = null
 var _timer := 0.0
@@ -26,9 +26,12 @@ func _ready() -> void:
 
 ## entries: [title, body] of each panel. above: over the control instead of beside it.
 ## clip: only hoverable inside this control's rect (the ScrollContainer it scrolls in).
-func add(target: Control, entries: Array, above := false, clip: Control = null) -> void:
-	if not entries.is_empty():
-		_targets[target] = {entries = entries, above = above, clip = clip}
+## below: under the control instead of beside it. No entries: the control isn't hoverable any more.
+func add(target: Control, entries: Array, above := false, clip: Control = null, below := false) -> void:
+	if entries.is_empty():
+		_targets.erase(target)
+	else:
+		_targets[target] = {entries = entries, above = above, clip = clip, below = below}
 
 
 func add_card(target: Control, card: BaseCard, clip: Control = null) -> void:
@@ -101,13 +104,15 @@ func _target_under_mouse() -> Control:
 	return null
 
 
-## Beside the control, left of it near the screen edge; or above it. Always on screen.
+## Beside the control, left of it near the screen edge; or above or below it. Always on screen.
 func _box_position() -> Vector2:
 	var rect := _current.get_global_rect()
 	var screen := get_viewport().get_visible_rect().size
 	var pos := Vector2(rect.end.x + InfoPanel.GAP, rect.position.y)
 	if _targets[_current].above:
 		pos = Vector2(rect.get_center().x - _box.size.x / 2.0, rect.position.y - _box.size.y - InfoPanel.GAP)
+	elif _targets[_current].below:
+		pos = Vector2(rect.get_center().x - _box.size.x / 2.0, rect.end.y + InfoPanel.GAP)
 	elif pos.x + _box.size.x > screen.x:
 		pos.x = rect.position.x - InfoPanel.GAP - _box.size.x
 	return pos.clamp(Vector2.ZERO, (screen - _box.size).max(Vector2.ZERO))

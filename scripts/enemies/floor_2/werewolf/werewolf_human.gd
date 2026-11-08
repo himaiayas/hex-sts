@@ -1,4 +1,4 @@
-class_name WarewolfHuman
+class_name WerewolfHuman
 extends EnemyHit
 
 ## Human form: Block 10 + Hit 5. Shields 10 random tiles of its own, then claws 5 player tiles.

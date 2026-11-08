@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://jn24wsaxh6k4"
-path="res://.godot/imported/floor_3_sci_fi_alt_2.jpg-901ba96f967230950beebeffc8128b76.ctex"
+uid="uid://dij2j6wl8lldn"
+path="res://.godot/imported/ogre.png-481764501561cafeed7ca1e264e44328.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/rooms/background/floor_3_sci_fi_alt_2.jpg"
-dest_files=["res://.godot/imported/floor_3_sci_fi_alt_2.jpg-901ba96f967230950beebeffc8128b76.ctex"]
+source_file="res://assets/enemies/floor_1/ogre.png"
+dest_files=["res://.godot/imported/ogre.png-481764501561cafeed7ca1e264e44328.ctex"]
 
 [params]
 

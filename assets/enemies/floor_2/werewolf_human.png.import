@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dctxh7o1p1wgy"
-path="res://.godot/imported/floor_3_sci_fi_alt_3.jpg-09c5933753809a78059bae40d5be3777.ctex"
+uid="uid://dan86hixb5ej6"
+path="res://.godot/imported/werewolf_human.png-d18fdd06b35f66918f1c01cc259ccc48.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/rooms/background/floor_3_sci_fi_alt_3.jpg"
-dest_files=["res://.godot/imported/floor_3_sci_fi_alt_3.jpg-09c5933753809a78059bae40d5be3777.ctex"]
+source_file="res://assets/enemies/floor_2/werewolf_human.png"
+dest_files=["res://.godot/imported/werewolf_human.png-d18fdd06b35f66918f1c01cc259ccc48.ctex"]
 
 [params]
 

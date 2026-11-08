@@ -1,11 +1,11 @@
-class_name Warewolf
+class_name Werewolf
 extends BaseEnemy
 
 ## Floor 2, Normal. Human (Guard) and Wolf (Howl & Maul) take turns. Its form is the one in its intent:
-## New Moon in Human form, Full Moon in Wolf form, where it's red and every Attack card hits it harder.
-## ponytail: Wolf form is the art tinted red until there's Human art; then swap idle_frames instead.
+## New Moon in Human form, Full Moon in Wolf form, where every Attack card hits it harder.
 
-const WOLF_TINT := Color(1.0, 0.45, 0.45)
+const HUMAN_ART := preload("res://assets/enemies/floor_2/werewolf_human.png")
+const WOLF_ART := preload("res://assets/enemies/floor_2/werewolf.png")
 
 
 func _init() -> void:
@@ -20,18 +20,18 @@ func _init() -> void:
 		Vector2i(-5, 5), Vector2i(-4, 5), Vector2i(-3, 5), Vector2i(-2, 5), Vector2i(-1, 5), Vector2i(0, 5), Vector2i(1, 5),
 		Vector2i(-2, 6), Vector2i(-1, 6), Vector2i(0, 6),
 	]
-	super("Warewolf", CombatUnit.make_hex_health(coords))
-	sprite = preload("res://assets/enemies/floor_2/warewolf.png")
-	actions = [WarewolfHuman.new(), WarewolfWolf.new()]
+	super("Werewolf", CombatUnit.make_hex_health(coords))
+	sprite = HUMAN_ART
+	actions = [WerewolfHuman.new(), WerewolfWolf.new()]
 	p1_cycle = [0, 1]
 	statuses.append(NewMoonPower.new())
 
 
-## Swaps New Moon / Full Moon to match the planned form; the new badge flashes.
+## Swaps New Moon / Full Moon and the art to match the planned form; the new badge flashes.
 func plan(combat: CombatState) -> void:
 	super(combat)
-	var wolf := not intent_actions.is_empty() and intent_actions[0] is WarewolfWolf
-	tint = WOLF_TINT if wolf else Color.WHITE
+	var wolf := not intent_actions.is_empty() and intent_actions[0] is WerewolfWolf
+	idle_frames = [WOLF_ART if wolf else HUMAN_ART]
 	if power_amount(FullMoonPower if wolf else NewMoonPower) > 0:
 		return
 	statuses.assign(statuses.filter(func(p: BaseEffect) -> bool: return not (p is FullMoonPower or p is NewMoonPower)))
