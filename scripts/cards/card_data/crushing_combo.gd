@@ -8,6 +8,7 @@ func _init() -> void:
 	type = Enum.CardType.ATTACK
 	rarity = Enum.CardRarity.UNCOMMON
 	description = "If your core is undamaged,\n{render:0},{render:1}, and {render:2}."
+	image = preload("res://assets/cards/cards/crushing_combo.png")
 	grid_actions = [
 		GridAction.new(Enum.TargetType.ENEMY, [
 			DamageTile.new(Vector2i(0,0)),

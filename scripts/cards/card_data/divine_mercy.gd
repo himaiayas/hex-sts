@@ -9,6 +9,7 @@ func _init() -> void:
 	target = Enum.TargetType.PLAYER
 	exhaust = true
 	description = "Gain 1 energy. Draw 2 cards.\n{keyword:Exhaust}."
+	image = preload("res://assets/cards/cards/divine_mercy.png")
 
 
 func execute(combat: CombatState, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int])->Array:

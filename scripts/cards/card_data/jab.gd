@@ -8,6 +8,7 @@ func _init() -> void:
 	type = Enum.CardType.ATTACK
 	to_draw_top = true
 	description = "{render:0}\nReturn this on top of your draw pile."
+	image = preload("res://assets/cards/cards/jab.png")
 	grid_actions = [
 		GridAction.new(Enum.TargetType.ENEMY, [
 			DamageTile.new(Vector2i(0,0)),

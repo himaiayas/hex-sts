@@ -7,6 +7,7 @@ func _init() -> void:
 	cost = 1
 	type = Enum.CardType.ATTACK
 	description = "{render:0}\nIf you {keyword:Exhaust}ed a card this turn, damage 2 more random enemy tiles."
+	image = preload("res://assets/cards/cards/cinder_strike.png")
 	grid_actions = [
 		GridAction.new(Enum.TargetType.ENEMY, [
 			DamageTile.new(Vector2i(1,0)),

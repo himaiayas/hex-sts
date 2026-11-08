@@ -8,6 +8,7 @@ func _init() -> void:
 	max_augments = 2
 	type = Enum.CardType.ATTACK
 	description = "{render:0}\nThis card can equip 2 augments."
+	image = preload("res://assets/cards/cards/x_slash.png")
 	grid_actions = [
 		GridAction.new(Enum.TargetType.ENEMY, [
 			DamageTile.new(Vector2i(0,0)),

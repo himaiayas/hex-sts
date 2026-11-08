@@ -9,6 +9,7 @@ func _init() -> void:
 	rarity = Enum.CardRarity.UNCOMMON
 	target = Enum.TargetType.PLAYER
 	description = "Every time you play 3 Attacks in a single turn, apply {keyword:Shield} to 1 random tile."
+	image = preload("res://assets/cards/cards/duelist.png")
 
 
 func execute(combat: CombatState, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int])->Array:

@@ -17,6 +17,7 @@ func _init() -> void:
 	type = Enum.CardType.ATTACK
 	rarity = Enum.CardRarity.UNCOMMON
 	description = "{render:0}\nGrows by 1 tile for each card you {keyword:Exhaust} this combat."
+	image = preload("res://assets/cards/cards/burnout.png")
 	grid_actions = [
 		GridAction.new(Enum.TargetType.ENEMY, [
 			DamageTile.new(Vector2i(0,0)),

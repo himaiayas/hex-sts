@@ -9,6 +9,7 @@ func _init() -> void:
 	rarity = Enum.CardRarity.RARE
 	target = Enum.TargetType.PLAYER
 	description = "At the start of your turn, apply 1 {keyword:Shield} to random tile."
+	image = preload("res://assets/cards/cards/infinite_ward.png")
 
 
 func execute(combat: CombatState, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int])->Array:

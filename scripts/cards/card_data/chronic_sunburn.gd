@@ -9,6 +9,7 @@ func _init() -> void:
 	rarity = Enum.CardRarity.LEGENDARY
 	target = Enum.TargetType.PLAYER
 	description = "At the start of your turn, apply Fracture to 1 random enemy tile."
+	image = preload("res://assets/cards/cards/chronic_sunburn.png")
 
 
 func execute(combat: CombatState, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int])->Array:

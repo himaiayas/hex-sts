@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Ogre / Magic Golem / Dark Elf / Griffin / Hydra / Skeleton / Bat / Zombie / Frangenstein / Jack O Lantern / Lil Ghost / Mummy / Warewolf / Lich / Dragon / Dracula / Ramiel. Exit code = number of failures.
+## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Ogre / Magic Golem / Dark Elf / Griffin / Hydra / Skeleton / Bat / Zombie / Frangenstein / Jack O Lantern / Lil Ghost / Mummy / Werewolf / Lich / Dragon / Dracula / Ramiel / the floor 3 monsters. Exit code = number of failures.
 ## godot --headless --path . -s res://scripts/enemies/enemy_check.gd
 
 var _failures := 0
@@ -50,11 +50,20 @@ func _initialize() -> void:
 	await _check_jack(combat)
 	await _check_lil_ghost(combat)
 	await _check_mummy(combat)
-	await _check_warewolf(combat)
+	await _check_werewolf(combat)
 	await _check_lich(combat)
 	await _check_dragon(combat)
 	await _check_dracula(combat)
 	await _check_ramiel(combat)
+	await _check_cyber_hound(combat)
+	await _check_scout_drone(combat)
+	await _check_wind_ups(combat)
+	await _check_nano_swarm(combat)
+	await _check_cleaner_bot(combat)
+	await _check_hacker_ai(combat)
+	_check_mech_walker(combat)
+	await _check_terminator(combat)
+	_check_descriptions()
 
 	run.free()
 	print("enemy_check: %s" % ("OK" if _failures == 0 else "%d failure(s)" % _failures))
@@ -121,6 +130,14 @@ func _check_goblin(combat: CombatState) -> void:
 			"goblin %s should damage %d tiles, damaged %d" % [action.action_name, 5 if i % 2 == 0 else 3, _cells_with(player, Enum.HealthTileEnum.DAMAGED)])
 	_check(names == ["Stab", "Backstab", "Stab", "Backstab"], "goblin order: %s" % [names])
 
+	# Pierce goes through Shield, so Backstab scores a shielded tile like an open one.
+	for tile in player.health.values():
+		tile.hp = Enum.HealthTileEnum.SHIELDED
+	var backstab := goblin.actions[1]
+	backstab.plan(combat, goblin)
+	var score := backstab.score_cell(backstab.parts[0], backstab.parts[0].cell, player)
+	_check(score == 6, "backstab on 3 shielded tiles should score 6, got %d" % score)
+
 
 
 func _check_vermin(combat: CombatState) -> void:
@@ -146,6 +163,13 @@ func _check_vermin(combat: CombatState) -> void:
 		if action is EnemyShieldSelf:
 			_check(_cells_with(vermin, Enum.HealthTileEnum.SHIELDED) == 5, "skitter should shield 5")
 	_check(names == ["Gnaw", "Gnaw", "Skitter", "Gnaw", "Gnaw", "Skitter"], "vermin order: %s" % [names])
+
+	# Scattered bites skip poor spots: on an open grid the first bite covers all 3 tiles.
+	_heal(player)
+	var gnaw := vermin.actions[0]
+	for i in 20:
+		gnaw.plan(combat, vermin)
+		_check(_covered(player, gnaw.parts[0]).size() == 3, "gnaw's first bite should cover 3 open tiles")
 
 
 
@@ -195,7 +219,7 @@ func _check_ogre(combat: CombatState) -> void:
 		await ogre.take_turn(combat)
 		var stripped := player.health.keys().filter(func(c: Vector2i) -> bool: return not player.health[c].has_effect(PlateTileEffect))
 		stripped.sort()
-		if action is OgreWindUp:
+		if action is EnemyWindUp:
 			_check(stripped.is_empty() and _cells_with(player, Enum.HealthTileEnum.SHIELDED) == player.health.size(), "wind-up touched the player")
 		else:
 			_check(aimed.size() == 12 and stripped == aimed, "smash should strip Plate from the 12 aimed tiles, stripped %d" % stripped.size())
@@ -573,7 +597,7 @@ func _check_jack(combat: CombatState) -> void:
 	var cells: Array = jack.health.keys()
 	_heal(player)
 	_heal(jack)
-	combat.playing = Strike.new()
+	combat.playing = Slash.new()
 	for i in 5:
 		jack.damage_health_tile(combat, cells[i])
 	_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == 0, "burning head burned before 6 tiles")
@@ -582,11 +606,11 @@ func _check_jack(combat: CombatState) -> void:
 	for i in range(6, 14):
 		jack.damage_health_tile(combat, cells[i])
 	_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == JackOLantern.BURN, "burning head burned twice for one card")
-	combat.playing = Strike.new()
+	combat.playing = Slash.new()
 	for i in range(14, 20):
 		jack.damage_health_tile(combat, cells[i])
 	_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == 2 * JackOLantern.BURN, "a new card should count again")
-	combat.playing = ShieldPlayer.new()
+	combat.playing = Guard.new()
 	for i in range(20, 26):
 		jack.damage_health_tile(combat, cells[i])
 	combat.playing = null
@@ -623,7 +647,7 @@ func _check_lil_ghost(combat: CombatState) -> void:
 	# Shiver: the next card costs 1 more, then it's gone. It doesn't stack, and ends with the player's turn.
 	await ghost.actions[1].execute(combat, ghost)
 	_check(player.power_amount(ShiverPower) == 1, "shiver stacked")
-	var card := ShieldPlayer.new()
+	var card := Guard.new()
 	combat.hand.append(card)
 	combat.energy = card.cost
 	_check(combat.cost_of(card) == card.cost + 1 and not combat.can_play(card), "shiver should add 1 to the cost")
@@ -637,7 +661,7 @@ func _check_lil_ghost(combat: CombatState) -> void:
 	# An X-cost card gets 1 less X under Shiver, spends all the energy, and uses Shiver up.
 	await ghost.actions[1].execute(combat, ghost)
 	combat.energy = 3
-	var flurry := Flurry.new()
+	var flurry := FlurryStorm.new()
 	combat.hand.append(flurry)
 	_check(combat.x_energy() == 2 and flurry.clicks(combat.x_energy()) == 2, "shiver should take 1 off X")
 	var targets: Array[CombatUnit] = [ghost, ghost]
@@ -648,15 +672,15 @@ func _check_lil_ghost(combat: CombatState) -> void:
 	# Ethereal: one Attack card lands 5 hits, the rest miss; a new card starts over; other cards aren't capped.
 	cells.assign(ghost.health.keys())
 	_heal(ghost)
-	combat.playing = Strike.new()
+	combat.playing = Slash.new()
 	var landed := 0
 	for i in 8:
 		if ghost.damage_health_tile(combat, cells[i]):
 			landed += 1
 	_check(landed == LilGhost.ETHEREAL, "ethereal should let %d hits land, let %d" % [LilGhost.ETHEREAL, landed])
-	combat.playing = Strike.new()
+	combat.playing = Slash.new()
 	_check(ghost.damage_health_tile(combat, cells[8]), "a new card should hit again")
-	combat.playing = ShieldPlayer.new()
+	combat.playing = Guard.new()
 	landed = 0
 	for i in range(9, 17):
 		if ghost.damage_health_tile(combat, cells[i]):
@@ -693,9 +717,9 @@ func _check_mummy(combat: CombatState) -> void:
 	# it's gone after the Defense card, and at the end of the player's turn.
 	_heal(player)
 	var cells: Array = player.health.keys()
-	combat.playing = Strike.new()
+	combat.playing = Slash.new()
 	player.shield_health_tile(combat, cells[0])
-	combat.playing = ShieldPlayer.new()
+	combat.playing = Guard.new()
 	for i in range(1, 5):
 		player.shield_health_tile(combat, cells[i])
 	player.apply_effect_health_tile(combat, cells[5], PlateTileEffect.new())
@@ -704,7 +728,7 @@ func _check_mummy(combat: CombatState) -> void:
 		"curse wrap should eat 3 Shields of the Defense card only")
 	player.statuses.clear()  # used up outside play_card, so nothing took it off
 	await mummy.actions[0].execute(combat, mummy)
-	var card := ShieldPlayer.new()
+	var card := Guard.new()
 	combat.hand.append(card)
 	combat.energy = card.cost
 	_heal(player)
@@ -717,17 +741,17 @@ func _check_mummy(combat: CombatState) -> void:
 	# Wrapped: every other hit of the first Attack card misses; later cards land; it resets each turn.
 	var tiles: Array = mummy.health.keys()
 	_heal(mummy)
-	combat.playing = Strike.new()
+	combat.playing = Slash.new()
 	var landed := 0
 	for i in 6:
 		if mummy.damage_health_tile(combat, tiles[i]):
 			landed += 1
 	_check(landed == 3, "wrapped should halve the first card, landed %d of 6" % landed)
-	combat.playing = Strike.new()
+	combat.playing = Slash.new()
 	_check(mummy.damage_health_tile(combat, tiles[6]) and mummy.damage_health_tile(combat, tiles[7]), "wrapped should only halve the first card")
 	combat.playing = null
 	await mummy.on_turn_end(combat)
-	combat.playing = Strike.new()
+	combat.playing = Slash.new()
 	landed = 0
 	for i in range(8, 12):
 		if mummy.damage_health_tile(combat, tiles[i]):
@@ -737,12 +761,12 @@ func _check_mummy(combat: CombatState) -> void:
 
 
 
-func _check_warewolf(combat: CombatState) -> void:
-	var wolf := Warewolf.new()
+func _check_werewolf(combat: CombatState) -> void:
+	var wolf := Werewolf.new()
 	combat.enemies = [wolf]
 	var player := combat.player
 
-	# Guard (Shield 10 + Hit 5, normal colour) -> Howl & Maul (Strength 1, then Hit 12, red), looped.
+	# Guard (Shield 10 + Hit 5, Human art) -> Howl & Maul (Strength 1, then Hit 12, Wolf art), looped.
 	var names: Array[String] = []
 	for i in 4:
 		_heal(player)
@@ -752,35 +776,35 @@ func _check_warewolf(combat: CombatState) -> void:
 		names.append(action.action_name)
 		var hit := _covered(player, action.parts[0])
 		var strength := wolf.power_amount(StrengthPower)
-		_check(wolf.tint == (Warewolf.WOLF_TINT if action is WarewolfWolf else Color.WHITE), "warewolf tint doesn't match its form")
-		var full := action is WarewolfWolf
-		_check(wolf.power_amount(FullMoonPower) == int(full) and wolf.power_amount(NewMoonPower) == int(not full), "warewolf should have only %s" % ("Full Moon" if full else "New Moon"))
+		_check(wolf.idle_frames == [Werewolf.WOLF_ART if action is WerewolfWolf else Werewolf.HUMAN_ART], "werewolf art doesn't match its form")
+		var full := action is WerewolfWolf
+		_check(wolf.power_amount(FullMoonPower) == int(full) and wolf.power_amount(NewMoonPower) == int(not full), "werewolf should have only %s" % ("Full Moon" if full else "New Moon"))
 		await wolf.take_turn(combat)
-		if action is WarewolfHuman:
-			_check(_cells_with(wolf, Enum.HealthTileEnum.SHIELDED) == WarewolfHuman.SHIELDS, "guard should shield 10")
+		if action is WerewolfHuman:
+			_check(_cells_with(wolf, Enum.HealthTileEnum.SHIELDED) == WerewolfHuman.SHIELDS, "guard should shield 10")
 			_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == hit.size(), "guard didn't damage what its intent showed")
 		else:
-			_check(wolf.power_amount(StrengthPower) == strength + WarewolfWolf.HOWL, "howl should give 1 Strength")
+			_check(wolf.power_amount(StrengthPower) == strength + WerewolfWolf.HOWL, "howl should give 1 Strength")
 			_check(hit.all(func(c: Vector2i) -> bool: return player.health[c].hp == Enum.HealthTileEnum.DAMAGED), "maul missed its intent")
-	_check(names == ["Guard", "Howl & Maul", "Guard", "Howl & Maul"], "warewolf order: %s" % [names])
+	_check(names == ["Guard", "Howl & Maul", "Guard", "Howl & Maul"], "werewolf order: %s" % [names])
 
 	# Wolf form: the first hit of each Attack card also hits 3 more tiles. Not in Human form, not other cards.
 	var cells: Array = wolf.health.keys()
 	_heal(wolf)
 	wolf.plan(combat)  # Guard: Human form
-	combat.playing = Strike.new()
+	combat.playing = Slash.new()
 	wolf.damage_health_tile(combat, cells[0])
 	_check(_cells_with(wolf, Enum.HealthTileEnum.DAMAGED) == 1, "human form took extra hits")
 	wolf.plan(combat)  # Howl & Maul: Wolf form
-	combat.playing = Strike.new()
+	combat.playing = Slash.new()
 	wolf.damage_health_tile(combat, cells[1])
 	wolf.damage_health_tile(combat, wolf.health.keys().filter(func(c: Vector2i) -> bool: return wolf.health[c].hp == Enum.HealthTileEnum.UNDAMAGED)[0])
 	_check(_cells_with(wolf, Enum.HealthTileEnum.DAMAGED) == 3 + FullMoonPower.EXTRA, "wolf form should add %d hits once per card" % FullMoonPower.EXTRA)
 	var before := _cells_with(wolf, Enum.HealthTileEnum.DAMAGED)
-	combat.playing = ShieldPlayer.new()
+	combat.playing = Guard.new()
 	wolf.damage_health_tile(combat, wolf.health.keys().filter(func(c: Vector2i) -> bool: return wolf.health[c].hp == Enum.HealthTileEnum.UNDAMAGED)[0])
 	_check(_cells_with(wolf, Enum.HealthTileEnum.DAMAGED) == before + 1, "wolf form took extra hits from a non-Attack card")
-	combat.playing = Strike.new()
+	combat.playing = Slash.new()
 	wolf.damage_health_tile(combat, wolf.health.keys().filter(func(c: Vector2i) -> bool: return wolf.health[c].hp == Enum.HealthTileEnum.UNDAMAGED)[0])
 	combat.playing = null
 	_check(_cells_with(wolf, Enum.HealthTileEnum.DAMAGED) == before + 2 + FullMoonPower.EXTRA, "a new Attack card should add the extra hits again")
@@ -975,7 +999,7 @@ func _check_ramiel(combat: CombatState) -> void:
 	var player := combat.player
 	var ramiel := Ramiel.new()
 	combat.enemies = [ramiel]
-	_check(RamielField.shields(ramiel) == 20, "ramiel should start with 20 shields")
+	_check(EnemyField.shields(ramiel) == 20, "ramiel should start with 20 shields")
 
 	# P1: Scan -> Charge x3 (counting down, beam locked) -> Particle Beam (Pierce) -> Scan.
 	var turns: Array[String] = []
@@ -1046,15 +1070,15 @@ func _check_ramiel(combat: CombatState) -> void:
 	ramiel._step = 1  # a Charge turn, so no Scan joins in
 	ramiel.plan(combat)
 	var field: BaseEnemyAction = ramiel.intent_actions[0]
-	_check(field is RamielField and field.parts[0].tiles.size() == 15, "field should plan 15 tiles first in the turn")
+	_check(field is EnemyField and field.parts[0].tiles.size() == 15, "field should plan 15 tiles first in the turn")
 	for t in field.parts[0].tiles.slice(0, 2):
 		ramiel.health[t.coords].hp = Enum.HealthTileEnum.DAMAGED
 	await ramiel.take_turn(combat)
-	_check(RamielField.shields(ramiel) == 18, "field should shield 13 surviving marks, has %d shields" % RamielField.shields(ramiel))
+	_check(EnemyField.shields(ramiel) == 18, "field should shield 13 surviving marks, has %d shields" % EnemyField.shields(ramiel))
 	# At 20 Shields it's skipped, but the turn still counts.
 	ramiel._turns = 5
 	for cell in ramiel.health:
-		if RamielField.shields(ramiel) < 20 and ramiel.health[cell].hp == Enum.HealthTileEnum.UNDAMAGED:
+		if EnemyField.shields(ramiel) < 20 and ramiel.health[cell].hp == Enum.HealthTileEnum.UNDAMAGED:
 			ramiel.health[cell].hp = Enum.HealthTileEnum.SHIELDED
 	ramiel.plan(combat)
 	_check(not _rows(ramiel).contains("Absolute Terror Field") and ramiel._turns == 6, "field at 20 shields should be skipped")
@@ -1068,15 +1092,180 @@ func _check_ramiel(combat: CombatState) -> void:
 	ramiel.plan(combat)
 	_check(_rows(ramiel) == "Absolute Terror Field\nScan", "field + scan rows: %s" % _rows(ramiel))
 	await ramiel.take_turn(combat)
-	_check(RamielField.shields(ramiel) == 35, "field + scan should make 35 shields, has %d" % RamielField.shields(ramiel))
+	_check(EnemyField.shields(ramiel) == 35, "field + scan should make 35 shields, has %d" % EnemyField.shields(ramiel))
 
 
 ## A unit's intent label: one row per move.
+
+func _check_cyber_hound(combat: CombatState) -> void:
+	var hound := CyberHound.new()
+	combat.enemies = [hound]
+	var bites: Array[int] = []
+	for i in 4:
+		hound.plan(combat)
+		bites.append(hound.intent_actions[0].parts.size())
+	_check(bites == [1, 2, 3, 1], "cyber hound should bite 1, 2, 3 times and reset: %s" % [bites])
+
+
+func _check_scout_drone(combat: CombatState) -> void:
+	var drone := ScoutDrone.new()
+	combat.enemies = [drone]
+	_heal(combat.player)
+	_check(drone.power_amount(AerialPower) == ScoutDrone.HOVER, "scout drone should start with Hover %d" % ScoutDrone.HOVER)
+	drone.plan(combat)
+	_check(drone.intent_actions[0].parts[0].tiles.size() == 6, "first laser ping should hit 6")
+	drone.plan(combat)
+	var scan := drone.intent_actions[0]
+	var aimed := scan.parts[0].cell
+	drone.plan(combat)
+	var ping := drone.intent_actions[0]
+	_check(scan is EnemyWindUp and ping.parts[0] == scan.parts[0] and ping.parts[0].cell == aimed and ping.parts[0].tiles.size() == 10,
+		"scanned ping should hit 10 where the scan aimed")
+
+
+## Plasma Turret's Charge and Android Sentinel's Aim lock the next hit's cell, and it lands there.
+func _check_wind_ups(combat: CombatState) -> void:
+	var player := combat.player
+	for enemy: BaseEnemy in [PlasmaTurret.new(), AndroidSentinel.new()]:
+		combat.enemies = [enemy]
+		_heal(player)
+		if enemy is PlasmaTurret:
+			enemy.plan(combat)  # Chip
+		enemy.plan(combat)
+		_check(enemy.intent_actions[0] is EnemyWindUp, "%s should wind up" % enemy.display_name)
+		var aimed := enemy.intent_actions[0].parts[0].cell
+		await enemy.take_turn(combat)
+		_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == 0, "%s's wind-up touched the player" % enemy.display_name)
+		for tile in player.health.values():
+			tile.hp = Enum.HealthTileEnum.SHIELDED
+		enemy.plan(combat)
+		var hit := enemy.intent_actions[0]
+		_check(hit.parts[0].cell == aimed, "%s's hit should land where it aimed" % enemy.display_name)
+		var covered := _covered(player, hit.parts[0])
+		await enemy.take_turn(combat)
+		var pierced := covered.all(func(c: Vector2i) -> bool: return player.health[c].hp == Enum.HealthTileEnum.DAMAGED)
+		_check(pierced == (enemy is AndroidSentinel), "%s's hit should %s Shield" % [enemy.display_name, "pierce" if enemy is AndroidSentinel else "not pierce"])
+
+
+func _check_nano_swarm(combat: CombatState) -> void:
+	var nano := NanoSwarm.new()
+	combat.enemies = [nano]
+	var player := combat.player
+	_heal(player)
+	for tile in player.health.values():
+		tile.hp = Enum.HealthTileEnum.SHIELDED
+		tile.status_effects.append(PlateTileEffect.new())
+	nano.plan(combat)
+	var covered := {}
+	for part in nano.intent_actions[0].parts:
+		for cell in _covered(player, part):
+			covered[cell] = true
+	await nano.take_turn(combat)
+	_check(covered.keys().all(func(c: Vector2i) -> bool: return not player.health[c].has_effect(PlateTileEffect)), "corrode should strip Plate where it hits")
+	_check(player.health.keys().all(func(c: Vector2i) -> bool: return covered.has(c) or player.health[c].has_effect(PlateTileEffect)), "corrode stripped Plate it didn't hit")
+	var cells := nano.health.keys()
+	for cell in cells.slice(0, 10):
+		nano.health[cell].hp = Enum.HealthTileEnum.DAMAGED
+	await nano.on_turn_start(combat)
+	await nano.on_turn_end(combat)
+	_check(_cells_with(nano, Enum.HealthTileEnum.DAMAGED) == 10 - NanoSwarm.CONSUME, "consume should heal %d" % NanoSwarm.CONSUME)
+
+
+func _check_cleaner_bot(combat: CombatState) -> void:
+	var bot := CleanerBot.new()
+	combat.enemies = [bot]
+	var player := combat.player
+	_heal(player)
+	for tile in player.health.values():
+		tile.status_effects.append(PlateTileEffect.new())
+	bot.plan(combat)  # Sweep
+	bot.plan(combat)
+	var shred := bot.intent_actions[0]
+	_check(shred is CleanerBotShred and shred.parts[0].tiles.size() == CleanerBotShred.SHRED, "shred should mark %d Plated tiles" % CleanerBotShred.SHRED)
+	await bot.take_turn(combat)
+	var plated := player.health.values().filter(func(t: HealthTile) -> bool: return t.has_effect(PlateTileEffect)).size()
+	_check(plated == player.health.size() - CleanerBotShred.SHRED, "shred should strip %d Plates, %d left" % [CleanerBotShred.SHRED, plated])
+	_check(_cells_with(bot, Enum.HealthTileEnum.SHIELDED) == CleanerBotShred.SHIELDS, "shred should shield %d of its own" % CleanerBotShred.SHIELDS)
+
+
+func _check_hacker_ai(combat: CombatState) -> void:
+	var hacker := HackerAI.new()
+	combat.enemies = [hacker]
+	var player := combat.player
+	_heal(player)
+	var cell: Vector2i = hacker.health.keys()[0]
+	_check(not ApplyEffectTile.new(Vector2i.ZERO, PoisonTileEffect.new()).can_inflict(hacker, cell), "firewall should stop Poison")
+	_check(ApplyEffectTile.new(Vector2i.ZERO, PlateTileEffect.new()).can_inflict(hacker, cell), "firewall shouldn't stop Plate")
+	hacker.plan(combat)
+	await hacker.take_turn(combat)
+	_check(player.power_amount(HackedPower) == 1, "hack should give Hacked")
+	var exhausted := combat.exhaust_pile.size()
+	await combat.start_turn()  # plans Lockdown
+	_check(combat.exhaust_pile.size() == exhausted + 1, "hacked should exhaust 1 card from the new hand")
+	var card := combat.hand[0]
+	var cost := combat.cost_of(card)
+	await hacker.take_turn(combat)
+	_check(combat.cost_of(card) == cost + 1, "lockdown should add 1 to the next card's cost")
+	await player.on_turn_end(combat)
+	_check(player.power_amount(HackedPower) == 0 and player.power_amount(LockdownPower) == 0, "hacked and lockdown should end with the turn")
+
+
+func _check_mech_walker(combat: CombatState) -> void:
+	var mech := MechWalker.new()
+	combat.enemies = [mech]
+	_check(EnemyField.shields(mech) == MechWalker.ARMOR, "mech walker should start with %d shields" % MechWalker.ARMOR)
+	_heal(mech)
+	var rows: Array[String] = []
+	for i in 3:
+		mech.plan(combat)
+		rows.append(_rows(mech))
+	_check(rows == ["Missile Salvo", "Stomp", "Armor Plating\nShield Up"], "mech walker rows: %s" % [rows])
+	_check(mech.intent_actions[0].parts[0].tiles.size() == MechWalker.ARMOR, "armor plating should mark %d tiles" % MechWalker.ARMOR)
+
+
+func _check_terminator(combat: CombatState) -> void:
+	var terminator := Terminator.new()
+	combat.enemies = [terminator]
+	var player := combat.player
+	_heal(player)
+	var names: Array[String] = []
+	for i in 3:
+		terminator.plan(combat)
+		names.append(terminator.intent_actions[0].action_name)
+		if i == 0:
+			await terminator.take_turn(combat)
+			_check(terminator.power_amount(StrengthPower) == TerminatorRally.RALLY, "rally should give Strength")
+	var cells := player.health.keys()
+	for cell in cells.slice(0, ceili(cells.size() / 2.0)):
+		player.health[cell].hp = Enum.HealthTileEnum.DAMAGED
+	for i in 3:
+		terminator.plan(combat)
+		names.append(terminator.intent_actions[0].action_name)
+	_check(names == ["Rally", "Rifle Barrage", "Rifle Barrage", "Rally", "Rifle Barrage", "Execute"], "terminator order: %s" % [names])
+
 func _rows(enemy: BaseEnemy) -> String:
 	return "\n".join(PackedStringArray(enemy.intent_actions.map(func(a: BaseEnemyAction) -> String: return a.intent_text())))
 
 
 ## Cells of unit's grid that a planned part covers.
+## Every move has a description for its intent tooltip, including the ones kept outside actions
+## (Slime's Split, Ramiel's Field, the Hydra's bites).
+func _check_descriptions() -> void:
+	var enemies: Array[BaseEnemy] = [Slime.new(), MiniSlime.new(), Goblin.new(), Vermin.new(), Hound.new(),
+		Ogre.new(), MagicGolem.new(), DarkElf.new(), Griffin.new(), Hydra.new(), Dragon.new(), Bat.new(),
+		Skeleton.new(), Zombie.new(), Frangenstein.new(), JackOLantern.new(), LilGhost.new(), Mummy.new(),
+		Werewolf.new(), Lich.new(), Dracula.new(), AndroidSentinel.new(), CleanerBot.new(), CyberHound.new(),
+		HackerAI.new(), MechWalker.new(), NanoSwarm.new(), PlasmaTurret.new(), ScoutDrone.new(),
+		Terminator.new(), Ramiel.new()]
+	enemies.append((enemies[19] as Lich).mimic)
+	for enemy in enemies:
+		for prop in enemy.get_property_list():
+			var value: Variant = enemy.get(prop.name)
+			for action: Variant in (value if value is Array else [value]):
+				if action is BaseEnemyAction:
+					_check(not action.description.is_empty(), "%s's %s has no description" % [enemy.display_name, action.action_name])
+
+
 func _covered(unit: CombatUnit, part: EnemyActionPart) -> Array[Vector2i]:
 	var cells: Array[Vector2i] = []
 	for t in part.tiles:

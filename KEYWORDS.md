@@ -65,7 +65,7 @@ The last sections, "Decided" and "Open", are not from the sheet. They say how th
 | Rune Armor / Bone Armor / Armor Plating / Absolute Terror Field | The enemy has its own Block, which damage must wear down before HP goes down. It recharges on the stated cycle. | Magic Golem, Skeleton, Mech Walker, Ramiel |
 | Rise | Revives once after dying, with the stated HP. | Zombie |
 | Burning Head | If the player hits it with an Attack that meets the condition, the damage is reflected back. | Jack O Lantern |
-| Moon Phase | Switches between two modes every turn, each with different rules and actions. | Warewolf |
+| Moon Phase | Switches between two modes every turn, each with different rules and actions. | Werewolf |
 | Stitched | Starts with some Plate. | Frangenstein |
 | Phylactery | A separate object with its own HP. While it stands, the main body heals every turn. | Lich |
 | Multi-head | Several hits per turn. A head can be cut off by dealing enough damage in one turn. | Hydra |
@@ -91,7 +91,7 @@ Agreed with Mai in issue #8, and for issue #19. Where this differs from the shee
 - So there's no Shield on the turn it's cast. The first one comes at the owner's next turn start, if the tile wasn't attacked in between.
 - It's removed when its tile's hp reaches 0 (ON_HIT). Hitting a Plated hex that has Shield twice in one turn breaks the Shield and then removes the Plate.
 - Plate can't go on a damaged hex.
-- Not implemented, sheet draft only: the 20-hex cap and Shred / Corrode. Smash (Ogre) removes Plate from every tile it covers.
+- Not implemented, sheet draft only: the 20-hex cap. Smash (Ogre) and Corrode (Nano Swarm) remove Plate from every tile they cover; Shred (Cleaner Bot) removes it from 4 Plated tiles marked in its intent. Plate doesn't stack, so the sheet's "Plate −1" removes it.
 
 **Pierce**
 - A Pierce hit goes through both Shield and Plate: the tile is damaged even if it has Shield.
@@ -146,8 +146,17 @@ Agreed with Mai in issue #8, and for issue #19. Where this differs from the shee
 - Sacrifice is the cost (destroy your own hexes). Fracture is the tile effect above. The Card tab's "Trade 2" / "Sacifice 3" mean Sacrifice.
 - Tooltips: Shield, Exhaust, Retain and Sacrifice get one from a small list in `keywords.gd` (they aren't effects). Plate and Poison get theirs from their effect class. Draw and Cost X get none.
 - The "Shield" card keeps its name.
-- Rune Armor / Bone Armor / Armor Plating / Absolute Terror Field: enemy Block is Shield on the enemy's own tiles (Pakkapao's decision). Only Ramiel's Absolute Terror Field is built: it starts with 20 Shields and tops them back up to 20 every 3rd turn, on tiles marked in its intent. The others aren't built yet.
+- Rune Armor / Bone Armor / Armor Plating / Absolute Terror Field: enemy Block is Shield on the enemy's own tiles (Pakkapao's decision). Ramiel's Absolute Terror Field and the Mech Walker's Armor Plating start with 20 Shields and top them back up to 20 every 3rd turn, on tiles marked in their intent (`EnemyField`). Rune Armor is a power and Bone Armor is starting Shields.
 - Numbers that don't fit the grids (Block 12 and Plate 15 on a 7-hex player, Slime 12 HP vs 17 hexes, bosses up to 170 HP) stay as they are for now.
+
+**Floor 3 monsters**
+- Hover is Aerial under another name (the first 2 hits each turn miss), and Consume is Regen 5.
+- Firewall: debuff tile effects (Poison, Fracture) can't be put on the Hacker AI.
+- Hack gives Hacked: right after your next hand is drawn, a random card in it is Exhausted. Lockdown is Shiver under another name.
+- Scan (Scout Drone) aims its next Laser Ping's first hit and makes it 10 tiles instead of 6.
+- Snipe (Android Sentinel) uses the usual Pierce, so Plate doesn't stop it.
+- Execute (Terminator) is only planned while you have half your tiles or fewer; otherwise that turn is another Rifle Barrage. Rally gives every enemy 1 Strength.
+- Where a hit count and its shape disagree, the shape wins: Stomp hits 9 (3x3), Snipe 10 (1x10), Sweep 8 (a ring plus one tile on each side).
 
 ## Open
 Not decided yet.

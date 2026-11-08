@@ -8,6 +8,7 @@ func _init() -> void:
 	type = Enum.CardType.SKILL
 	target = Enum.TargetType.PLAYER
 	description = "[Self] {render:0}\n"
+	image = preload("res://assets/cards/cards/heroic_stance.png")
 	grid_actions = [
 		GridAction.new(Enum.TargetType.PLAYER, [
 			ApplyEffectTile.new(Vector2i(0,0), HeroicTileEffect.new()),

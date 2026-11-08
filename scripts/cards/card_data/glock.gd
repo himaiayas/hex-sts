@@ -8,6 +8,7 @@ func _init() -> void:
 	type = Enum.CardType.ATTACK
 	rarity = Enum.CardRarity.LEGENDARY
 	description = "{render:0} 9 times."
+	image = preload("res://assets/cards/cards/glock.png")
 	grid_actions = [
 		RepeatAction.new(GridAction.new(Enum.TargetType.ENEMY, [
 			DamageTile.new(Vector2i(0,0)),

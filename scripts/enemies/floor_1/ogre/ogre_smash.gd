@@ -22,12 +22,6 @@ func plan(_combat: CombatState, _owner: CombatUnit) -> void:
 func execute(combat: CombatState, _owner: CombatUnit) -> void:
 	var player := combat.player
 	for t in parts[0].tiles:
-		var cell := parts[0].cell + t.coords
-		if not player.health.has(cell):
-			continue
-		for effect in player.health[cell].status_effects.duplicate():
-			if effect is PlateTileEffect:
-				player.health[cell].status_effects.erase(effect)
-				combat.record(player, cell, Enum.Change.EFFECT_LOST, effect)
+		PlateTileEffect.strip(combat, player, parts[0].cell + t.coords)
 	await combat.flush()
 	await GridAction.new(Enum.TargetType.PLAYER, parts[0].tiles).execute(combat, player, parts[0].cell)

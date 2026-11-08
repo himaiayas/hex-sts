@@ -8,6 +8,7 @@ extends BaseEnemy
 ## every 3rd turn, before its move.
 
 const FIELD_EVERY := 3
+const FIELD_SHIELDS := 20
 const P1_CHARGES := 3
 const P2_CHARGES := 2
 
@@ -15,8 +16,8 @@ var _counting := false  # from the first Charge until the beam is planned
 var _step := 0  # turns into the current cycle
 var _turns := 0  # turns planned, for the Field
 
-var _field := RamielField.new()
-var _scan := EnemyShieldSelf.new("Scan", 15)
+var _field := EnemyField.new("Absolute Terror Field", FIELD_SHIELDS)
+var _scan := EnemyShieldSelf.new("Scan", 15, "Shield 15 random tiles of its own.")
 var _charge := RamielCharge.new()
 var _beam := RamielParticleBeam.new(_charge)
 var _drill := RamielShardDrill.new()
@@ -64,16 +65,13 @@ func _init() -> void:
 	_charge.aim_vfx = preload("res://assets/enemies/floor_3/ramiel_charge.png")
 	_beam.aim_vfx = _charge.aim_vfx
 	actions = [_field, _scan, _charge, _beam, _drill, _stunned]
-	var cells := health.keys()
-	cells.shuffle()
-	for cell in cells.slice(0, RamielField.SHIELDS):
-		health[cell].hp = Enum.HealthTileEnum.SHIELDED
+	EnemyField.shield_start(self, FIELD_SHIELDS)
 
 
 func _choose_actions() -> Array[BaseEnemyAction]:
 	_turns += 1
 	var rows: Array[BaseEnemyAction] = []
-	if _turns % FIELD_EVERY == 0 and RamielField.shields(self) < RamielField.SHIELDS:
+	if _turns % FIELD_EVERY == 0 and EnemyField.shields(self) < FIELD_SHIELDS:
 		rows.append(_field)
 	var undamaged := health.values().filter(func(t: HealthTile) -> bool: return t.hp > Enum.HealthTileEnum.DAMAGED).size()
 	if _step == 0 and undamaged * 2 < health.size():

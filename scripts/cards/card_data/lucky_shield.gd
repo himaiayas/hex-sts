@@ -8,6 +8,7 @@ func _init() -> void:
 	type = Enum.CardType.DEFENSE
 	rarity = Enum.CardRarity.UNCOMMON
 	description = "Apply {keyword:Shield} to 6 random tiles."
+	image = preload("res://assets/cards/cards/lucky_shield.png")
 
 
 func execute(combat: CombatState, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int])->Array:

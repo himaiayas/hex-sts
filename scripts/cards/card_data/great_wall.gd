@@ -8,6 +8,7 @@ func _init() -> void:
 	type = Enum.CardType.DEFENSE
 	rarity = Enum.CardRarity.RARE
 	description = "Apply {keyword:Shield} the entire row."
+	image = preload("res://assets/cards/cards/great_wall.png")
 	grid_actions = [
 		LineGridAction.new(Enum.TargetType.PLAYER, ShieldTile.new(Vector2i.ZERO)),
 	]

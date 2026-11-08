@@ -7,6 +7,7 @@ func _init() -> void:
 	cost = 1
 	type = Enum.CardType.ATTACK
 	description = "{keyword:Sacrifice} 1.\n{render:1}."
+	image = preload("res://assets/cards/cards/sword_of_might.png")
 	grid_actions = [
 		GridAction.new(Enum.TargetType.PLAYER, [SacrificeTile.new(Vector2i(0,0))], Vector2i.ZERO, true),
 		GridAction.new(Enum.TargetType.ENEMY, [

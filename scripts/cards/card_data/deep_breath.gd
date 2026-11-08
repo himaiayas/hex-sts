@@ -8,6 +8,7 @@ func _init() -> void:
 	type = Enum.CardType.SKILL
 	target = Enum.TargetType.PLAYER
 	description = "Draw 2 cards. Discard 1 card. {keyword:Exhaust}."
+	image = preload("res://assets/cards/cards/deep_breath.png")
 	exhaust= true
 
 
