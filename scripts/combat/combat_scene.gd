@@ -722,7 +722,7 @@ func _room_type() -> Enum.RoomType:
 
 ## The enemy being built, fought in every normal and elite room (and on F6) until it's done.
 ## null = the usual line-ups.
-static var testing: Script = Slime
+static var testing: Script = null
 
 
 ## Placeholder line-ups until there are more enemies.
