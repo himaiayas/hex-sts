@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Ogre / Magic Golem / Dark Elf / Griffin / Hydra / Dragon / Dracula / Ramiel. Exit code = number of failures.
+## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Ogre / Magic Golem / Dark Elf / Griffin / Hydra / Skeleton / Dragon / Dracula / Ramiel. Exit code = number of failures.
 ## godot --headless --path . -s res://scripts/enemies/enemy_check.gd
 
 var _failures := 0
@@ -43,6 +43,7 @@ func _initialize() -> void:
 	await _check_dark_elf(combat)
 	await _check_griffin(combat)
 	await _check_hydra(combat)
+	await _check_skeleton(combat)
 	await _check_dragon(combat)
 	await _check_dracula(combat)
 	await _check_ramiel(combat)
@@ -367,6 +368,51 @@ func _check_hydra(combat: CombatState) -> void:
 	_heal(player)
 	await hydra.take_turn(combat)
 	_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == 0, "a headless hydra attacked")
+
+
+
+func _check_skeleton(combat: CombatState) -> void:
+	var skeleton := Skeleton.new()
+	combat.enemies = [skeleton]
+	var player := combat.player
+	_check(_cells_with(skeleton, Enum.HealthTileEnum.SHIELDED) == Skeleton.BONE_ARMOR, "skeleton should start with %d shields" % Skeleton.BONE_ARMOR)
+
+	# Bone Throw (2 hits) -> Rattle, looped.
+	var names: Array[String] = []
+	for i in 4:
+		_heal(player)
+		_heal(skeleton)
+		skeleton.plan(combat)
+		var action := skeleton.intent_actions[0]
+		names.append(action.action_name)
+		var expect := {}
+		for part in action.parts:
+			for cell in _covered(player, part):
+				expect[cell] = true
+		await skeleton.on_turn_start(combat)
+		await skeleton.take_turn(combat)
+		if action is SkeletonRattle:
+			_check(_cells_with(skeleton, Enum.HealthTileEnum.SHIELDED) == 7 and skeleton.power_amount(RetaliatePower) == SkeletonRattle.RETALIATE,
+				"rattle should shield 7 and give Retaliate 3")
+		else:
+			_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == expect.size(), "bone throw didn't damage what its intent showed")
+		await skeleton.on_turn_end(combat)
+	_check(names == ["Bone Throw", "Rattle", "Bone Throw", "Rattle"], "skeleton order: %s" % [names])
+
+	# Retaliate: a player hit on a Shield damages 3 player tiles; gone at its next turn start.
+	_heal(player)
+	_heal(skeleton)
+	await skeleton.on_turn_start(combat)  # clears the Retaliate left from the loop's last Rattle
+	await skeleton.actions[1].execute(combat, skeleton)
+	await skeleton.on_turn_end(combat)
+	var shielded: Vector2i = skeleton.health.keys().filter(func(c: Vector2i) -> bool: return skeleton.health[c].hp == Enum.HealthTileEnum.SHIELDED)[0]
+	player.in_turn = true
+	skeleton.damage_health_tile(combat, shielded)
+	player.in_turn = false
+	_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == SkeletonRattle.RETALIATE, "retaliate should damage 3 player tiles")
+	await skeleton.on_turn_start(combat)
+	_check(skeleton.power_amount(RetaliatePower) == 0, "retaliate should end at its turn start")
+	await skeleton.on_turn_end(combat)
 
 
 
