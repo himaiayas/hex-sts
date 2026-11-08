@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Ogre / Magic Golem / Dark Elf / Griffin / Hydra / Skeleton / Bat / Zombie / Frangenstein / Dragon / Dracula / Ramiel. Exit code = number of failures.
+## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Ogre / Magic Golem / Dark Elf / Griffin / Hydra / Skeleton / Bat / Zombie / Frangenstein / Jack O Lantern / Dragon / Dracula / Ramiel. Exit code = number of failures.
 ## godot --headless --path . -s res://scripts/enemies/enemy_check.gd
 
 var _failures := 0
@@ -47,6 +47,7 @@ func _initialize() -> void:
 	await _check_bat(combat)
 	await _check_zombie(combat)
 	await _check_frangenstein(combat)
+	await _check_jack(combat)
 	await _check_dragon(combat)
 	await _check_dracula(combat)
 	await _check_ramiel(combat)
@@ -533,6 +534,61 @@ func _check_frangenstein(combat: CombatState) -> void:
 	_check(frank.actions[0].parts[0].tiles.size() == 15, "thunder fist should be 15 tiles")
 	await frank.actions[2].execute(combat, frank)
 	_check(frank.power_amount(StrengthPower) == 2 * Frangenstein.OVERCHARGE, "overcharge should stack")
+
+
+
+func _check_jack(combat: CombatState) -> void:
+	var jack := JackOLantern.new()
+	combat.enemies = [jack]
+	var player := combat.player
+
+	# Flame Spit (with Poison) -> Grin (Strength 2) -> Pumpkin Smash. Patterns are 7 + 2 Poison and 11.
+	var names: Array[String] = []
+	for i in 2:
+		_heal(player)
+		jack.plan(combat)
+		var action := jack.intent_actions[0]
+		names.append(action.action_name)
+		var hit: Array = []
+		for part in action.parts:
+			for t in part.tiles:
+				if t is DamageTile and player.health.has(part.cell + t.coords):
+					hit.append(part.cell + t.coords)
+		await jack.take_turn(combat)
+		if action is EnemyApplyPower:
+			_check(jack.power_amount(StrengthPower) == JackOLantern.GRIN, "grin should give Strength %d" % JackOLantern.GRIN)
+		else:
+			_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == hit.size(), "flame spit didn't damage what its intent showed")
+	jack.plan(combat)
+	names.append(jack.intent_actions[0].action_name)
+	_check(names == ["Flame Spit", "Grin", "Pumpkin Smash"], "jack order: %s" % [names])
+	_check(jack.actions[0].parts[0].tiles.size() == 9 and jack.actions[2].parts[0].tiles.size() == 11, "jack patterns should be 7 + 2 and 11 tiles")
+
+	# Burning Head: the 6th tile one Attack card destroys burns 3 player tiles, once per card.
+	# Non-Attack cards and hits outside a card don't count.
+	var cells: Array = jack.health.keys()
+	_heal(player)
+	_heal(jack)
+	combat.playing = Strike.new()
+	for i in 5:
+		jack.damage_health_tile(combat, cells[i])
+	_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == 0, "burning head burned before 6 tiles")
+	jack.damage_health_tile(combat, cells[5])
+	_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == JackOLantern.BURN, "burning head should burn %d" % JackOLantern.BURN)
+	for i in range(6, 14):
+		jack.damage_health_tile(combat, cells[i])
+	_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == JackOLantern.BURN, "burning head burned twice for one card")
+	combat.playing = Strike.new()
+	for i in range(14, 20):
+		jack.damage_health_tile(combat, cells[i])
+	_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == 2 * JackOLantern.BURN, "a new card should count again")
+	combat.playing = ShieldPlayer.new()
+	for i in range(20, 26):
+		jack.damage_health_tile(combat, cells[i])
+	combat.playing = null
+	for i in range(26, 32):
+		jack.damage_health_tile(combat, cells[i])
+	_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == 2 * JackOLantern.BURN, "only Attack cards should count")
 
 
 
