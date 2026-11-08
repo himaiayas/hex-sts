@@ -41,7 +41,7 @@ func _init(run: Node) -> void:
 	player = CombatUnit.new("Player", run.health, true)
 	player.artifacts = run.artifacts
 	for card in run.deck:
-		draw_pile.append(card.duplicate())
+		draw_pile.append(card.copy())
 	draw_pile.shuffle()
 
 
@@ -225,7 +225,7 @@ func play_card(card: BaseCard, units: Array[CombatUnit], cells: Array[Vector2i],
 	played_this_turn.append(card)
 	playing = card
 	await card.execute(self, units, cells, rotations)
-	var extra := 0
+	var extra := 1 if card.repeat else 0
 	for artifact in player.artifacts:
 		extra += artifact.extra_plays(self, card)
 	if card.type == Enum.CardType.ATTACK and EchoPower.use(player):

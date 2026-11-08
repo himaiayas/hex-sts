@@ -1,8 +1,9 @@
 extends CanvasLayer
 
-## Applying an augment the player just got: pick a card from the deck, then (Expansion
-## Augment) a pattern, an empty cell next to it, and, if its neighbours differ, which action
-## to copy. There's no cancel: the augment must go on a card (unless none can take it).
+## Applying an augment the player just got: pick a card from the deck, then, for each tile the
+## augment adds (BaseAugment.tiles_to_add), a pattern, an empty cell next to it, and, if its
+## neighbours differ, which action to copy. Then BaseAugment.apply changes the rest.
+## There's no cancel: the augment must go on a card (unless none can take it).
 ## Usage: add the scene, call open(augment), wait for `finished`.
 
 signal finished(card: BaseCard)  # null if no card could take it
@@ -17,6 +18,7 @@ var augment: BaseAugment
 var _card: BaseCard = null
 var _action: GridAction = null
 var _tile: BaseActionTile = null  # placed in _action.tiles while previewing; removed if changed
+var _placed: Array[Dictionary] = []  # earlier tiles already added: {action, tile}; undone by Back
 var _hover_info := HoverInfo.new()  # keywords of the cards shown
 
 @onready var _icon: TextureRect = %AugmentIcon
@@ -49,6 +51,9 @@ func open(_augment: BaseAugment) -> void:
 
 func _show_cards() -> void:
 	_remove_tile()
+	for placed in _placed:
+		placed.action.tiles.erase(placed.tile)
+	_placed.clear()
 	_card = null
 	_action = null
 	_card_page.show()
@@ -79,7 +84,7 @@ func _show_cards() -> void:
 
 func _on_card_input(event: InputEvent, card: BaseCard) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
-		if augment is ExpansionAugment:
+		if augment.tiles_to_add() > 0:
 			_edit(card)
 		else:  # nothing more to choose
 			_card = card
@@ -115,8 +120,10 @@ func _select_pattern(action: GridAction) -> void:
 		(_pattern_buttons.get_child(i) as Button).set_pressed_no_signal(patterns[i] == action)
 	_editor.setup(action, ExpansionAugment.free_cells(action))
 	_clear(_tile_options)
+	var left := augment.tiles_to_add() - _placed.size()
 	_hint.text = "Click an outlined cell to add a tile there. It copies a tile next to it." \
-		+ ("\nThis card has more than one pattern: only one can grow." if patterns.size() > 1 else "")
+		+ ("\n%d tiles left to add." % left if left > 1 else "") \
+		+ ("\nThis card has more than one pattern: choose which one grows." if patterns.size() > 1 else "")
 	_refresh_preview()
 
 
@@ -150,10 +157,16 @@ func _on_option_pressed(button: Button, tile: BaseActionTile) -> void:
 	_place(tile)
 
 
+## The last tile waits for Confirm (and can still be changed); earlier ones are kept right away
+## and the editor moves on to the next.
 func _place(tile: BaseActionTile) -> void:
 	_remove_tile()
-	_tile = tile
 	_action.tiles.append(tile)
+	if _placed.size() + 1 < augment.tiles_to_add():
+		_placed.append({action = _action, tile = tile})
+		_select_pattern(_action)
+		return
+	_tile = tile
 	_confirm_button.disabled = false
 	_editor.queue_redraw()
 	_refresh_preview()
@@ -186,8 +199,10 @@ func _on_back_pressed() -> void:
 
 func _on_confirm_pressed() -> void:
 	if _card:
+		augment.apply(_card)
 		_card.augments.append(augment)
-		_tile = null  # keep it: it's part of the card now
+		_tile = null  # keep the tiles: they're part of the card now
+		_placed.clear()
 	_hover_info.clear()
 	hide()
 	finished.emit(_card)

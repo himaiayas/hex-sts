@@ -13,6 +13,7 @@ var rarity: Enum.CardRarity = Enum.CardRarity.COMMON
 var exhaust := false  # goes to the exhaust pile after it's played, gone until the next fight
 var retain := false  # stays in hand at the end of the turn
 var to_draw_top := false  # goes on top of the draw pile after it's played, instead of the discard pile
+var repeat := false  # its effect runs twice each time it's played (Duplication Augment)
 var grid_actions: Array[BaseAction] = []  # each a GridAction, or a RepeatAction around one; drawn with {render:N}
 var augments: Array[BaseAugment] = []  # applied upgrades, shown as icons above the card
 var max_augments := 1  # raise for cards that say they hold more
@@ -43,6 +44,18 @@ func on_card_exhausted(_combat: CombatState) -> void:
 	pass
 
 
+## This fight's copy of a deck card, keeping what augments changed (cost, exhaust, repeat, added
+## tiles). Resource.duplicate() would rebuild it from _init, since script vars aren't stored.
+## Arrays are copied, but the GridActions in them are shared: combat replaces them, never edits them.
+func copy() -> BaseCard:
+	var result: BaseCard = get_script().new()
+	for property in get_property_list():
+		if property.usage & PROPERTY_USAGE_SCRIPT_VARIABLE:
+			var value: Variant = get(property.name)
+			result.set(property.name, value.duplicate() if value is Array or value is Dictionary else value)
+	return result
+
+
 ## The grid action click i places: placements()[i], or the only one, again, on an X-cost card.
 func grid_action(i: int) -> GridAction:
 	return pattern(0) if x_cost else placements()[i]
@@ -69,5 +82,19 @@ func placements() -> Array[GridAction]:
 	return result
 
 
+## description, kept in step with exhaust and repeat when an augment changed them: a closing
+## "{keyword:Exhaust}." is added or removed, and "{keyword:Repeat}." added.
 func get_description() -> String:
-	return description
+	var text := description
+	var exhaust_line := _EXHAUST_END.search(text)
+	if exhaust_line and not exhaust:
+		text = text.substr(0, exhaust_line.get_start())
+	elif exhaust and not exhaust_line:
+		text += "\n{keyword:Exhaust}."
+	if repeat:
+		text += "\n{keyword:Repeat}."
+	return text
+
+
+## A description's closing "{keyword:Exhaust}." (the card's own Exhaust), with the space or line before it.
+static var _EXHAUST_END := RegEx.create_from_string("\\s*\\{keyword:Exhaust\\}\\.$")

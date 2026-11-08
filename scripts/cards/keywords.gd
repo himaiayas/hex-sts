@@ -9,6 +9,7 @@ const NOT_EFFECTS: Dictionary[String, String] = {
 	"Shield": "Absorbs the next hit on this tile.",
 	"Exhaust": "Removed from this combat after it's played. It comes back next combat.",
 	"Retain": "Not discarded at the end of your turn.",
+	"Repeat": "Its effect happens twice each time it's played.",
 	"Sacrifice": "Destroy your own tiles as a cost. You choose which.",
 	"Heal": "Restore damaged tiles of yours. You choose which.",
 	"Pierce": "Goes through Shield and Plate.",

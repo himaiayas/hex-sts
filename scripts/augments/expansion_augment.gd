@@ -20,6 +20,10 @@ func can_apply(card: BaseCard) -> bool:
 	return super(card) and not patterns(card).is_empty()
 
 
+func tiles_to_add() -> int:
+	return 1
+
+
 ## The card's grid actions that have a pattern to grow.
 static func patterns(card: BaseCard) -> Array[GridAction]:
 	var result: Array[GridAction] = []
