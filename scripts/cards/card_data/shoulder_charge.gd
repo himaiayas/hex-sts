@@ -6,10 +6,12 @@ func _init() -> void:
 	card_name = "Shoulder Charge"
 	cost = 1
 	type = Enum.CardType.ATTACK
-	pick_tiles = 1
-	pick_tile = SacrificeTile.new(Vector2i.ZERO)
-	description = "{keyword:Sacrifice} 1.\n{render:0}"
+	description = "{keyword:Sacrifice} 2.\n{render:1}\n[Self] {render:2}"
 	grid_actions = [
+		GridAction.new(Enum.TargetType.PLAYER, [
+			SacrificeTile.new(Vector2i(0,0)),
+			SacrificeTile.new(Vector2i(1,0))
+			], Vector2i.ZERO, true),
 		GridAction.new(Enum.TargetType.ENEMY, [
 			DamageTile.new(Vector2i(-2,1)),
 			DamageTile.new(Vector2i(-1,0)),
@@ -19,5 +21,9 @@ func _init() -> void:
 			DamageTile.new(Vector2i(1,1)),
 			DamageTile.new(Vector2i(0,1)),
 			DamageTile.new(Vector2i(-1,1)),
+		]),
+		GridAction.new(Enum.TargetType.PLAYER, [
+			ShieldTile.new(Vector2i(1,0)),
+			ShieldTile.new(Vector2i(0,0)),
 		]),
 	]

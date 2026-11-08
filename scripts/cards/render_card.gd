@@ -194,7 +194,7 @@ static func _fill_description(box: VBoxContainer, data: BaseCard) -> void:
 
 static func _grid_action(data: BaseCard, index: int) -> GridAction:
 	if index < data.grid_actions.size():
-		return data.grid_actions[index]
+		return data.pattern(index)
 	push_warning("%s has no grid action %d" % [data.card_name, index])
 	return null
 

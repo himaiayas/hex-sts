@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://c5ftbsiqvg437"
-path="res://.godot/imported/strike.png-83a5a94fbadc8fd36960555853b672bf.ctex"
+uid="uid://u0e2c53qluyr"
+path="res://.godot/imported/piercing.png-e12bd55849a93db2ecd57fa4204075a5.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/cards/cards/strike.png"
-dest_files=["res://.godot/imported/strike.png-83a5a94fbadc8fd36960555853b672bf.ctex"]
+source_file="res://assets/grid_effects/piercing.png"
+dest_files=["res://.godot/imported/piercing.png-e12bd55849a93db2ecd57fa4204075a5.ctex"]
 
 [params]
 

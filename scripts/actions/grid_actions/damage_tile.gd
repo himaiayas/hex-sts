@@ -15,9 +15,9 @@ func inflict(combat: CombatState, unit: CombatUnit, cell: Vector2i)->bool:
 func get_color()->Color:
 	return Color("#c46bff") if pierce else Color("#ff7a7a")
 
-## Pierce has no icon yet, so it's drawn in its colour instead.
+## Pierce (and so Sacrifice) has its own icon.
 func get_icon() -> Texture2D:
-	return null if pierce else preload("res://assets/grid_effects/damage.png")
+	return preload("res://assets/grid_effects/piercing.png") if pierce else preload("res://assets/grid_effects/damage.png")
 
 func display_name() -> String:
 	return "Pierce" if pierce else "Damage"

@@ -1,29 +1,18 @@
 class_name SacrificeTile
-extends BaseActionTile
+extends DamageTile
 
-## Destroys one of your own tiles as a cost. A Shield doesn't absorb it.
+## Destroys one of your own tiles as a cost: Damage that pierces, so a Shield doesn't absorb it.
+## Put it in a must_land GridAction on the player's grid, so it can't go on a damaged tile or off the grid.
 
 
 func _init(_coord: Vector2i)->void:
-	super(_coord)
-
-func inflict(combat: CombatState, unit: CombatUnit, cell: Vector2i)->bool:
-	return can_inflict(unit, cell) and unit.damage_health_tile(combat, cell, true)
-
-## A Plated tile can only be picked once every other undamaged tile is picked.
-func can_pick(unit: CombatUnit, cell: Vector2i, picked: Array[Vector2i])->bool:
-	if not can_inflict(unit, cell):
-		return false
-	if not unit.health[cell].has_effect(PlateTileEffect):
-		return true
-	for other in unit.health:
-		if other != cell and other not in picked and can_inflict(unit, other) \
-				and not unit.health[other].has_effect(PlateTileEffect):
-			return false
-	return true
+	super(_coord, true)
 
 func get_color()->Color:
 	return Color("#b03a48")
 
 func display_name() -> String:
 	return "Sacrifice"
+
+func copy_at(at: Vector2i) -> BaseActionTile:
+	return SacrificeTile.new(at)

@@ -3,11 +3,37 @@ extends BaseAction
 
 var tiles:Array[BaseActionTile]
 var anchor: Vector2i
+## Every tile must land on an undamaged (or shielded) tile of the grid. For patterns that hurt
+## whoever they're placed on (e.g. Damage or Fracture on your own grid), so they can't be dodged
+## by placing them on damaged tiles or off the grid.
+var must_land := false
 
-func _init(_target: Enum.TargetType, _tiles:Array[BaseActionTile], _anchor: Vector2i=Vector2i.ZERO)->void:
+func _init(_target: Enum.TargetType, _tiles:Array[BaseActionTile], _anchor: Vector2i=Vector2i.ZERO, _must_land := false)->void:
 	target = _target
 	tiles = _tiles
 	anchor = _anchor
+	must_land = _must_land
+
+
+## Whether the pattern may go at cell on unit's grid with this rotation (always, unless must_land).
+func can_place(unit: CombatUnit, cell: Vector2i, rotation := 0)->bool:
+	if not must_land:
+		return true
+	for offset in rotated(rotation):
+		if not unit.health.has(cell + offset) or unit.health[cell + offset].hp == Enum.HealthTileEnum.DAMAGED:
+			return false
+	return true
+
+
+## Whether there's any cell and rotation on unit's grid where it may go.
+func can_place_anywhere(unit: CombatUnit)->bool:
+	if not must_land:
+		return true
+	for cell in unit.health:
+		for rotation in 6:
+			if can_place(unit, cell, rotation):
+				return true
+	return false
 
 ## rotation = 60° clockwise steps around the clicked cell. Returns the cells it changed.
 func execute(combat: CombatState, unit: CombatUnit, cell: Vector2i, rotation := 0)->Array[Vector2i]:

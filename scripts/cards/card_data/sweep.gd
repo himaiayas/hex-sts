@@ -6,7 +6,6 @@ func _init() -> void:
 	card_name = "Sweep"
 	cost = 1
 	type = Enum.CardType.ATTACK
-	pick_from_discard = 1
 	description = "{render:0}\nPut a card from your discard pile on top of your draw pile."
 	grid_actions = [
 		GridAction.new(Enum.TargetType.ENEMY, [
@@ -16,3 +15,9 @@ func _init() -> void:
 
 		]),
 	]
+
+
+func execute(combat: CombatState, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int])->Array:
+	var hits: Array = await super(combat, units, cells, rotations)
+	await DiscardToDrawTopAction.new(1).execute(combat, combat.player, Vector2i.ZERO)
+	return hits

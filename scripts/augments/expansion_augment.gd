@@ -23,7 +23,8 @@ func can_apply(card: BaseCard) -> bool:
 ## The card's grid actions that have a pattern to grow.
 static func patterns(card: BaseCard) -> Array[GridAction]:
 	var result: Array[GridAction] = []
-	for action in card.grid_actions:
+	for i in card.grid_actions.size():
+		var action := card.pattern(i)
 		if not action is RandomGridAction:
 			result.append(action)
 	return result
