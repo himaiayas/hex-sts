@@ -46,7 +46,7 @@ func _on_exp_pressed() -> void:
 
 
 func _on_artifact_pressed() -> void:
-	RunState.artifacts.append(artifact)
+	RunState.add_artifact(artifact)
 	_artifact_button.hide()
 	_top_bar.refresh()
 

@@ -51,13 +51,13 @@ func _refresh() -> void:
 			row.remove_child(child)
 			child.queue_free()
 	for card in _cards:
-		var card_offer := ShopOffer.make(RenderCard.CARD_SIZE, _make_card_slot(card), CARD_PRICES[card.rarity],
+		var card_offer := ShopOffer.make(RenderCard.CARD_SIZE, _make_card_slot(card), RunState.shop_price(CARD_PRICES[card.rarity]),
 			card in _sold, _on_card_bought.bind(card))
 		_hover_info.add_card(card_offer, card)
 		_card_offers.add_child(card_offer)
 	for artifact in _artifacts:
 		var info := ShopOffer.make_name_row(artifact.image, ARTIFACT_ICON_SIZE, artifact.name)
-		var offer := ShopOffer.make(ARTIFACT_OFFER_SIZE, info, ARTIFACT_PRICES[artifact.rarity],
+		var offer := ShopOffer.make(ARTIFACT_OFFER_SIZE, info, RunState.shop_price(ARTIFACT_PRICES[artifact.rarity]),
 			artifact in _sold, _on_artifact_bought.bind(artifact))
 		_hover_info.add(offer, [[artifact.name, artifact.description]], true)
 		_artifact_offers.add_child(offer)
@@ -75,14 +75,14 @@ func _make_card_slot(card: BaseCard) -> Control:
 
 
 func _on_card_bought(card: BaseCard) -> void:
-	RunState.gold -= CARD_PRICES[card.rarity]
+	RunState.gold -= RunState.shop_price(CARD_PRICES[card.rarity])
 	RunState.deck.append(card)
 	_sell(card, "%s added to your deck." % card.card_name)
 
 
 func _on_artifact_bought(artifact: BaseArtifact) -> void:
-	RunState.gold -= ARTIFACT_PRICES[artifact.rarity]
-	RunState.artifacts.append(artifact)
+	RunState.gold -= RunState.shop_price(ARTIFACT_PRICES[artifact.rarity])
+	RunState.add_artifact(artifact)
 	_sell(artifact, "You got %s." % artifact.name)
 
 

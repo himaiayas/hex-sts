@@ -29,6 +29,7 @@ var energy := 0
 var turn := 0
 var exhausted_this_turn := 0  # cards exhausted since the player's turn started
 var exhausted_this_combat := 0
+var retained_once: Array[BaseCard] = []  # stay in hand at this turn's end only (Chalk Marker)
 var played_this_turn: Array[BaseCard] = []  # cards the player started playing this turn, in order
 var player_tiles_destroyed := 0  # player tiles damaged this combat, counting a healed tile again (Bloodlust Strike)
 var extra_turns := 0  # player turns to take right after this one, skipping the enemies (Chronokinesis)
@@ -64,15 +65,17 @@ func flush() -> void:
 
 ## The player picks count of these cards (fewer if there aren't that many). in_hand: they're
 ## picked in the hand, otherwise in the pile viewer. Without a chooser (headless) the first ones.
-func choose_cards(cards: Array[BaseCard], count: int, prompt: String, in_hand: bool) -> Array[BaseCard]:
+## min_count: fewer may be picked, down to this (-1: exactly count).
+func choose_cards(cards: Array[BaseCard], count: int, prompt: String, in_hand: bool, min_count := -1) -> Array[BaseCard]:
 	count = mini(count, cards.size())
+	min_count = count if min_count < 0 else mini(min_count, count)
 	var picked: Array[BaseCard] = []
 	if count == 0:
 		return picked
 	if not chooser.is_valid():
-		picked.assign(cards.slice(0, count))
+		picked.assign(cards.slice(0, min_count))
 		return picked
-	picked.assign(await chooser.call({cards = cards, in_hand = in_hand, count = count, prompt = prompt}))
+	picked.assign(await chooser.call({cards = cards, in_hand = in_hand, count = count, min = min_count, prompt = prompt}))
 	return picked
 
 
@@ -122,10 +125,12 @@ func add_to_hand(card: BaseCard) -> void:
 		hand.append(card)
 
 
-## Retain cards stay in hand.
+## Retain cards stay in hand, and this turn's retained_once.
 func discard_hand() -> void:
-	discard_pile.append_array(hand.filter(func(c: BaseCard) -> bool: return not c.retain))
-	hand.assign(hand.filter(func(c: BaseCard) -> bool: return c.retain))
+	var stays := func(c: BaseCard) -> bool: return c.retain or c in retained_once
+	discard_pile.append_array(hand.filter(func(c: BaseCard) -> bool: return not stays.call(c)))
+	hand.assign(hand.filter(stays))
+	retained_once.clear()
 
 
 ## replan: false on an extra turn, so the enemies keep the intents they already showed.
@@ -147,6 +152,8 @@ func start_turn(replan := true) -> void:
 
 
 func end_turn() -> void:
+	for artifact in player.artifacts.duplicate():
+		await artifact.before_discard(self)
 	discard_hand()
 	await player.on_turn_end(self)
 	if extra_turns > 0 and not is_lost() and not is_won():
@@ -196,7 +203,7 @@ func can_afford(card: BaseCard) -> bool:
 
 ## What card costs now: 0 on its free_on_turn, and Shiver adds 1 to the next card.
 func cost_of(card: BaseCard) -> int:
-	var base := 0 if card.free_on_turn == turn else card.cost
+	var base := 0 if card.free_on_turn == turn or card.free_until_played else card.cost
 	return base + player.power_amount(ShiverPower)
 
 
@@ -213,16 +220,24 @@ func play_card(card: BaseCard, units: Array[CombatUnit], cells: Array[Vector2i],
 	if not can_play(card):
 		return false
 	energy = 0 if card.x_cost else energy - cost_of(card)
+	card.free_until_played = false
 	hand.erase(card)
 	played_this_turn.append(card)
 	playing = card
 	await card.execute(self, units, cells, rotations)
+	var extra := 0
+	for artifact in player.artifacts:
+		extra += artifact.extra_plays(self, card)
 	if card.type == Enum.CardType.ATTACK and EchoPower.use(player):
+		extra += 1
+	for i in extra:
 		await card.execute(self, units, cells, rotations)
 	playing = null
 	for power in player.statuses.duplicate():
 		if power is BasePower:
 			power.on_card_played(self, player, card)
+	for artifact in player.artifacts.duplicate():
+		artifact.on_card_played(self, card)
 	await flush()  # what those powers changed (Hallowed Knight's cleanse)
 	if card.exhaust:
 		exhaust(card)
@@ -230,7 +245,18 @@ func play_card(card: BaseCard, units: Array[CombatUnit], cells: Array[Vector2i],
 		draw_pile.append(card)  # draw() takes from the back
 	elif card.type != Enum.CardType.POWER:
 		discard_pile.append(card)
+	await flush()  # what its own exhaust set off (Cinder Urn)
 	return true
+
+
+## Extra damage after an attack: Strength, then, for the player's attacks, their artifacts
+## (Eagle Eye). landed = [unit, cell] of the attack's damage tiles on the grid.
+func attack_extras(landed: Array) -> Array[Vector2i]:
+	var extras := StrengthPower.spread(self, landed)
+	if acting_unit() == player:
+		for artifact in player.artifacts:
+			extras.append_array(artifact.on_attack_landed(self, landed))
+	return extras
 
 
 ## Moves card from the hand to the discard pile.
@@ -252,6 +278,8 @@ func exhaust(card: BaseCard) -> void:
 	for power in player.statuses.duplicate():
 		if power is BasePower:
 			power.on_card_exhausted(self, player, card)
+	for artifact in player.artifacts.duplicate():
+		artifact.on_card_exhausted(self, card)
 
 
 ## The unit whose turn it is: the player, or the enemy taking its turn. Null between turns.
@@ -273,6 +301,9 @@ func is_lost() -> bool:
 
 
 func finish(run: Node) -> void:
+	if is_won():
+		for artifact in player.artifacts:
+			artifact.on_combat_end(self)
 	for tile in player.health.values():
 		tile.status_effects.clear()  # tile effects only last for the fight
 	run.health = player.health

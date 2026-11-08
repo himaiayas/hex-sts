@@ -40,6 +40,7 @@ const LEVEL_UP_TILES := 3
 
 ## Level-ups not yet claimed in the level-up modal.
 var pending_level_ups := 0
+var pending_tile_slots := 0  # health tiles to place from an artifact (Spare Hex), in the level-up modal
 
 var map: MapState = null
 var current_room: MapRoom = null
@@ -61,6 +62,7 @@ func start_new_run() -> void:
 	level = 0
 	xp = 0
 	pending_level_ups = 0
+	pending_tile_slots = 0
 	dungeon_floor = 1
 
 	deck.append(CureAilment.new())
@@ -141,6 +143,26 @@ func add_xp(amount: int) -> void:
 		xp -= LEVEL_XP[level]
 		level += 1
 		pending_level_ups += 1
+
+
+## Gives the player an artifact and runs its pick-up effect.
+func add_artifact(artifact: BaseArtifact) -> void:
+	artifacts.append(artifact)
+	artifact.on_pickup()
+
+
+func has_artifact(script: Script) -> bool:
+	return artifacts.any(func(a: BaseArtifact) -> bool: return a.get_script() == script)
+
+
+## A Merchant or Blacksmith price, after Trading Sigil.
+func shop_price(base: int) -> int:
+	return ceili(base * TradingSigil.PRICE_FACTOR) if has_artifact(TradingSigil) else base
+
+
+## Drop weight factor of a rarity: Lucky Charm favours Rare and Legendary cards and artifacts.
+func luck_factor(rare_or_better: bool) -> int:
+	return LuckyCharm.FACTOR if rare_or_better and has_artifact(LuckyCharm) else 1
 
 
 func is_max_level() -> bool:
