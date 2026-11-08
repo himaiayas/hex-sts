@@ -53,7 +53,7 @@ func get_color() -> Color:
 static func spread(combat: CombatState, landed: Array) -> Array[Vector2i]:
 	var extras: Array[Vector2i] = []
 	var attacker := combat.acting_unit()
-	var strength := attacker.power_amount(StrengthPower) if attacker else 0
+	var strength := attacker.power_amount(StrengthPower) + HeroicTileEffect.strength(attacker) if attacker else 0
 	if strength <= 0:
 		return extras
 	var open := []  # [unit, cell], each once

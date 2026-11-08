@@ -45,7 +45,7 @@ func damage_health_tile(combat: CombatState, coords: Vector2i, pierce := false)-
 			if power is BasePower and power.dodges(combat, self):
 				combat.record(self, coords, Enum.Change.BLOCK)
 				return false
-	if tile.hp == Enum.HealthTileEnum.SHIELDED and not pierce:
+	if tile.hp == Enum.HealthTileEnum.SHIELDED and not pierce and not PiercingPower.active(combat, self):
 		tile.hp = Enum.HealthTileEnum.UNDAMAGED
 		combat.record(self, coords, Enum.Change.BLOCK)
 		fire_at(Enum.Trigger.ON_BLOCK, combat, coords)
@@ -72,8 +72,13 @@ func apply_effect_health_tile(combat: CombatState, coords:Vector2i, effect:BaseT
 	if tile and (tile.hp > Enum.HealthTileEnum.DAMAGED or effect.allow_damaged):
 		if effect is PlateTileEffect and CurseWrapPower.fizzles(combat, self):
 			return
+		var is_new := not tile.has_effect(effect.get_script())
 		_add_or_stack(tile.status_effects, effect)
 		combat.record(self, coords, Enum.Change.EFFECT, effect)
+		if is_new:
+			for power in statuses.duplicate():
+				if power is BasePower:
+					power.on_tile_effect_gained(combat, self, coords, effect)
 
 
 func add_power(combat: CombatState, power: BaseEffect) -> void:

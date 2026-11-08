@@ -16,6 +16,7 @@ var to_draw_top := false  # goes on top of the draw pile after it's played, inst
 var grid_actions: Array[BaseAction] = []  # each a GridAction, or a RepeatAction around one; drawn with {render:N}
 var augments: Array[BaseAugment] = []  # applied upgrades, shown as icons above the card
 var max_augments := 1  # raise for cards that say they hold more
+var free_on_turn := -1  # costs 0 on this combat turn (Sacred Blessing); see CombatState.cost_of
 
 
 ## units[i], cells[i], rotations[i] = the grid, cell and rotation chosen for grid_action(i), in order.

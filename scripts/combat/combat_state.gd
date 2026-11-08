@@ -19,6 +19,9 @@ var animator: Callable  # set by the combat scene: plays one batch of changes, a
 ## Set by the combat scene: lets the player pick cards, awaited by choose_cards().
 ## Gets {cards, in_hand, count, prompt}; returns the picked cards.
 var chooser: Callable
+## Set by the combat scene: lets the player move one enemy part aimed at them, awaited by
+## relocate_intents(). Gets {part, min_hits}; returns the part's new cell (its old one to keep it).
+var relocator: Callable
 var _changes: Array[Dictionary] = []  # recorded since the last flush
 
 var max_energy := 3
@@ -26,6 +29,10 @@ var energy := 0
 var turn := 0
 var exhausted_this_turn := 0  # cards exhausted since the player's turn started
 var exhausted_this_combat := 0
+var played_this_turn: Array[BaseCard] = []  # cards the player started playing this turn, in order
+var player_tiles_destroyed := 0  # player tiles damaged this combat, counting a healed tile again (Bloodlust Strike)
+var extra_turns := 0  # player turns to take right after this one, skipping the enemies (Chronokinesis)
+var end_turn_requested := false  # a card asked to end the turn once it has resolved; the scene does it
 var playing: BaseCard  # the card whose effect is running now, for powers that react per card
 
 
@@ -40,6 +47,8 @@ func _init(run: Node) -> void:
 ## Called by CombatUnit whenever a tile or a power changes. effect = the tile effect or power, if any.
 func record(unit: CombatUnit, cell: Vector2i, kind: Enum.Change, effect: BaseEffect = null) -> void:
 	_changes.append({unit = unit, cell = cell, kind = kind, effect = effect})
+	if kind == Enum.Change.DAMAGE and unit == player:
+		player_tiles_destroyed += 1
 
 
 ## Plays the changes recorded since the last flush, and returns once they're done.
@@ -67,6 +76,31 @@ func choose_cards(cards: Array[BaseCard], count: int, prompt: String, in_hand: b
 	return picked
 
 
+## Tiles of part that would change something on the player's grid if it went at cell.
+func part_hits(part: EnemyActionPart, cell: Vector2i) -> int:
+	var hits := 0
+	for t in part.tiles:
+		if t.can_inflict(player, cell + t.coords):
+			hits += 1
+	return hits
+
+
+## Taunt: the player moves each enemy part aimed at them this turn, one at a time. Each must still
+## hit at least one tile fewer than where it was. Without a relocator (headless) nothing moves.
+func relocate_intents() -> void:
+	if not relocator.is_valid():
+		return
+	for enemy in enemies:
+		if not enemy is BaseEnemy or enemy.is_dead():
+			continue
+		for action: BaseEnemyAction in enemy.intent_actions:
+			for part in action.parts:
+				if part.side != Enum.Side.PLAYER:
+					continue
+				var min_hits := maxi(0, part_hits(part, part.cell) - 1)
+				part.cell = await relocator.call({part = part, min_hits = min_hits})
+
+
 func draw(amount: int) -> void:
 	for i in amount:
 		if hand.size() >= HAND_LIMIT:
@@ -80,20 +114,32 @@ func draw(amount: int) -> void:
 		hand.append(draw_pile.pop_back())
 
 
+## Puts a new card in the hand, or on the discard pile if the hand is full.
+func add_to_hand(card: BaseCard) -> void:
+	if hand.size() >= HAND_LIMIT:
+		discard_pile.append(card)
+	else:
+		hand.append(card)
+
+
 ## Retain cards stay in hand.
 func discard_hand() -> void:
 	discard_pile.append_array(hand.filter(func(c: BaseCard) -> bool: return not c.retain))
 	hand.assign(hand.filter(func(c: BaseCard) -> bool: return c.retain))
 
 
-func start_turn() -> void:
+## replan: false on an extra turn, so the enemies keep the intents they already showed.
+func start_turn(replan := true) -> void:
 	turn += 1
 	exhausted_this_turn = 0
+	played_this_turn.clear()
 	energy = max_energy
 	if turn == 1:
 		await player.fire(Enum.Trigger.COMBAT_START, self)
 	await player.on_turn_start(self)
 	draw(DRAW_PER_TURN - player.power_amount(ScreechPower))
+	if not replan:
+		return
 	for e in enemies:
 		var enemy := e as BaseEnemy
 		if enemy and not enemy.is_dead():
@@ -103,6 +149,10 @@ func start_turn() -> void:
 func end_turn() -> void:
 	discard_hand()
 	await player.on_turn_end(self)
+	if extra_turns > 0 and not is_lost() and not is_won():
+		extra_turns -= 1
+		await start_turn(false)
+		return
 	for e in enemies.duplicate():  # enemies spawned this turn wait for the next one
 		if is_lost():
 			return  # the fight is lost; don't start another turn
@@ -144,9 +194,10 @@ func can_afford(card: BaseCard) -> bool:
 	return card.x_cost or cost_of(card) <= energy
 
 
-## What card costs now: Shiver adds 1 to the next card.
+## What card costs now: 0 on its free_on_turn, and Shiver adds 1 to the next card.
 func cost_of(card: BaseCard) -> int:
-	return card.cost + player.power_amount(ShiverPower)
+	var base := 0 if card.free_on_turn == turn else card.cost
+	return base + player.power_amount(ShiverPower)
 
 
 ## Energy an X-cost card gets to use: all of it, minus Shiver's extra 1.
@@ -163,6 +214,7 @@ func play_card(card: BaseCard, units: Array[CombatUnit], cells: Array[Vector2i],
 		return false
 	energy = 0 if card.x_cost else energy - cost_of(card)
 	hand.erase(card)
+	played_this_turn.append(card)
 	playing = card
 	await card.execute(self, units, cells, rotations)
 	if card.type == Enum.CardType.ATTACK and EchoPower.use(player):
@@ -171,6 +223,7 @@ func play_card(card: BaseCard, units: Array[CombatUnit], cells: Array[Vector2i],
 	for power in player.statuses.duplicate():
 		if power is BasePower:
 			power.on_card_played(self, player, card)
+	await flush()  # what those powers changed (Hallowed Knight's cleanse)
 	if card.exhaust:
 		exhaust(card)
 	elif card.to_draw_top:
@@ -196,6 +249,9 @@ func exhaust(card: BaseCard) -> void:
 		other.on_card_exhausted(self)
 	if playing:
 		playing.on_card_exhausted(self)
+	for power in player.statuses.duplicate():
+		if power is BasePower:
+			power.on_card_exhausted(self, player, card)
 
 
 ## The unit whose turn it is: the player, or the enemy taking its turn. Null between turns.
