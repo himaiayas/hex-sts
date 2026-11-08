@@ -18,6 +18,10 @@ func get_color() -> Color:
 	return Color("#ffd24a")
 
 
+func get_icon() -> Texture2D:
+	return preload("res://assets/grid_effects/heroic.png")
+
+
 ## Strength unit gets from its Heroic tiles right now: 1 per tile whose neighbours are all damaged.
 static func strength(unit: CombatUnit) -> int:
 	var total := 0

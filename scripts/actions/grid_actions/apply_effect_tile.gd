@@ -23,6 +23,9 @@ func get_color()->Color:
 func get_icon() -> Texture2D:
 	return effect.get_icon()
 
+func describe() -> String:
+	return effect.description
+
 func display_name() -> String:
 	return effect.name
 

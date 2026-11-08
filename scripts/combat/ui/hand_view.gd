@@ -257,9 +257,7 @@ func _update_keywords(delta: float) -> void:
 
 func _show_keywords(card: BaseCard) -> void:
 	InfoPanel.clear(_keyword_box)
-	for keyword in RenderCard.keywords_in(card.get_description()):
-		var text := Keywords.describe(keyword)
-		if not text.is_empty():
-			_keyword_box.add_child(InfoPanel.make(keyword, text))
+	for entry in HoverInfo.keyword_entries(card):
+		_keyword_box.add_child(HoverInfo.make_panel(entry))
 	_keyword_box.reset_size()
 	_keyword_box.visible = _keyword_box.get_child_count() > 0

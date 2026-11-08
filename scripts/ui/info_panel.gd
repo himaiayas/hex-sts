@@ -12,7 +12,8 @@ const COLOR_TITLE := Color(1, 0.831373, 0.352941)
 const BODY_FONT_SIZE := 22
 
 
-static func make(title: String, body: String, title_color := COLOR_TITLE) -> PanelContainer:
+## icon: drawn left of the title (a tile's hex, for pattern tiles on cards).
+static func make(title: String, body: String, title_color := COLOR_TITLE, icon: Control = null) -> PanelContainer:
 	var style := StyleBoxFlat.new()
 	style.bg_color = COLOR_BG
 	style.border_color = COLOR_BORDER
@@ -31,7 +32,15 @@ static func make(title: String, body: String, title_color := COLOR_TITLE) -> Pan
 	body_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	body_label.custom_minimum_size.x = WIDTH - 26
 	body_label.add_theme_font_size_override("font_size", BODY_FONT_SIZE)
-	rows.add_child(title_label)
+	if icon:
+		var title_row := HBoxContainer.new()
+		title_row.add_theme_constant_override("separation", 8)
+		icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		title_row.add_child(icon)
+		title_row.add_child(title_label)
+		rows.add_child(title_row)
+	else:
+		rows.add_child(title_label)
 	rows.add_child(body_label)
 	panel.add_child(rows)
 	return panel

@@ -8,6 +8,7 @@ extends CanvasLayer
 
 const RenderCard := preload("res://scripts/cards/render_card.gd")
 const LAYER := 50  # above every modal
+const ICON_SIZE := 40.0  # a pattern tile's hex in its panel
 
 ## Optional: return true to show nothing (e.g. a modal covers these controls).
 var is_blocked := Callable()
@@ -40,13 +41,31 @@ func clear() -> void:
 	_targets.clear()
 
 
+## [title, body, icon tile or null]: each kind of tile in the card's patterns first, with its hex
+## as the icon, then the description's keywords that aren't one of those tiles.
 static func keyword_entries(card: BaseCard) -> Array:
 	var entries := []
+	var titles: Array[String] = []
+	for i in card.grid_actions.size():
+		for t in card.pattern(i).tiles:
+			if t.display_name() not in titles and not t.describe().is_empty():
+				titles.append(t.display_name())
+				entries.append([t.display_name(), t.describe(), t])
 	for keyword in RenderCard.keywords_in(card.get_description()):
 		var text := Keywords.describe(keyword)
-		if not text.is_empty():
-			entries.append([keyword, text])
+		if not text.is_empty() and keyword not in titles:
+			titles.append(keyword)
+			entries.append([keyword, text, null])
 	return entries
+
+
+## The panel for one keyword_entries() entry.
+static func make_panel(entry: Array) -> PanelContainer:
+	var icon: Control = null
+	if entry.size() > 2 and entry[2] is BaseActionTile:
+		var tiles: Array[BaseActionTile] = [entry[2].copy_at(Vector2i.ZERO)]
+		icon = PatternView.new(GridAction.new(Enum.TargetType.ENEMY, tiles), ICON_SIZE, ICON_SIZE)
+	return InfoPanel.make(entry[0], entry[1], InfoPanel.COLOR_TITLE, icon)
 
 
 func _process(delta: float) -> void:
@@ -62,7 +81,7 @@ func _process(delta: float) -> void:
 		if _timer > 0.0:
 			return
 		for entry in _targets[_current].entries:
-			_box.add_child(InfoPanel.make(entry[0], entry[1]))
+			_box.add_child(make_panel(entry))
 		_box.reset_size()
 		_box.show()
 	# Every frame, because the box only knows its wrapped height after a layout pass.
