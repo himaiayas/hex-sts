@@ -1,7 +1,10 @@
 class_name Mummy
 extends BaseEnemy
 
-## Floor 2, Normal.
+## Floor 2, Normal. Cycles Curse Wrap -> Pierce. Wrapped: the first Attack card each player turn
+## deals it half damage.
+
+const CURSE_WRAP := 3
 
 
 func _init() -> void:
@@ -16,4 +19,13 @@ func _init() -> void:
 	]
 	super("Mummy", CombatUnit.make_hex_health(coords))
 	sprite = preload("res://assets/enemies/floor_2/mummy.png")
-	actions = []
+	var lance: Array[BaseActionTile] = []
+	for r in 2:
+		for q in 5:
+			lance.append(DamageTile.new(Vector2i(q, r), true))
+	actions = [
+		EnemyApplyPower.new("Curse Wrap", "Your next Defense card places %d fewer Shield or Plate." % CURSE_WRAP, CurseWrapPower.new(CURSE_WRAP), true),
+		EnemyHit.new("Pierce", "Hit 10 tiles in 2 rows with Pierce.", lance),
+	]
+	p1_cycle = [0, 1]
+	statuses.append(WrappedPower.new())

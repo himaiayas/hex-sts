@@ -14,6 +14,10 @@ func _init(_amount := 1) -> void:
 	super("Multi-head", "Attacks once per head. Losing %d tiles in one of your turns cuts off a head, once a turn." % CUT, _amount)
 
 
+func get_description() -> String:
+	return "%s left: attacks once per head. Losing %d tiles in one of your turns cuts one off, once a turn." % [plural(amount, "head"), CUT]
+
+
 func on_trigger(trigger: Enum.Trigger, combat: CombatState, unit: CombatUnit, _cell: Vector2i) -> void:
 	match trigger:
 		Enum.Trigger.TURN_END:  # the opponent's turn comes next

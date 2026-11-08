@@ -15,6 +15,13 @@ func _init(_amount := 1, _guard := 0) -> void:
 		description += " Not if it lost %d or more tiles since its last turn." % guard
 
 
+func get_description() -> String:
+	var text := "At the start of its turn, heals %s." % plural(amount, "damaged tile")
+	if guard > 0:
+		text += " Not if it lost %d or more tiles since its last turn." % guard
+	return text
+
+
 func on_trigger(trigger: Enum.Trigger, combat: CombatState, unit: CombatUnit, _cell: Vector2i) -> void:
 	match trigger:
 		Enum.Trigger.ON_HIT:

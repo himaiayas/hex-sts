@@ -16,6 +16,13 @@ func _init(_amount := 1, _this_turn := false) -> void:
 		this_turn = _amount
 
 
+func get_description() -> String:
+	var text := "Each attack also damages %s next to the tiles it hit, if any are left." % plural(amount, "random tile")
+	if this_turn > 0:
+		text += " %d of it ends this turn." % this_turn
+	return text
+
+
 func on_trigger(trigger: Enum.Trigger, _combat: CombatState, unit: CombatUnit, _cell: Vector2i) -> void:
 	if trigger == Enum.Trigger.TURN_END and this_turn > 0:
 		amount -= this_turn

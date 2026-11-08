@@ -1,7 +1,11 @@
 class_name Warewolf
 extends BaseEnemy
 
-## Floor 2, Normal.
+## Floor 2, Normal. Human (Guard) and Wolf (Howl & Maul) take turns. Its form is the one in its intent:
+## New Moon in Human form, Full Moon in Wolf form, where it's red and every Attack card hits it harder.
+## ponytail: Wolf form is the art tinted red until there's Human art; then swap idle_frames instead.
+
+const WOLF_TINT := Color(1.0, 0.45, 0.45)
 
 
 func _init() -> void:
@@ -18,4 +22,17 @@ func _init() -> void:
 	]
 	super("Warewolf", CombatUnit.make_hex_health(coords))
 	sprite = preload("res://assets/enemies/floor_2/warewolf.png")
-	actions = []
+	actions = [WarewolfHuman.new(), WarewolfWolf.new()]
+	p1_cycle = [0, 1]
+	statuses.append(NewMoonPower.new())
+
+
+## Swaps New Moon / Full Moon to match the planned form; the new badge flashes.
+func plan(combat: CombatState) -> void:
+	super(combat)
+	var wolf := not intent_actions.is_empty() and intent_actions[0] is WarewolfWolf
+	tint = WOLF_TINT if wolf else Color.WHITE
+	if power_amount(FullMoonPower if wolf else NewMoonPower) > 0:
+		return
+	statuses.assign(statuses.filter(func(p: BaseEffect) -> bool: return not (p is FullMoonPower or p is NewMoonPower)))
+	add_power(combat, FullMoonPower.new() if wolf else NewMoonPower.new())

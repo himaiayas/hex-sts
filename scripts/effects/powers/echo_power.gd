@@ -9,6 +9,10 @@ func _init(_amount := 1) -> void:
 	super("Echo", "Your next Attack this turn is played twice.", _amount)
 
 
+func get_description() -> String:
+	return "Your next %s this turn %s played twice." % ["Attack" if amount == 1 else "%d Attacks" % amount, "is" if amount == 1 else "are"]
+
+
 func on_trigger(trigger: Enum.Trigger, _combat: CombatState, unit: CombatUnit, _cell: Vector2i) -> void:
 	if trigger == Enum.Trigger.TURN_END:
 		unit.statuses.erase(self)

@@ -1,7 +1,7 @@
 class_name CombatState
 extends RefCounted
 
-signal enemy_spawned(enemy: CombatUnit, in_place_of: CombatUnit)  # the scene shows it in in_place_of's slot
+signal enemy_spawned(enemy: CombatUnit, in_place_of: CombatUnit)  # the scene shows it in in_place_of's slot, or beside when null
 
 
 # Temporary state for combat encounter
@@ -22,6 +22,7 @@ var max_energy := 3
 var energy := 0
 var turn := 0
 var exhausted_this_turn := 0  # cards exhausted since the player's turn started
+var playing: BaseCard  # the card whose effect is running now, for powers that react per card
 
 
 func _init(run: Node) -> void:
@@ -74,7 +75,7 @@ func start_turn() -> void:
 	if turn == 1:
 		await player.fire(Enum.Trigger.COMBAT_START, self)
 	await player.on_turn_start(self)
-	draw(DRAW_PER_TURN)
+	draw(DRAW_PER_TURN - player.power_amount(ScreechPower))
 	for e in enemies:
 		var enemy := e as BaseEnemy
 		if enemy and not enemy.is_dead():
@@ -99,15 +100,25 @@ func end_turn() -> void:
 	await start_turn()
 
 
-## Adds enemy mid-fight, right after in_place_of, which leaves the field (Slime's Split).
-## It plans its first move at the next player turn.
-func spawn(enemy: CombatUnit, in_place_of: CombatUnit) -> void:
-	enemies.insert(enemies.find(in_place_of) + 1, enemy)
-	enemy_spawned.emit(enemy, in_place_of)
+## Adds enemy mid-fight, right after next_to. With replace, next_to leaves the field (Slime's Split);
+## without, it stays (Lich's Summon). The new enemy plans its first move at the next player turn.
+func spawn(enemy: CombatUnit, next_to: CombatUnit, replace := true) -> void:
+	enemies.insert(enemies.find(next_to) + 1, enemy)
+	enemy_spawned.emit(enemy, next_to if replace else null)
 
 
 func can_play(card: BaseCard) -> bool:
-	return card in hand and (card.x_cost or card.cost <= energy)
+	return card in hand and (card.x_cost or cost_of(card) <= energy)
+
+
+## What card costs now: Shiver adds 1 to the next card.
+func cost_of(card: BaseCard) -> int:
+	return card.cost + player.power_amount(ShiverPower)
+
+
+## Energy an X-cost card gets to use: all of it, minus Shiver's extra 1.
+func x_energy() -> int:
+	return maxi(0, energy - player.power_amount(ShiverPower))
 
 
 ## Pays the cost, runs each grid action on units[i] at cells[i], then discards the card.
@@ -119,7 +130,7 @@ func can_play(card: BaseCard) -> bool:
 func play_card(card: BaseCard, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int], picks: Array[BaseCard] = [], tile_picks: Array[Vector2i] = []) -> bool:
 	if not can_play(card):
 		return false
-	energy -= energy if card.x_cost else card.cost
+	energy = 0 if card.x_cost else energy - cost_of(card)
 	hand.erase(card)
 	for pick in picks:
 		if card.pick_from_discard > 0:
@@ -130,9 +141,14 @@ func play_card(card: BaseCard, units: Array[CombatUnit], cells: Array[Vector2i],
 	for cell in tile_picks:
 		card.pick_tile.inflict(self, player, cell)
 	await flush()
+	playing = card
 	await card.execute(self, units, cells, rotations)
 	if card.type == Enum.CardType.ATTACK and EchoPower.use(player):
 		await card.execute(self, units, cells, rotations)
+	playing = null
+	for power in player.statuses.duplicate():
+		if power is BasePower:
+			power.on_card_played(self, player, card)
 	if card.exhaust:
 		exhaust(card)
 	elif card.to_draw_top:

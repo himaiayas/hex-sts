@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Ogre / Magic Golem / Dark Elf / Griffin / Hydra / Dragon / Dracula / Ramiel. Exit code = number of failures.
+## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Ogre / Magic Golem / Dark Elf / Griffin / Hydra / Skeleton / Bat / Zombie / Frangenstein / Jack O Lantern / Lil Ghost / Mummy / Warewolf / Lich / Dragon / Dracula / Ramiel. Exit code = number of failures.
 ## godot --headless --path . -s res://scripts/enemies/enemy_check.gd
 
 var _failures := 0
@@ -43,6 +43,15 @@ func _initialize() -> void:
 	await _check_dark_elf(combat)
 	await _check_griffin(combat)
 	await _check_hydra(combat)
+	await _check_skeleton(combat)
+	await _check_bat(combat)
+	await _check_zombie(combat)
+	await _check_frangenstein(combat)
+	await _check_jack(combat)
+	await _check_lil_ghost(combat)
+	await _check_mummy(combat)
+	await _check_warewolf(combat)
+	await _check_lich(combat)
 	await _check_dragon(combat)
 	await _check_dracula(combat)
 	await _check_ramiel(combat)
@@ -367,6 +376,467 @@ func _check_hydra(combat: CombatState) -> void:
 	_heal(player)
 	await hydra.take_turn(combat)
 	_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == 0, "a headless hydra attacked")
+
+
+
+func _check_skeleton(combat: CombatState) -> void:
+	var skeleton := Skeleton.new()
+	combat.enemies = [skeleton]
+	var player := combat.player
+	_check(_cells_with(skeleton, Enum.HealthTileEnum.SHIELDED) == Skeleton.BONE_ARMOR, "skeleton should start with %d shields" % Skeleton.BONE_ARMOR)
+
+	# Bone Throw (2 hits) -> Rattle, looped.
+	var names: Array[String] = []
+	for i in 4:
+		_heal(player)
+		_heal(skeleton)
+		skeleton.plan(combat)
+		var action := skeleton.intent_actions[0]
+		names.append(action.action_name)
+		var expect := {}
+		for part in action.parts:
+			for cell in _covered(player, part):
+				expect[cell] = true
+		await skeleton.on_turn_start(combat)
+		await skeleton.take_turn(combat)
+		if action is SkeletonRattle:
+			_check(_cells_with(skeleton, Enum.HealthTileEnum.SHIELDED) == 7 and skeleton.power_amount(RetaliatePower) == SkeletonRattle.RETALIATE,
+				"rattle should shield 7 and give Retaliate 3")
+		else:
+			_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == expect.size(), "bone throw didn't damage what its intent showed")
+		await skeleton.on_turn_end(combat)
+	_check(names == ["Bone Throw", "Rattle", "Bone Throw", "Rattle"], "skeleton order: %s" % [names])
+
+	# Retaliate: a player hit on a Shield damages 3 player tiles; gone at its next turn start.
+	_heal(player)
+	_heal(skeleton)
+	await skeleton.on_turn_start(combat)  # clears the Retaliate left from the loop's last Rattle
+	await skeleton.actions[1].execute(combat, skeleton)
+	await skeleton.on_turn_end(combat)
+	var shielded: Vector2i = skeleton.health.keys().filter(func(c: Vector2i) -> bool: return skeleton.health[c].hp == Enum.HealthTileEnum.SHIELDED)[0]
+	player.in_turn = true
+	skeleton.damage_health_tile(combat, shielded)
+	player.in_turn = false
+	_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == SkeletonRattle.RETALIATE, "retaliate should damage 3 player tiles")
+	await skeleton.on_turn_start(combat)
+	_check(skeleton.power_amount(RetaliatePower) == 0, "retaliate should end at its turn start")
+	await skeleton.on_turn_end(combat)
+
+
+
+func _check_bat(combat: CombatState) -> void:
+	var bat := Bat.new()
+	combat.enemies = [bat]
+	var player := combat.player
+
+	# Bite damages what its intent showed and heals 3 of its own; Screech puts Screech on the player.
+	var names: Array[String] = []
+	for i in 4:
+		_heal(player)
+		_heal(bat)
+		player.statuses.clear()
+		for cell in bat.health.keys().slice(0, 5):
+			bat.health[cell].hp = Enum.HealthTileEnum.DAMAGED
+		bat.plan(combat)
+		var action := bat.intent_actions[0]
+		names.append(action.action_name)
+		var hit: Array = _covered(player, action.parts[0]) if not action.parts.is_empty() else []
+		await bat.take_turn(combat)
+		if action is BatBite:
+			_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == hit.size(), "bite didn't damage what its intent showed")
+			_check(_cells_with(bat, Enum.HealthTileEnum.DAMAGED) == 5 - BatBite.HEAL, "bite should heal 3")
+		else:
+			_check(player.power_amount(ScreechPower) == 1, "screech should put Screech on the player")
+	_check(names == ["Bite", "Screech", "Bite", "Screech"], "bat order: %s" % [names])
+
+	# Screech doesn't stack, and the next turn draws 1 fewer, then it's gone.
+	await bat.actions[1].execute(combat, bat)
+	_check(player.power_amount(ScreechPower) == 1, "screech stacked")
+	combat.discard_hand()
+	var kept := combat.hand.size()  # Retain cards stay in hand
+	await combat.start_turn()
+	_check(combat.hand.size() - kept == CombatState.DRAW_PER_TURN - 1, "screech should draw %d, drew %d" % [CombatState.DRAW_PER_TURN - 1, combat.hand.size() - kept])
+	_check(player.power_amount(ScreechPower) == 1, "screech should stay through the player's turn")
+	await player.on_turn_end(combat)
+	_check(player.power_amount(ScreechPower) == 0, "screech should go away when the player's turn ends")
+	combat.discard_hand()
+	kept = combat.hand.size()
+	await combat.start_turn()
+	_check(combat.hand.size() - kept == CombatState.DRAW_PER_TURN, "the turn after screech should draw normally, drew %d" % (combat.hand.size() - kept))
+	await player.on_turn_end(combat)
+
+
+
+func _check_zombie(combat: CombatState) -> void:
+	var zombie := Zombie.new()
+	combat.enemies = [zombie]
+	var player := combat.player
+
+	# Lumber -> Groan -> Rot Bite, looped. Rot Bite poisons the tiles past its ends.
+	var names: Array[String] = []
+	for i in 6:
+		_heal(player)
+		_heal(zombie)
+		zombie.plan(combat)
+		var action := zombie.intent_actions[0]
+		names.append(action.action_name)
+		var expect_damaged := {}
+		var expect_poisoned := {}
+		for part in action.parts:
+			for t in part.tiles:
+				var cell: Vector2i = part.cell + t.coords
+				if player.health.has(cell):
+					if t is DamageTile:
+						expect_damaged[cell] = true
+					else:
+						expect_poisoned[cell] = true
+		await zombie.take_turn(combat)
+		if action is EnemyShieldSelf:
+			_check(_cells_with(zombie, Enum.HealthTileEnum.SHIELDED) == 6, "groan should shield 6")
+		else:
+			var poisoned := player.health.keys().filter(func(c: Vector2i) -> bool: return player.health[c].has_effect(PoisonTileEffect))
+			_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == expect_damaged.size() and poisoned.size() == expect_poisoned.size(),
+				"%s didn't match its intent" % action.action_name)
+	_check(names == ["Lumber", "Groan", "Rot Bite", "Lumber", "Groan", "Rot Bite"], "zombie order: %s" % [names])
+
+	# Rise: the first death brings back 12 tiles at once and uses it up; the second death is final.
+	_heal(zombie)
+	for cell in zombie.health:
+		zombie.damage_health_tile(combat, cell)
+	_check(not zombie.is_dead() and _cells_with(zombie, Enum.HealthTileEnum.UNDAMAGED) == Zombie.RISE and zombie.power_amount(RisePower) == 0,
+		"zombie should rise with %d tiles" % Zombie.RISE)
+	for cell in zombie.health:
+		zombie.damage_health_tile(combat, cell)
+	_check(zombie.is_dead(), "zombie rose twice")
+
+
+
+func _check_frangenstein(combat: CombatState) -> void:
+	var frank := Frangenstein.new()
+	combat.enemies = [frank]
+	var player := combat.player
+	var plated := frank.health.values().filter(func(t: HealthTile) -> bool: return t.has_effect(PlateTileEffect)).size()
+	_check(plated == Frangenstein.STITCHED, "frangenstein should start with %d Plate, has %d" % [Frangenstein.STITCHED, plated])
+
+	# Thunder Fist -> Static (through Shield) -> Overcharge (Strength 2), then Overcharge stacks.
+	var names: Array[String] = []
+	for i in 3:
+		_heal(player)
+		for tile in player.health.values():
+			tile.hp = Enum.HealthTileEnum.SHIELDED if i == 1 else Enum.HealthTileEnum.UNDAMAGED
+		frank.plan(combat)
+		var action := frank.intent_actions[0]
+		names.append(action.action_name)
+		var hit: Array = _covered(player, action.parts[0]) if not action.parts.is_empty() else []
+		await frank.take_turn(combat)
+		if action is EnemyApplyPower:
+			_check(frank.power_amount(StrengthPower) == Frangenstein.OVERCHARGE, "overcharge should give Strength %d" % Frangenstein.OVERCHARGE)
+		else:
+			_check(not hit.is_empty() and hit.all(func(c: Vector2i) -> bool: return player.health[c].hp == Enum.HealthTileEnum.DAMAGED)
+				and _cells_with(player, Enum.HealthTileEnum.DAMAGED) == hit.size(), "%s didn't damage what its intent showed" % action.action_name)
+	_check(names == ["Thunder Fist", "Static", "Overcharge"], "frangenstein order: %s" % [names])
+	_check(frank.actions[0].parts[0].tiles.size() == 15, "thunder fist should be 15 tiles")
+	await frank.actions[2].execute(combat, frank)
+	_check(frank.power_amount(StrengthPower) == 2 * Frangenstein.OVERCHARGE, "overcharge should stack")
+
+
+
+func _check_jack(combat: CombatState) -> void:
+	var jack := JackOLantern.new()
+	combat.enemies = [jack]
+	var player := combat.player
+
+	# Flame Spit (with Poison) -> Grin (Strength 2) -> Pumpkin Smash. Patterns are 7 + 2 Poison and 11.
+	var names: Array[String] = []
+	for i in 2:
+		_heal(player)
+		jack.plan(combat)
+		var action := jack.intent_actions[0]
+		names.append(action.action_name)
+		var hit: Array = []
+		for part in action.parts:
+			for t in part.tiles:
+				if t is DamageTile and player.health.has(part.cell + t.coords):
+					hit.append(part.cell + t.coords)
+		await jack.take_turn(combat)
+		if action is EnemyApplyPower:
+			_check(jack.power_amount(StrengthPower) == JackOLantern.GRIN, "grin should give Strength %d" % JackOLantern.GRIN)
+		else:
+			_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == hit.size(), "flame spit didn't damage what its intent showed")
+	jack.plan(combat)
+	names.append(jack.intent_actions[0].action_name)
+	_check(names == ["Flame Spit", "Grin", "Pumpkin Smash"], "jack order: %s" % [names])
+	_check(jack.actions[0].parts[0].tiles.size() == 9 and jack.actions[2].parts[0].tiles.size() == 11, "jack patterns should be 7 + 2 and 11 tiles")
+
+	# Burning Head: the 6th tile one Attack card destroys burns 3 player tiles, once per card.
+	# Non-Attack cards and hits outside a card don't count.
+	var cells: Array = jack.health.keys()
+	_heal(player)
+	_heal(jack)
+	combat.playing = Strike.new()
+	for i in 5:
+		jack.damage_health_tile(combat, cells[i])
+	_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == 0, "burning head burned before 6 tiles")
+	jack.damage_health_tile(combat, cells[5])
+	_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == JackOLantern.BURN, "burning head should burn %d" % JackOLantern.BURN)
+	for i in range(6, 14):
+		jack.damage_health_tile(combat, cells[i])
+	_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == JackOLantern.BURN, "burning head burned twice for one card")
+	combat.playing = Strike.new()
+	for i in range(14, 20):
+		jack.damage_health_tile(combat, cells[i])
+	_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == 2 * JackOLantern.BURN, "a new card should count again")
+	combat.playing = ShieldPlayer.new()
+	for i in range(20, 26):
+		jack.damage_health_tile(combat, cells[i])
+	combat.playing = null
+	for i in range(26, 32):
+		jack.damage_health_tile(combat, cells[i])
+	_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == 2 * JackOLantern.BURN, "only Attack cards should count")
+
+
+
+func _check_lil_ghost(combat: CombatState) -> void:
+	var ghost := LilGhost.new()
+	combat.enemies = [ghost]
+	var player := combat.player
+	player.statuses.clear()
+
+	# Boo (3 scattered hits) -> Shiver (on the player).
+	var names: Array[String] = []
+	for i in 2:
+		_heal(player)
+		ghost.plan(combat)
+		var action := ghost.intent_actions[0]
+		names.append(action.action_name)
+		var expect := {}
+		for part in action.parts:
+			for cell in _covered(player, part):
+				expect[cell] = true
+		await ghost.take_turn(combat)
+		if action is EnemyHit:
+			_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == expect.size(), "boo didn't damage what its intent showed")
+		else:
+			_check(player.power_amount(ShiverPower) == 1, "shiver should put Shiver on the player")
+	_check(names == ["Boo", "Shiver"], "lil ghost order: %s" % [names])
+
+	# Shiver: the next card costs 1 more, then it's gone. It doesn't stack, and ends with the player's turn.
+	await ghost.actions[1].execute(combat, ghost)
+	_check(player.power_amount(ShiverPower) == 1, "shiver stacked")
+	var card := ShieldPlayer.new()
+	combat.hand.append(card)
+	combat.energy = card.cost
+	_check(combat.cost_of(card) == card.cost + 1 and not combat.can_play(card), "shiver should add 1 to the cost")
+	combat.energy = card.cost + 1
+	_heal(player)
+	await combat.play_card(card, [player], [player.health.keys()[0]], [0])
+	_check(combat.energy == 0 and player.power_amount(ShiverPower) == 0, "shiver should be paid once, then gone")
+	await ghost.actions[1].execute(combat, ghost)
+	await player.on_turn_end(combat)
+	_check(player.power_amount(ShiverPower) == 0, "shiver should end with the player's turn")
+	# An X-cost card gets 1 less X under Shiver, spends all the energy, and uses Shiver up.
+	await ghost.actions[1].execute(combat, ghost)
+	combat.energy = 3
+	var flurry := Flurry.new()
+	combat.hand.append(flurry)
+	_check(combat.x_energy() == 2 and flurry.clicks(combat.x_energy()) == 2, "shiver should take 1 off X")
+	var targets: Array[CombatUnit] = [ghost, ghost]
+	var cells: Array[Vector2i] = [ghost.health.keys()[0], ghost.health.keys()[1]]
+	await combat.play_card(flurry, targets, cells, [0, 0])
+	_check(combat.energy == 0 and player.power_amount(ShiverPower) == 0 and combat.x_energy() == 0, "an X-cost card should spend everything and use Shiver up")
+
+	# Ethereal: one Attack card lands 5 hits, the rest miss; a new card starts over; other cards aren't capped.
+	cells.assign(ghost.health.keys())
+	_heal(ghost)
+	combat.playing = Strike.new()
+	var landed := 0
+	for i in 8:
+		if ghost.damage_health_tile(combat, cells[i]):
+			landed += 1
+	_check(landed == LilGhost.ETHEREAL, "ethereal should let %d hits land, let %d" % [LilGhost.ETHEREAL, landed])
+	combat.playing = Strike.new()
+	_check(ghost.damage_health_tile(combat, cells[8]), "a new card should hit again")
+	combat.playing = ShieldPlayer.new()
+	landed = 0
+	for i in range(9, 17):
+		if ghost.damage_health_tile(combat, cells[i]):
+			landed += 1
+	combat.playing = null
+	_check(landed == 8, "ethereal capped a non-Attack card")
+
+
+
+func _check_mummy(combat: CombatState) -> void:
+	var mummy := Mummy.new()
+	combat.enemies = [mummy]
+	var player := combat.player
+	player.statuses.clear()
+
+	# Curse Wrap (on the player) -> Pierce (through Shield).
+	var names: Array[String] = []
+	for i in 2:
+		_heal(player)
+		for tile in player.health.values():
+			tile.hp = Enum.HealthTileEnum.SHIELDED
+		mummy.plan(combat)
+		var action := mummy.intent_actions[0]
+		names.append(action.action_name)
+		var hit: Array = _covered(player, action.parts[0]) if not action.parts.is_empty() else []
+		await mummy.take_turn(combat)
+		if action is EnemyHit:
+			_check(not hit.is_empty() and _cells_with(player, Enum.HealthTileEnum.DAMAGED) == hit.size(), "pierce didn't go through Shield where its intent showed")
+		else:
+			_check(player.power_amount(CurseWrapPower) == Mummy.CURSE_WRAP, "curse wrap should put Curse Wrap 3 on the player")
+	_check(names == ["Curse Wrap", "Pierce"], "mummy order: %s" % [names])
+
+	# Curse Wrap: during a Defense card, the first 3 Shields or Plates fizzle; other cards aren't affected;
+	# it's gone after the Defense card, and at the end of the player's turn.
+	_heal(player)
+	var cells: Array = player.health.keys()
+	combat.playing = Strike.new()
+	player.shield_health_tile(combat, cells[0])
+	combat.playing = ShieldPlayer.new()
+	for i in range(1, 5):
+		player.shield_health_tile(combat, cells[i])
+	player.apply_effect_health_tile(combat, cells[5], PlateTileEffect.new())
+	combat.playing = null
+	_check(_cells_with(player, Enum.HealthTileEnum.SHIELDED) == 2 and player.health[cells[5]].has_effect(PlateTileEffect),
+		"curse wrap should eat 3 Shields of the Defense card only")
+	player.statuses.clear()  # used up outside play_card, so nothing took it off
+	await mummy.actions[0].execute(combat, mummy)
+	var card := ShieldPlayer.new()
+	combat.hand.append(card)
+	combat.energy = card.cost
+	_heal(player)
+	await combat.play_card(card, [player], [cells[0]], [0])
+	_check(_cells_with(player, Enum.HealthTileEnum.SHIELDED) == 0 and player.power_amount(CurseWrapPower) == 0, "curse wrap should eat the card's Shield, then go")
+	await mummy.actions[0].execute(combat, mummy)
+	await player.on_turn_end(combat)
+	_check(player.power_amount(CurseWrapPower) == 0, "curse wrap should end with the player's turn")
+
+	# Wrapped: every other hit of the first Attack card misses; later cards land; it resets each turn.
+	var tiles: Array = mummy.health.keys()
+	_heal(mummy)
+	combat.playing = Strike.new()
+	var landed := 0
+	for i in 6:
+		if mummy.damage_health_tile(combat, tiles[i]):
+			landed += 1
+	_check(landed == 3, "wrapped should halve the first card, landed %d of 6" % landed)
+	combat.playing = Strike.new()
+	_check(mummy.damage_health_tile(combat, tiles[6]) and mummy.damage_health_tile(combat, tiles[7]), "wrapped should only halve the first card")
+	combat.playing = null
+	await mummy.on_turn_end(combat)
+	combat.playing = Strike.new()
+	landed = 0
+	for i in range(8, 12):
+		if mummy.damage_health_tile(combat, tiles[i]):
+			landed += 1
+	combat.playing = null
+	_check(landed == 2, "wrapped should halve the first card again next turn")
+
+
+
+func _check_warewolf(combat: CombatState) -> void:
+	var wolf := Warewolf.new()
+	combat.enemies = [wolf]
+	var player := combat.player
+
+	# Guard (Shield 10 + Hit 5, normal colour) -> Howl & Maul (Strength 1, then Hit 12, red), looped.
+	var names: Array[String] = []
+	for i in 4:
+		_heal(player)
+		_heal(wolf)
+		wolf.plan(combat)
+		var action := wolf.intent_actions[0]
+		names.append(action.action_name)
+		var hit := _covered(player, action.parts[0])
+		var strength := wolf.power_amount(StrengthPower)
+		_check(wolf.tint == (Warewolf.WOLF_TINT if action is WarewolfWolf else Color.WHITE), "warewolf tint doesn't match its form")
+		var full := action is WarewolfWolf
+		_check(wolf.power_amount(FullMoonPower) == int(full) and wolf.power_amount(NewMoonPower) == int(not full), "warewolf should have only %s" % ("Full Moon" if full else "New Moon"))
+		await wolf.take_turn(combat)
+		if action is WarewolfHuman:
+			_check(_cells_with(wolf, Enum.HealthTileEnum.SHIELDED) == WarewolfHuman.SHIELDS, "guard should shield 10")
+			_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == hit.size(), "guard didn't damage what its intent showed")
+		else:
+			_check(wolf.power_amount(StrengthPower) == strength + WarewolfWolf.HOWL, "howl should give 1 Strength")
+			_check(hit.all(func(c: Vector2i) -> bool: return player.health[c].hp == Enum.HealthTileEnum.DAMAGED), "maul missed its intent")
+	_check(names == ["Guard", "Howl & Maul", "Guard", "Howl & Maul"], "warewolf order: %s" % [names])
+
+	# Wolf form: the first hit of each Attack card also hits 3 more tiles. Not in Human form, not other cards.
+	var cells: Array = wolf.health.keys()
+	_heal(wolf)
+	wolf.plan(combat)  # Guard: Human form
+	combat.playing = Strike.new()
+	wolf.damage_health_tile(combat, cells[0])
+	_check(_cells_with(wolf, Enum.HealthTileEnum.DAMAGED) == 1, "human form took extra hits")
+	wolf.plan(combat)  # Howl & Maul: Wolf form
+	combat.playing = Strike.new()
+	wolf.damage_health_tile(combat, cells[1])
+	wolf.damage_health_tile(combat, wolf.health.keys().filter(func(c: Vector2i) -> bool: return wolf.health[c].hp == Enum.HealthTileEnum.UNDAMAGED)[0])
+	_check(_cells_with(wolf, Enum.HealthTileEnum.DAMAGED) == 3 + FullMoonPower.EXTRA, "wolf form should add %d hits once per card" % FullMoonPower.EXTRA)
+	var before := _cells_with(wolf, Enum.HealthTileEnum.DAMAGED)
+	combat.playing = ShieldPlayer.new()
+	wolf.damage_health_tile(combat, wolf.health.keys().filter(func(c: Vector2i) -> bool: return wolf.health[c].hp == Enum.HealthTileEnum.UNDAMAGED)[0])
+	_check(_cells_with(wolf, Enum.HealthTileEnum.DAMAGED) == before + 1, "wolf form took extra hits from a non-Attack card")
+	combat.playing = Strike.new()
+	wolf.damage_health_tile(combat, wolf.health.keys().filter(func(c: Vector2i) -> bool: return wolf.health[c].hp == Enum.HealthTileEnum.UNDAMAGED)[0])
+	combat.playing = null
+	_check(_cells_with(wolf, Enum.HealthTileEnum.DAMAGED) == before + 2 + FullMoonPower.EXTRA, "a new Attack card should add the extra hits again")
+	_check(not FullMoonPower.new().show_amount and not NewMoonPower.new().show_amount, "moon badges shouldn't show an amount")
+
+
+
+func _check_lich(combat: CombatState) -> void:
+	var lich := Lich.new()
+	combat.enemies = [lich, lich.mimic]
+	var player := combat.player
+	_check(lich.companions == [lich.mimic] and lich.mimic.health.size() == 20, "the lich should bring a 20-tile Mimic")
+	_check(lich.power_amount(RegenPower) == Lich.REGEN, "the lich should start with Regen %d" % Lich.REGEN)
+
+	# Summon (a Lil Ghost beside it) -> Soul Drain (Fracture 4) -> Bone Storm (3 hits).
+	var names: Array[String] = []
+	for i in 3:
+		_heal(player)
+		lich.plan(combat)
+		var action := lich.intent_actions[0]
+		names.append(action.action_name)
+		var expect := {}
+		for part in action.parts:
+			for cell in _covered(player, part):
+				expect[cell] = true
+		await lich.take_turn(combat)
+		if action is LichSummon:
+			_check(combat.enemies.size() == 3 and combat.enemies[1] is LilGhost and lich.summons.size() == 1, "summon should add a Lil Ghost beside the lich")
+		elif action.action_name == "Soul Drain":
+			var fractured := player.health.values().filter(func(t: HealthTile) -> bool: return t.has_effect(FractureTileEffect)).size()
+			_check(fractured == 4, "soul drain should fracture 4, fractured %d" % fractured)
+		else:
+			_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == expect.size(), "bone storm didn't damage what its intent showed")
+	_check(names == ["Summon Lil Ghost", "Soul Drain", "Bone Storm"], "lich order: %s" % [names])
+
+	# While its ghost is alive, Soul Drain replaces the Summon.
+	lich.plan(combat)
+	_check(lich.intent_actions[0].action_name == "Soul Drain", "a live ghost should skip the summon: %s" % _rows(lich))
+
+	# Regen heals 5 while the Mimic stands; destroying the Mimic takes it away.
+	_heal(lich)
+	var cells: Array = lich.health.keys()
+	for i in 10:
+		lich.health[cells[i]].hp = Enum.HealthTileEnum.DAMAGED
+	await lich.on_turn_start(combat)
+	await lich.on_turn_end(combat)
+	_check(_cells_with(lich, Enum.HealthTileEnum.DAMAGED) == 10 - Lich.REGEN, "regen should heal %d" % Lich.REGEN)
+	for cell in lich.mimic.health:
+		lich.mimic.damage_health_tile(combat, cell)
+	_check(lich.power_amount(RegenPower) == 0, "destroying the mimic should end the regen")
+
+	# The lich's death takes its ghosts and Mimic with it: the fight is won.
+	_check(not combat.is_won(), "won with the lich alive")
+	for cell in lich.health:
+		lich.damage_health_tile(combat, cell)
+	_check(combat.is_won(), "killing the lich should win the fight")
 
 
 

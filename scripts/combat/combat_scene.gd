@@ -50,6 +50,8 @@ var _aim: TextureRect  # an enemy's sight on the player's sprite, while a move w
 @onready var _player_view: HealthGridView = %PlayerGrid
 @onready var _player_image: UnitImage = %PlayerImage
 @onready var _enemies_box: HBoxContainer = %Enemies
+@onready var _arena: HBoxContainer = $Margin/Layout/Arena
+@onready var _player_side: HBoxContainer = $Margin/Layout/Arena/Player
 @onready var _hand: HandView = %Hand
 @onready var _deck_button: Button = %DeckButton
 @onready var _draw_button: Button = %DrawPileButton
@@ -75,24 +77,29 @@ var _aim: TextureRect  # an enemy's sight on the player's sprite, while a move w
 var _rewards: CombatRewards
 var _over := false  # won or lost: ignore combat input
 var _busy := false  # a card or a turn is playing out: ignore combat input until it's done
+var _hovered_enemy := -1  # index in combat.enemies under the mouse: only its intents show at full strength
 
 
 func _ready() -> void:
 	if RunState.deck.is_empty():
 		RunState.start_new_run()
 	_floor_background.texture = RunState.combat_background()
+	if testing and _room_type() != Enum.RoomType.BOSS_COMBAT and _floor_of(testing) > 0:
+		_floor_background.texture = RunState.FLOOR_COMBAT_BACKGROUNDS[_floor_of(testing) - 1]  # the test monster's floor
 	combat = RunState.start_combat()
 	for enemy in _enemies_for(_room_type()):
 		combat.enemies.append(enemy)
 
 	_hand.card_clicked.connect(_on_card_clicked)
 	_hand.card_cast.connect(_on_card_cast)
+	_hand.cost_of = combat.cost_of
 	_player_view.setup(combat.player, true)
 	_player_view.cell_clicked.connect(_on_cell_clicked)
 	combat.player.blocked.connect(_on_player_blocked)
 	combat.enemy_spawned.connect(_on_enemy_spawned)
 	for enemy in combat.enemies:
 		_add_enemy(enemy)
+	_fit_enemies()
 
 	combat.animator = _animate
 	_busy = true
@@ -145,10 +152,66 @@ func _add_enemy(enemy: BaseEnemy) -> void:
 	_intent_labels.insert(i, intent_label)
 
 
-## A spawned enemy takes in_place_of's place on screen, with a flash.
+## Which enemy's sprite or grid is under the mouse; the others' intents on the player's grid fade.
+func _update_hovered_enemy() -> void:
+	var hovered := -1
+	for i in _enemy_views.size():
+		var side := _enemy_views[i].get_parent() as Control
+		if side.visible and side.get_global_rect().has_point(get_global_mouse_position()):
+			hovered = i
+	if hovered != _hovered_enemy:
+		_hovered_enemy = hovered
+		_refresh()
+
+
+## Shrinks the enemies' grids and sprites by the same factor until the row fits beside the player's side,
+## so a crowded fight (summons, Split) never pushes anything off screen. Enemies with shrinks = false
+## (the Lich) keep their size.
+func _fit_enemies() -> void:
+	var margin: MarginContainer = $Margin
+	var room := get_viewport_rect().size.x - margin.get_theme_constant("margin_left") - margin.get_theme_constant("margin_right") \
+		- _player_side.get_combined_minimum_size().x - 2 * _arena.get_theme_constant("separation")
+	var factor := 1.0
+	for attempt in 8:  # the grids' padding doesn't scale, so close in over a few tries
+		var widths := _enemies_width(factor)  # fixed, shrinking
+		if widths.x + widths.y <= room or widths.y <= 0.0:
+			break
+		factor *= maxf(0.1, (room - widths.x) / widths.y) * 0.98
+
+
+## The enemy row's width with the shrinking grids and sprites at factor of their own size:
+## x = the part that doesn't shrink (fixed enemies, gaps), y = the part that does.
+func _enemies_width(factor: float) -> Vector2:
+	var widths := Vector2.ZERO
+	var shown := 0
+	for i in combat.enemies.size():
+		var enemy := combat.enemies[i] as BaseEnemy
+		var view := _enemy_views[i]
+		var slot := _enemy_images[i].get_parent() as Control
+		var f := factor if enemy.shrinks else 1.0
+		view.scale_factor = enemy.grid_scale * f
+		view.refresh()
+		slot.custom_minimum_size = enemy.image_size * f
+		var side := view.get_parent() as HBoxContainer
+		if not side.visible:
+			continue
+		var width := slot.custom_minimum_size.x + view.custom_minimum_size.x
+		if enemy.shrinks:
+			widths.y += width
+		else:
+			widths.x += width
+		widths.x += side.get_theme_constant("separation")
+		shown += 1
+	widths.x += maxi(0, shown - 1) * _enemies_box.get_theme_constant("separation")
+	return widths
+
+
+## A spawned enemy appears with a flash, in in_place_of's place if it has one.
 func _on_enemy_spawned(enemy: CombatUnit, in_place_of: CombatUnit) -> void:
 	_add_enemy(enemy)
-	_view_for(in_place_of).get_parent().hide()
+	if in_place_of:
+		_view_for(in_place_of).get_parent().hide()
+	_fit_enemies()
 	_flash_sprite(_sprite_for(enemy))
 
 
@@ -170,7 +233,7 @@ func _on_card_clicked(card: BaseCard) -> void:
 		return
 	else:
 		_select(card)
-		if card.clicks(combat.energy) == 0:  # an X-cost card with no energy left
+		if card.clicks(combat.x_energy()) == 0:  # an X-cost card with no energy left
 			_play_selected()
 			return
 	_refresh()
@@ -204,7 +267,7 @@ func _on_cell_clicked(unit: CombatUnit, cell: Vector2i) -> void:
 	_units.append(unit)
 	_cells.append(cell)
 	_rotations.append(_rotation)
-	if _cells.size() < selected.clicks(combat.energy): #store intents in _cells, when all grid has been chosen, this condition reeturn false
+	if _cells.size() < selected.clicks(combat.x_energy()): #store intents in _cells, when all grid has been chosen, this condition reeturn false
 		_refresh()
 		return
 	_play_selected()
@@ -350,6 +413,8 @@ func _on_win_combat_pressed()->void:
 
 ## _input, not _unhandled_input: the grids and this root stop mouse events, so right-clicks never arrive unhandled.
 func _input(event: InputEvent) -> void:
+	if event is InputEventMouseMotion:
+		_update_hovered_enemy()
 	if _over or _busy or _top_bar.is_modal_open():
 		return
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_RIGHT:
@@ -416,7 +481,7 @@ func _animate(batch: Array[Dictionary]) -> void:
 		_ripple(action.ripple_vfx, _center(_sprite_for(attacker)))
 	for change in batch:
 		_view_for(change.unit).flash(change.cell, change.kind, change.effect)
-		if change.effect is MultiHeadPower:  # a Hydra head was cut
+		if change.effect is MultiHeadPower or change.effect is RisePower:  # a Hydra head was cut, a Zombie rose
 			_flash_sprite(_sprite_for(change.unit))
 	for unit in damaged:
 		if unit == combat.player:
@@ -424,6 +489,21 @@ func _animate(batch: Array[Dictionary]) -> void:
 		else:
 			_shake(_sprite_for(unit), "position")
 	await get_tree().create_timer(HealthGridView.FLASH_TIME).timeout
+	_hide_departed()
+
+
+## Takes enemies with leaves_when_dead off the screen once they're dead (the Mimic), after their last
+## hit has played. They stay in combat.enemies, dead, so the views keep their order.
+func _hide_departed() -> void:
+	var changed := false
+	for i in combat.enemies.size():
+		var enemy := combat.enemies[i] as BaseEnemy
+		var side := _enemy_views[i].get_parent() as Control
+		if enemy and enemy.leaves_when_dead and enemy.is_dead() and side.visible:
+			side.hide()
+			changed = true
+	if changed:
+		_fit_enemies()
 
 
 ## Moves node LUNGE_DISTANCE toward a point, then back. node rests at ZERO inside its slot.
@@ -561,8 +641,8 @@ func _refresh() -> void:
 			_hint_label.text = "Pick %d card%s in your hand to exhaust. Right-click to cancel." % [count, "" if count == 1 else "s"]
 	elif selected:
 		var step := ""
-		if selected.clicks(combat.energy) > 1:
-			step = " (pattern %d/%d)" % [_cells.size() + 1, selected.clicks(combat.energy)]
+		if selected.clicks(combat.x_energy()) > 1:
+			step = " (pattern %d/%d)" % [_cells.size() + 1, selected.clicks(combat.x_energy())]
 		if _next_grid_action() is RandomGridAction:
 			_hint_label.text = "Click %s%s. Right-click to cancel." % ["your grid" if _targets_player() else "an enemy", step]
 		else:
@@ -622,13 +702,15 @@ func _refresh() -> void:
 			if action.aim_vfx:
 				aim = action.aim_vfx
 			for part in action.parts:
-				var intent := {cell = part.cell, tiles = part.tiles}
+				var intent := {cell = part.cell, tiles = part.tiles, faded = _hovered_enemy != -1 and _hovered_enemy != i}
 				if part.side == Enum.Side.PLAYER:
 					player_intents.append(intent)
 				else:
 					self_intents.append(intent)
 		_enemy_views[i].intents = self_intents
 		_enemy_views[i].refresh()
+		if enemy:
+			_enemy_images[i].modulate = enemy.tint
 	_player_view.intents = player_intents
 	_set_aim(aim)
 	_player_view.refresh()
@@ -636,7 +718,7 @@ func _refresh() -> void:
 
 ## The selected card's grid action the next click places, or null.
 func _next_grid_action() -> GridAction:
-	if selected and _cells.size() < selected.clicks(combat.energy):
+	if selected and _cells.size() < selected.clicks(combat.x_energy()):
 		return selected.grid_action(_cells.size())
 	return null
 
@@ -661,7 +743,7 @@ func _select(card: BaseCard) -> void:
 ## Whether the next click goes on the player's grid: the current grid action's target, or the card's.
 func _targets_player() -> bool:
 	var target := selected.target
-	if _cells.size() < selected.clicks(combat.energy):
+	if _cells.size() < selected.clicks(combat.x_energy()):
 		target = selected.grid_action(_cells.size()).target
 	return target == Enum.TargetType.PLAYER
 
@@ -724,8 +806,22 @@ func _room_type() -> Enum.RoomType:
 ## null = the usual line-ups.
 static var testing: Script = null
 
+## Each floor's monsters: NORMALS[0] / ELITES[0] are floor 1. Floors past the end reuse the last one.
+static var NORMALS: Array = [
+	[Slime, Goblin, Vermin, Hound, Ogre, MagicGolem, DarkElf, Griffin],
+	[Skeleton, Bat, Zombie, JackOLantern, LilGhost, Mummy, Warewolf],
+]
+static var ELITES: Array = [[Hydra], [Frangenstein, Lich]]
 
-## Placeholder line-ups until there are more enemies.
+
+## The floor whose monster lists have script, or 0.
+func _floor_of(script: Script) -> int:
+	for i in NORMALS.size():
+		if script in NORMALS[i] or script in ELITES[i]:
+			return i + 1
+	return 0
+
+
 func _enemies_for(room_type: Enum.RoomType) -> Array[CombatUnit]:
 	var enemies: Array[CombatUnit] = []
 	if room_type == Enum.RoomType.BOSS_COMBAT:
@@ -733,11 +829,11 @@ func _enemies_for(room_type: Enum.RoomType) -> Array[CombatUnit]:
 		return enemies
 	if testing:
 		enemies.append(testing.new())
+		enemies.append_array(enemies[0].companions)
 		return enemies
-	if room_type == Enum.RoomType.ELITE_COMBAT:
-		enemies.append(Hydra.new())
-		return enemies
-	enemies.append([Slime, Goblin, Vermin, Hound, Ogre, MagicGolem, DarkElf, Griffin].pick_random().new())
+	var pools: Array = ELITES if room_type == Enum.RoomType.ELITE_COMBAT else NORMALS
+	enemies.append(pools[mini(RunState.dungeon_floor, pools.size()) - 1].pick_random().new())
+	enemies.append_array(enemies[0].companions)
 	return enemies
 
 
