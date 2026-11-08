@@ -49,6 +49,7 @@ var _aim: TextureRect  # an enemy's sight on the player's sprite, while a move w
 @onready var _top_bar: TopBar = %TopBar
 @onready var _floor_background: TextureRect = %FloorBackground
 var _hover_info := HoverInfo.new()  # keywords of cards in the pile viewer and card rewards
+var _intent_info := HoverInfo.new()  # each intent row's description; not _hover_info, which the pile viewer clears
 @onready var _status_label: Label = %StatusLabel
 @onready var _hint_label: Label = %HintLabel
 @onready var _player_view: HealthGridView = %PlayerGrid
@@ -92,6 +93,8 @@ func _ready() -> void:
 		_floor_background.texture = RunState.FLOOR_COMBAT_BACKGROUNDS[_floor_of(testing) - 1]  # the test monster's floor
 	_hover_info.is_blocked = _top_bar.is_modal_open
 	add_child(_hover_info)
+	_intent_info.is_blocked = func() -> bool: return _top_bar.is_modal_open() or _pile_viewer.visible or _over
+	add_child(_intent_info)
 	combat = RunState.start_combat()
 	for enemy in _enemies_for(_room_type()):
 		combat.enemies.append(enemy)
@@ -704,6 +707,8 @@ func _refresh() -> void:
 			actions = enemy.intent_actions
 		var self_intents: Array = []
 		_intent_labels[i].text = "\n".join(PackedStringArray(actions.map(func(a: BaseEnemyAction) -> String: return a.intent_text())))
+		_intent_info.add(_intent_labels[i], actions.filter(func(a: BaseEnemyAction) -> bool: return not a.description.is_empty()) \
+			.map(func(a: BaseEnemyAction) -> Array: return [a.intent_text(), a.description]), false, null, true)
 		for action in actions:
 			if action.aim_vfx:
 				aim = action.aim_vfx

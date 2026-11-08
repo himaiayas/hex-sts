@@ -7,6 +7,7 @@ extends BaseEnemyAction
 
 func _init() -> void:
 	super(Enum.BaseEnemyActionEnum.ATTACK, "Shard Drill", 1.0)
+	description = "Hit 3 lines of 8 tiles, one along each axis."
 	for dir in [Vector2i(1, 0), Vector2i(0, 1), Vector2i(1, -1)]:
 		var line: Array[BaseActionTile] = []
 		for k in 8:

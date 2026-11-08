@@ -6,6 +6,7 @@ extends BaseEnemyAction
 
 func _init() -> void:
 	super(Enum.BaseEnemyActionEnum.ATTACK, "Bat Swarm", 1.0)
+	description = "Hit 3 tiles 4 times."
 	hit_vfx = preload("res://assets/enemies/floor_2/dracula_attack_bat.png")
 	for i in 4:
 		parts.append(EnemyActionPart.new(Enum.Side.PLAYER, [

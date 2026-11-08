@@ -33,7 +33,7 @@ func _init() -> void:
 	actions = [
 		DraculaBite.new(4),
 		DraculaBatSwarm.new(),
-		EnemyShieldSelf.new("Blood Mist", 10),
+		EnemyShieldSelf.new("Blood Mist", 10, "Shield 10 random tiles of its own."),
 		DraculaBite.new(8),
 		DraculaCrimsonRain.new(),
 	]

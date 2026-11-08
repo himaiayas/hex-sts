@@ -16,7 +16,7 @@ var _step := 0  # turns into the current cycle
 var _turns := 0  # turns planned, for the Field
 
 var _field := RamielField.new()
-var _scan := EnemyShieldSelf.new("Scan", 15)
+var _scan := EnemyShieldSelf.new("Scan", 15, "Shield 15 random tiles of its own.")
 var _charge := RamielCharge.new()
 var _beam := RamielParticleBeam.new(_charge)
 var _drill := RamielShardDrill.new()

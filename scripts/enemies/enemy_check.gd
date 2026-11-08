@@ -55,6 +55,7 @@ func _initialize() -> void:
 	await _check_dragon(combat)
 	await _check_dracula(combat)
 	await _check_ramiel(combat)
+	_check_descriptions()
 
 	run.free()
 	print("enemy_check: %s" % ("OK" if _failures == 0 else "%d failure(s)" % _failures))
@@ -573,7 +574,7 @@ func _check_jack(combat: CombatState) -> void:
 	var cells: Array = jack.health.keys()
 	_heal(player)
 	_heal(jack)
-	combat.playing = Strike.new()
+	combat.playing = Slash.new()
 	for i in 5:
 		jack.damage_health_tile(combat, cells[i])
 	_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == 0, "burning head burned before 6 tiles")
@@ -582,11 +583,11 @@ func _check_jack(combat: CombatState) -> void:
 	for i in range(6, 14):
 		jack.damage_health_tile(combat, cells[i])
 	_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == JackOLantern.BURN, "burning head burned twice for one card")
-	combat.playing = Strike.new()
+	combat.playing = Slash.new()
 	for i in range(14, 20):
 		jack.damage_health_tile(combat, cells[i])
 	_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == 2 * JackOLantern.BURN, "a new card should count again")
-	combat.playing = ShieldPlayer.new()
+	combat.playing = Guard.new()
 	for i in range(20, 26):
 		jack.damage_health_tile(combat, cells[i])
 	combat.playing = null
@@ -623,7 +624,7 @@ func _check_lil_ghost(combat: CombatState) -> void:
 	# Shiver: the next card costs 1 more, then it's gone. It doesn't stack, and ends with the player's turn.
 	await ghost.actions[1].execute(combat, ghost)
 	_check(player.power_amount(ShiverPower) == 1, "shiver stacked")
-	var card := ShieldPlayer.new()
+	var card := Guard.new()
 	combat.hand.append(card)
 	combat.energy = card.cost
 	_check(combat.cost_of(card) == card.cost + 1 and not combat.can_play(card), "shiver should add 1 to the cost")
@@ -637,7 +638,7 @@ func _check_lil_ghost(combat: CombatState) -> void:
 	# An X-cost card gets 1 less X under Shiver, spends all the energy, and uses Shiver up.
 	await ghost.actions[1].execute(combat, ghost)
 	combat.energy = 3
-	var flurry := Flurry.new()
+	var flurry := FlurryStorm.new()
 	combat.hand.append(flurry)
 	_check(combat.x_energy() == 2 and flurry.clicks(combat.x_energy()) == 2, "shiver should take 1 off X")
 	var targets: Array[CombatUnit] = [ghost, ghost]
@@ -648,15 +649,15 @@ func _check_lil_ghost(combat: CombatState) -> void:
 	# Ethereal: one Attack card lands 5 hits, the rest miss; a new card starts over; other cards aren't capped.
 	cells.assign(ghost.health.keys())
 	_heal(ghost)
-	combat.playing = Strike.new()
+	combat.playing = Slash.new()
 	var landed := 0
 	for i in 8:
 		if ghost.damage_health_tile(combat, cells[i]):
 			landed += 1
 	_check(landed == LilGhost.ETHEREAL, "ethereal should let %d hits land, let %d" % [LilGhost.ETHEREAL, landed])
-	combat.playing = Strike.new()
+	combat.playing = Slash.new()
 	_check(ghost.damage_health_tile(combat, cells[8]), "a new card should hit again")
-	combat.playing = ShieldPlayer.new()
+	combat.playing = Guard.new()
 	landed = 0
 	for i in range(9, 17):
 		if ghost.damage_health_tile(combat, cells[i]):
@@ -693,9 +694,9 @@ func _check_mummy(combat: CombatState) -> void:
 	# it's gone after the Defense card, and at the end of the player's turn.
 	_heal(player)
 	var cells: Array = player.health.keys()
-	combat.playing = Strike.new()
+	combat.playing = Slash.new()
 	player.shield_health_tile(combat, cells[0])
-	combat.playing = ShieldPlayer.new()
+	combat.playing = Guard.new()
 	for i in range(1, 5):
 		player.shield_health_tile(combat, cells[i])
 	player.apply_effect_health_tile(combat, cells[5], PlateTileEffect.new())
@@ -704,7 +705,7 @@ func _check_mummy(combat: CombatState) -> void:
 		"curse wrap should eat 3 Shields of the Defense card only")
 	player.statuses.clear()  # used up outside play_card, so nothing took it off
 	await mummy.actions[0].execute(combat, mummy)
-	var card := ShieldPlayer.new()
+	var card := Guard.new()
 	combat.hand.append(card)
 	combat.energy = card.cost
 	_heal(player)
@@ -717,17 +718,17 @@ func _check_mummy(combat: CombatState) -> void:
 	# Wrapped: every other hit of the first Attack card misses; later cards land; it resets each turn.
 	var tiles: Array = mummy.health.keys()
 	_heal(mummy)
-	combat.playing = Strike.new()
+	combat.playing = Slash.new()
 	var landed := 0
 	for i in 6:
 		if mummy.damage_health_tile(combat, tiles[i]):
 			landed += 1
 	_check(landed == 3, "wrapped should halve the first card, landed %d of 6" % landed)
-	combat.playing = Strike.new()
+	combat.playing = Slash.new()
 	_check(mummy.damage_health_tile(combat, tiles[6]) and mummy.damage_health_tile(combat, tiles[7]), "wrapped should only halve the first card")
 	combat.playing = null
 	await mummy.on_turn_end(combat)
-	combat.playing = Strike.new()
+	combat.playing = Slash.new()
 	landed = 0
 	for i in range(8, 12):
 		if mummy.damage_health_tile(combat, tiles[i]):
@@ -768,19 +769,19 @@ func _check_warewolf(combat: CombatState) -> void:
 	var cells: Array = wolf.health.keys()
 	_heal(wolf)
 	wolf.plan(combat)  # Guard: Human form
-	combat.playing = Strike.new()
+	combat.playing = Slash.new()
 	wolf.damage_health_tile(combat, cells[0])
 	_check(_cells_with(wolf, Enum.HealthTileEnum.DAMAGED) == 1, "human form took extra hits")
 	wolf.plan(combat)  # Howl & Maul: Wolf form
-	combat.playing = Strike.new()
+	combat.playing = Slash.new()
 	wolf.damage_health_tile(combat, cells[1])
 	wolf.damage_health_tile(combat, wolf.health.keys().filter(func(c: Vector2i) -> bool: return wolf.health[c].hp == Enum.HealthTileEnum.UNDAMAGED)[0])
 	_check(_cells_with(wolf, Enum.HealthTileEnum.DAMAGED) == 3 + FullMoonPower.EXTRA, "wolf form should add %d hits once per card" % FullMoonPower.EXTRA)
 	var before := _cells_with(wolf, Enum.HealthTileEnum.DAMAGED)
-	combat.playing = ShieldPlayer.new()
+	combat.playing = Guard.new()
 	wolf.damage_health_tile(combat, wolf.health.keys().filter(func(c: Vector2i) -> bool: return wolf.health[c].hp == Enum.HealthTileEnum.UNDAMAGED)[0])
 	_check(_cells_with(wolf, Enum.HealthTileEnum.DAMAGED) == before + 1, "wolf form took extra hits from a non-Attack card")
-	combat.playing = Strike.new()
+	combat.playing = Slash.new()
 	wolf.damage_health_tile(combat, wolf.health.keys().filter(func(c: Vector2i) -> bool: return wolf.health[c].hp == Enum.HealthTileEnum.UNDAMAGED)[0])
 	combat.playing = null
 	_check(_cells_with(wolf, Enum.HealthTileEnum.DAMAGED) == before + 2 + FullMoonPower.EXTRA, "a new Attack card should add the extra hits again")
@@ -1077,6 +1078,24 @@ func _rows(enemy: BaseEnemy) -> String:
 
 
 ## Cells of unit's grid that a planned part covers.
+## Every move has a description for its intent tooltip, including the ones kept outside actions
+## (Slime's Split, Ramiel's Field, the Hydra's bites).
+func _check_descriptions() -> void:
+	var enemies: Array[BaseEnemy] = [Slime.new(), MiniSlime.new(), Goblin.new(), Vermin.new(), Hound.new(),
+		Ogre.new(), MagicGolem.new(), DarkElf.new(), Griffin.new(), Hydra.new(), Dragon.new(), Bat.new(),
+		Skeleton.new(), Zombie.new(), Frangenstein.new(), JackOLantern.new(), LilGhost.new(), Mummy.new(),
+		Warewolf.new(), Lich.new(), Dracula.new(), AndroidSentinel.new(), CleanerBot.new(), CyberHound.new(),
+		HackerAI.new(), MechWalker.new(), NanoSwarm.new(), PlasmaTurret.new(), ScoutDrone.new(),
+		Terminator.new(), Ramiel.new()]
+	enemies.append((enemies[19] as Lich).mimic)
+	for enemy in enemies:
+		for prop in enemy.get_property_list():
+			var value: Variant = enemy.get(prop.name)
+			for action: Variant in (value if value is Array else [value]):
+				if action is BaseEnemyAction:
+					_check(not action.description.is_empty(), "%s's %s has no description" % [enemy.display_name, action.action_name])
+
+
 func _covered(unit: CombatUnit, part: EnemyActionPart) -> Array[Vector2i]:
 	var cells: Array[Vector2i] = []
 	for t in part.tiles:

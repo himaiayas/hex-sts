@@ -9,6 +9,7 @@ var _first_hits: Array[Vector2i] = []
 
 func _init() -> void:
 	super(Enum.BaseEnemyActionEnum.ATTACK, "Tail Sweep", 1.0)
+	description = "Hit 2 rows of 6 tiles."
 	hit_vfx = preload("res://assets/enemies/floor_1/dragon_attack_tail_sweep.png")
 	for i in 2:
 		var row: Array[BaseActionTile] = []
