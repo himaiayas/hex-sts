@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Ogre / Magic Golem / Dark Elf / Griffin / Hydra / Skeleton / Bat / Zombie / Dragon / Dracula / Ramiel. Exit code = number of failures.
+## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Ogre / Magic Golem / Dark Elf / Griffin / Hydra / Skeleton / Bat / Zombie / Frangenstein / Dragon / Dracula / Ramiel. Exit code = number of failures.
 ## godot --headless --path . -s res://scripts/enemies/enemy_check.gd
 
 var _failures := 0
@@ -46,6 +46,7 @@ func _initialize() -> void:
 	await _check_skeleton(combat)
 	await _check_bat(combat)
 	await _check_zombie(combat)
+	await _check_frangenstein(combat)
 	await _check_dragon(combat)
 	await _check_dracula(combat)
 	await _check_ramiel(combat)
@@ -502,6 +503,36 @@ func _check_zombie(combat: CombatState) -> void:
 	for cell in zombie.health:
 		zombie.damage_health_tile(combat, cell)
 	_check(zombie.is_dead(), "zombie rose twice")
+
+
+
+func _check_frangenstein(combat: CombatState) -> void:
+	var frank := Frangenstein.new()
+	combat.enemies = [frank]
+	var player := combat.player
+	var plated := frank.health.values().filter(func(t: HealthTile) -> bool: return t.has_effect(PlateTileEffect)).size()
+	_check(plated == Frangenstein.STITCHED, "frangenstein should start with %d Plate, has %d" % [Frangenstein.STITCHED, plated])
+
+	# Thunder Fist -> Static (through Shield) -> Overcharge (Strength 2), then Overcharge stacks.
+	var names: Array[String] = []
+	for i in 3:
+		_heal(player)
+		for tile in player.health.values():
+			tile.hp = Enum.HealthTileEnum.SHIELDED if i == 1 else Enum.HealthTileEnum.UNDAMAGED
+		frank.plan(combat)
+		var action := frank.intent_actions[0]
+		names.append(action.action_name)
+		var hit: Array = _covered(player, action.parts[0]) if not action.parts.is_empty() else []
+		await frank.take_turn(combat)
+		if action is EnemyApplyPower:
+			_check(frank.power_amount(StrengthPower) == Frangenstein.OVERCHARGE, "overcharge should give Strength %d" % Frangenstein.OVERCHARGE)
+		else:
+			_check(not hit.is_empty() and hit.all(func(c: Vector2i) -> bool: return player.health[c].hp == Enum.HealthTileEnum.DAMAGED)
+				and _cells_with(player, Enum.HealthTileEnum.DAMAGED) == hit.size(), "%s didn't damage what its intent showed" % action.action_name)
+	_check(names == ["Thunder Fist", "Static", "Overcharge"], "frangenstein order: %s" % [names])
+	_check(frank.actions[0].parts[0].tiles.size() == 15, "thunder fist should be 15 tiles")
+	await frank.actions[2].execute(combat, frank)
+	_check(frank.power_amount(StrengthPower) == 2 * Frangenstein.OVERCHARGE, "overcharge should stack")
 
 
 
