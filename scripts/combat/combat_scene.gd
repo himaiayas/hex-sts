@@ -10,8 +10,6 @@ extends Control
 const RenderCard := preload("res://scripts/cards/render_card.gd")
 const CARD_SIZE := HandView.CARD_SIZE
 const LUNGE_DISTANCE := 40.0  # px toward the target
-const LUNGE_TIME := 0.1  # out to the target; the hit flashes when it gets there
-const LUNGE_BACK_TIME := 0.15
 const VFX_SCALE := 1.25  # an enemy move's hit image, relative to its area
 const RIPPLES := 3
 const RIPPLE_GAP := 0.2  # seconds between rings
@@ -25,7 +23,7 @@ const LUNGE_TIME := 0.06  # out to the target; the hit flashes when it gets ther
 const LUNGE_BACK_TIME := 0.1
 const SHAKE_AMOUNT := 8.0  # px, the first jolt; later ones get smaller
 const SHAKE_STEPS := 6
-const SHAKE_TIME := 0.25
+const SHAKE_TIME := 0.15
 const PROJECTILE_WIDTH := 200.0  # px; its height keeps the texture's aspect
 const PROJECTILE_SPEED := 2400.0  # px per second, steady
 const SPRITE_FLASH := Color(2.5, 2.5, 2.5)  # a sprite's brightest, fading back over the hex flash
@@ -319,7 +317,7 @@ func _play_selected() -> void:
 	_busy = true
 	if card.type == Enum.CardType.ATTACK:
 		_player_image.show_pose(UnitImage.PLAYER_ATTACK)
-	await combat.play_card(card, units, cells, rotations, picks, tile_picks)
+	await combat.play_card(card, units, cells, rotations)
 	_busy = false
 	_refresh()
 	_check_combat_end()

@@ -157,15 +157,6 @@ func play_card(card: BaseCard, units: Array[CombatUnit], cells: Array[Vector2i],
 		return false
 	energy = 0 if card.x_cost else energy - cost_of(card)
 	hand.erase(card)
-	for pick in picks:
-		if card.pick_from_discard > 0:
-			discard_pile.erase(pick)
-			draw_pile.append(pick)  # draw() takes from the back
-		else:
-			exhaust(pick)
-	for cell in tile_picks:
-		card.pick_tile.inflict(self, player, cell)
-	await flush()
 	playing = card
 	await card.execute(self, units, cells, rotations)
 	if card.type == Enum.CardType.ATTACK and EchoPower.use(player):
