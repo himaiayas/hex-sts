@@ -54,6 +54,10 @@ func damage_health_tile(combat: CombatState, coords: Vector2i, pierce := false)-
 		tile.hp = Enum.HealthTileEnum.DAMAGED
 		combat.record(self, coords, Enum.Change.DAMAGE)
 		fire_at(Enum.Trigger.ON_HIT, combat, coords)
+		if is_dead():
+			for artifact in artifacts:
+				if artifact.revive(combat, self):
+					break
 		return true
 	return false
 
@@ -79,9 +83,13 @@ func apply_effect_health_tile(combat: CombatState, coords:Vector2i, effect:BaseT
 			for power in statuses.duplicate():
 				if power is BasePower:
 					power.on_tile_effect_gained(combat, self, coords, effect)
+			for artifact in artifacts.duplicate():
+				artifact.on_tile_effect_gained(combat, coords, effect)
 
 
 func add_power(combat: CombatState, power: BaseEffect) -> void:
+	for artifact in artifacts:
+		artifact.modify_power(power)
 	_add_or_stack(statuses, power)
 	combat.record(self, Vector2i.ZERO, Enum.Change.POWER, power)
 
@@ -111,7 +119,7 @@ func on_turn_end(combat: CombatState) -> void:
 ## Runs trigger on every artifact, power and tile effect, and plays what each one changed in turn.
 func fire(trigger: Enum.Trigger, combat: CombatState) -> void:
 	for artifact in artifacts.duplicate():
-		artifact.on_trigger(trigger, combat, self, Vector2i.ZERO)
+		await artifact.on_trigger(trigger, combat, self, Vector2i.ZERO)
 		await combat.flush()
 	for power in statuses.duplicate():
 		power.on_trigger(trigger, combat, self, Vector2i.ZERO)

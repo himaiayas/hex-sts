@@ -18,3 +18,14 @@ func _init(_name: String, _description: String, _icon: Texture2D) -> void:
 
 func can_apply(card: BaseCard) -> bool:
 	return card.augments.size() < card.max_augments
+
+
+## Tiles the player adds to the card's patterns in the AugmentModal before it's applied
+## (ExpansionAugment.patterns has the patterns that can grow).
+func tiles_to_add() -> int:
+	return 0
+
+
+## Changes the card, once, when the augment goes on it (after any tiles are added).
+func apply(_card: BaseCard) -> void:
+	pass

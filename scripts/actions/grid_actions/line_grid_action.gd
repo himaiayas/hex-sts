@@ -15,9 +15,7 @@ func _init(_target: Enum.TargetType, _tile: BaseActionTile)->void:
 	super(_target, shown)
 
 func rotated(steps: int)->Dictionary[Vector2i, BaseActionTile]:
-	var dir := Vector2i(1, 0)
-	for i in posmod(steps, 6):
-		dir = rotate_cw(dir)
+	var dir := orient(Vector2i(1, 0), steps)
 	var pattern: Dictionary[Vector2i, BaseActionTile] = {}
 	for k in range(-REACH, REACH + 1):
 		pattern[dir * k] = tiles[0]

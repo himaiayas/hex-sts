@@ -40,6 +40,8 @@ var _hover_info := HoverInfo.new()  # keywords of cards in the Deck modal
 ## Level-up in progress: a copy of the health grid with the placed tiles, and the artifact on offer.
 var _level_up_health: Dictionary[Vector2i, HealthTile] = {}
 var _level_up_reward: BaseArtifact = null
+var _placing := 0  # tiles this modal places: LEVEL_UP_TILES for a level, or an artifact's tile slots
+var _slots_only := false  # opened for RunState.pending_tile_slots, not a level
 
 
 func _ready() -> void:
@@ -72,7 +74,7 @@ func refresh() -> void:
 		_next_level.text = "LV%d" % [RunState.level+1]
 		_exp_text.text = "%d/%d" % [RunState.xp, RunState.xp_to_next()]
 		_exp.tooltip_text = "Level %d  %d / %d EXP" % [RunState.level, RunState.xp, RunState.xp_to_next()]
-	if RunState.pending_level_ups > 0 and not _level_up_modal.visible:
+	if (RunState.pending_level_ups > 0 or RunState.pending_tile_slots > 0) and not _level_up_modal.visible:
 		_open_level_up()
 
 
@@ -158,8 +160,12 @@ func _on_close_pressed() -> void:
 ## One modal per level gained: place LEVEL_UP_TILES health tiles next to the grid, and take an artifact.
 func _open_level_up() -> void:
 	_close_modals()
-	_level_up_title.text = "Level %d!" % (RunState.level - RunState.pending_level_ups + 1)
-	_level_up_reward = ArtifactPool.random_artifact(RunState.artifacts)
+	_slots_only = RunState.pending_level_ups == 0
+	_placing = RunState.pending_tile_slots if _slots_only else RunState.LEVEL_UP_TILES
+	_level_up_title.text = "New health tiles" if _slots_only \
+		else "Level %d!" % (RunState.level - RunState.pending_level_ups + 1)
+	_level_up_reward = null if _slots_only else ArtifactPool.random_artifact(RunState.artifacts)
+	_level_up_artifact.visible = not _slots_only
 	_level_up_artifact_image.visible = _level_up_reward != null
 	if _level_up_reward:
 		_level_up_artifact_image.texture = _level_up_reward.image
@@ -191,15 +197,18 @@ func _on_level_up_confirm_pressed() -> void:
 	for cell in _level_up_grid.new_cells:
 		RunState.health[cell] = _level_up_health[cell]
 	if _level_up_reward:
-		RunState.artifacts.append(_level_up_reward)
-	RunState.pending_level_ups -= 1
+		RunState.add_artifact(_level_up_reward)
+	if _slots_only:
+		RunState.pending_tile_slots = 0
+	else:
+		RunState.pending_level_ups -= 1
 	_level_up_modal.hide()
 	refresh()  # opens the next level-up, if any
 
 
 ## Empty cells next to the grid are clickable until all tiles are placed.
 func _refresh_level_up() -> void:
-	var left := RunState.LEVEL_UP_TILES - _level_up_grid.new_cells.size()
+	var left := _placing - _level_up_grid.new_cells.size()
 	_level_up_grid.candidates.clear()
 	if left > 0:
 		for cell: Vector2i in _level_up_health:

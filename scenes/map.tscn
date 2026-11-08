@@ -2,7 +2,8 @@
 
 [ext_resource type="Script" uid="uid://ddymykvgy3fil" path="res://scripts/map/map_scene.gd" id="1_map"]
 [ext_resource type="Script" uid="uid://d2mguidiwck0p" path="res://scripts/map/map_view.gd" id="2_view"]
-[ext_resource type="PackedScene" uid="uid://b76onrkqqin8t" path="res://scenes/ui/top_bar.tscn" id="3_topbar"]
+[ext_resource type="PackedScene" path="res://scenes/ui/top_bar.tscn" id="3_topbar"]
+[ext_resource type="Texture2D" path="res://assets/icons/footstep.png" id="4_footstep"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
 content_margin_left = 48.0
@@ -48,8 +49,7 @@ script = ExtResource("2_view")
 unique_name_in_owner = true
 layout_mode = 1
 
-[node name="StepsLabel" type="Label" parent="." unique_id=1106001309]
-unique_name_in_owner = true
+[node name="Steps" type="HBoxContainer" parent="."]
 layout_mode = 1
 anchors_preset = 2
 anchor_top = 1.0
@@ -59,8 +59,20 @@ offset_top = -88.0
 offset_right = 440.0
 offset_bottom = -40.0
 grow_vertical = 0
+theme_override_constants/separation = 12
+
+[node name="StepsIcon" type="TextureRect" parent="Steps"]
+custom_minimum_size = Vector2(48, 48)
+layout_mode = 2
+texture = ExtResource("4_footstep")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="StepsLabel" type="Label" parent="Steps" unique_id=1106001309]
+unique_name_in_owner = true
+layout_mode = 2
 theme_override_font_sizes/font_size = 32
-text = "Steps  50 / 50"
+text = "50 / 50"
 vertical_alignment = 1
 
 [node name="HintLabel" type="Label" parent="." unique_id=908778644]

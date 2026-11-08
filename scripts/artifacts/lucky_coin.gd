@@ -1,11 +1,11 @@
-class_name GlowingOrb
+class_name LuckyCoin
 extends BaseArtifact
 
-const ENERGY := 2
 
 func _init() -> void:
-	super("Glowing Orb", "At the start of combat, gain %d Energy." % ENERGY, Enum.ArtifactRarity.RARE)
+	super("Lucky Coin", "At the start of combat, draw 1 card.", Enum.ArtifactRarity.COMMON,
+		preload("res://assets/artifacts/lucky_coin.png"))
 
 func on_trigger(trigger: Enum.Trigger, combat: CombatState, _unit: CombatUnit, _cell: Vector2i) -> void:
 	if trigger == Enum.Trigger.COMBAT_START:
-		combat.energy += ENERGY
+		combat.draw(1)

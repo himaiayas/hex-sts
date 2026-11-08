@@ -37,12 +37,12 @@ func _refresh() -> void:
 func _make_offer(augment: BaseAugment) -> Control:
 	var fits := RunState.deck.any(func(card: BaseCard) -> bool: return augment.can_apply(card))
 	var info := ShopOffer.make_info_column(augment.icon, ICON_SIZE, augment.name, augment.description)
-	return ShopOffer.make(OFFER_SIZE, info, augment.price, augment in _sold, _on_buy_pressed.bind(augment),
+	return ShopOffer.make(OFFER_SIZE, info, RunState.shop_price(augment.price), augment in _sold, _on_buy_pressed.bind(augment),
 		"" if fits else "No card in your deck can take this.")
 
 
 func _on_buy_pressed(augment: BaseAugment) -> void:
-	RunState.gold -= augment.price
+	RunState.gold -= RunState.shop_price(augment.price)
 	_buying = augment
 	_top_bar.refresh()
 	_modal.open(augment)
@@ -53,7 +53,7 @@ func _on_augment_applied(card: BaseCard) -> void:
 		_sold.append(_buying)
 		_hint.text = "%s put on %s." % [_buying.name, card.card_name]
 	else:  # nothing could take it after all
-		RunState.gold += _buying.price
+		RunState.gold += RunState.shop_price(_buying.price)
 	_buying = null
 	_refresh()
 

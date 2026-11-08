@@ -1,7 +1,8 @@
 class_name CombatRewards
 extends RefCounted
 
-## What the player gets for winning a fight: pick 1 of 3 cards, coins, and EXP.
+## What the player gets for winning a fight: pick 1 of 3 cards, coins, and EXP, plus an artifact
+## from a boss (ArtifactPool.BOSS_WEIGHTS).
 ## Amounts depend on the room type; tune them here.
 
 const CARD_CHOICES := 3
@@ -22,10 +23,12 @@ const EXP := {
 var gold := 0
 var exp_points := 0
 var cards: Array[BaseCard] = []
+var artifact: BaseArtifact = null  # bosses only; null if none
 
 var gold_taken := false
 var exp_taken := false
 var card_taken := false  # picked one, or skipped
+var artifact_taken := false
 
 
 static func roll(room_type: Enum.RoomType) -> CombatRewards:
@@ -34,6 +37,8 @@ static func roll(room_type: Enum.RoomType) -> CombatRewards:
 	rewards.gold = randi_range(gold_range.x, gold_range.y)
 	rewards.exp_points = EXP.get(room_type, EXP[Enum.RoomType.NORMAL_COMBAT])
 	rewards.cards = CardPool.random_cards(CARD_CHOICES)
+	if room_type == Enum.RoomType.BOSS_COMBAT:
+		rewards.artifact = ArtifactPool.random_artifact(RunState.artifacts, ArtifactPool.BOSS_WEIGHTS)
 	return rewards
 
 
@@ -56,3 +61,9 @@ func take_card(run: Node, card: BaseCard) -> void:
 	if card:
 		run.deck.append(card)
 	card_taken = true
+
+
+func take_artifact(run: Node) -> void:
+	if artifact and not artifact_taken:
+		run.add_artifact(artifact)
+		artifact_taken = true

@@ -31,6 +31,6 @@ func execute(combat: CombatState, _unit: CombatUnit, _cell: Vector2i)->Array[Vec
 			hits.append(pick[1])
 	await combat.flush()
 	if tile is DamageTile:
-		hits.append_array(StrengthPower.spread(combat, picks))
+		hits.append_array(combat.attack_extras(picks))
 	await combat.flush()
 	return hits

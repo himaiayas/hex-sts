@@ -75,6 +75,7 @@ var _intent_info := HoverInfo.new()  # each intent row's description; not _hover
 @onready var _gold_button: Button = %GoldButton
 @onready var _exp_button: Button = %ExpButton
 @onready var _card_button: Button = %CardButton
+@onready var _artifact_button: Button = %ArtifactRewardButton
 @onready var _card_choice_panel: Control = %CardChoicePanel
 @onready var _card_choices: HBoxContainer = %CardChoices
 @onready var _defeat_panel: Control = %DefeatPanel
@@ -304,7 +305,7 @@ func _on_confirm_pressed() -> void:
 	if not _relocating.is_empty():
 		_relocated.emit(_relocating.part.cell)  # keep it where it is
 		return
-	if not _choice.is_empty() and _picked_count() == _choice.count:
+	if not _choice.is_empty() and _picked_count() >= _choice.min:
 		_choice_confirmed.emit()
 
 
@@ -447,7 +448,12 @@ func _input(event: InputEvent) -> void:
 			return
 		get_viewport().set_input_as_handled()
 	elif selected and _choice.is_empty() and not _pile_viewer.visible and _rotation_step(event) != 0:
-		_rotation = posmod(_rotation + _rotation_step(event), 6)
+		_rotation = _rotation - _rotation % 6 + posmod(_rotation % 6 + _rotation_step(event), 6)  # keeps the flip
+		_refresh()
+		get_viewport().set_input_as_handled()
+	elif selected and _choice.is_empty() and not _pile_viewer.visible and RunState.has_artifact(Mirror) \
+			and event is InputEventKey and event.pressed and not event.echo and event.physical_keycode == KEY_F:
+		_rotation = (_rotation + 6) % 12  # Mirror: flip the pattern
 		_refresh()
 		get_viewport().set_input_as_handled()
 
@@ -657,7 +663,7 @@ func _refresh() -> void:
 		_confirm_button.disabled = false
 		_hint_label.text = "Taunt: click your grid to move this attack (it must hit at least %d tiles). Confirm keeps it there." % _relocating.min_hits
 	elif choosing:
-		_confirm_button.disabled = _picked_count() < _choice.count
+		_confirm_button.disabled = _picked_count() < _choice.min
 		_hint_label.text = _choice.prompt
 	elif selected:
 		var step := ""
@@ -666,7 +672,8 @@ func _refresh() -> void:
 		if _next_grid_action() is RandomGridAction:
 			_hint_label.text = "Click %s%s. Right-click to cancel." % ["your grid" if _targets_player() else "an enemy", step]
 		else:
-			_hint_label.text = "Click a cell on %s%s. Q/E or scroll to rotate. Right-click to cancel." % ["your grid" if _targets_player() else "the enemy", step]
+			_hint_label.text = "Click a cell on %s%s. Q/E or scroll to rotate%s. Right-click to cancel." % ["your grid" if _targets_player() else "the enemy", step,
+				", F to flip" if RunState.has_artifact(Mirror) else ""]
 	else:
 		_hint_label.text = "Click a card to select it."
 
@@ -786,7 +793,7 @@ func _card_slot(card: BaseCard) -> Control:
 func _show_pile(title: String, cards: Array[BaseCard], hide_order := false, picking := false) -> void:
 	_pile_title.text = "%s (%d)" % [title, cards.size()]
 	_pile_confirm_button.visible = picking
-	_pile_confirm_button.disabled = picking and _picks.size() < _choice.count
+	_pile_confirm_button.disabled = picking and _picks.size() < _choice.min
 	_close_pile_button.visible = not picking
 	_hover_info.clear()
 	for child in _pile_grid.get_children():
@@ -892,6 +899,16 @@ func _refresh_rewards() -> void:
 	_gold_button.visible = not _rewards.gold_taken
 	_exp_button.visible = not _rewards.exp_taken
 	_card_button.visible = not _rewards.card_taken
+	_artifact_button.visible = _rewards.artifact != null and not _rewards.artifact_taken
+	if _rewards.artifact:
+		_artifact_button.text = _rewards.artifact.name
+		_artifact_button.tooltip_text = _rewards.artifact.description
+		_artifact_button.icon = _rewards.artifact.image
+
+
+func _on_artifact_reward_pressed() -> void:
+	_rewards.take_artifact(RunState)
+	_refresh_rewards()
 
 
 func _on_gold_reward_pressed() -> void:
@@ -934,10 +951,11 @@ func _on_card_choice_back_pressed() -> void:
 	_card_choice_panel.hide()
 
 
-## Coins and EXP left on the table are collected on the way out; an unpicked card is lost.
+## Coins, EXP and a boss's artifact left on the table are collected on the way out; an unpicked card is lost.
 func _on_continue_pressed() -> void:
 	_rewards.take_gold(RunState)
 	_rewards.take_exp(RunState)
+	_rewards.take_artifact(RunState)
 	RunState.leave_room()
 
 

@@ -46,19 +46,29 @@ func execute(combat: CombatState, unit: CombatUnit, cell: Vector2i, rotation := 
 		if pattern[offset].inflict(combat, unit, cell + offset):
 			hits.append(cell + offset)
 	await combat.flush()
-	hits.append_array(StrengthPower.spread(combat, landed))
+	hits.append_array(combat.attack_extras(landed))
 	await combat.flush()  # Strength's extras play after the pattern
 	return hits
 
 ## New dict of offset from the clicked cell -> tile, turned 60° clockwise per step. Never changes tiles itself.
+## Steps 6-11 are flipped first (Mirror), then turned steps - 6.
 func rotated(steps: int)->Dictionary[Vector2i, BaseActionTile]:
 	var pattern: Dictionary[Vector2i, BaseActionTile] = {}
 	for t in tiles:
-		var offset := t.coords + anchor
-		for i in posmod(steps, 6):
-			offset = rotate_cw(offset)
-		pattern[offset] = t
+		pattern[orient(t.coords + anchor, steps)] = t
 	return pattern
+
+## c flipped (steps 6-11) and turned, as rotated() does.
+static func orient(c: Vector2i, steps: int)->Vector2i:
+	if posmod(steps, 12) >= 6:
+		c = flip(c)
+	for i in posmod(steps, 6):
+		c = rotate_cw(c)
+	return c
+
+## Mirrored top to bottom: axial (q, r) -> (q+r, -r).
+static func flip(c: Vector2i)->Vector2i:
+	return Vector2i(c.x + c.y, -c.y)
 
 ## Axial (q, r) -> (-r, q+r). Anticlockwise (q+r, -q) is 5 clockwise steps.
 static func rotate_cw(c: Vector2i)->Vector2i:
