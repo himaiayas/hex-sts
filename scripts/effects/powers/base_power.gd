@@ -6,6 +6,7 @@ extends BaseEffect
 ## amount = stacks: applying a power the unit already has adds to it.
 
 var amount := 1
+var show_amount := true  # false: no number on the badge or in the tooltip title (Full Moon)
 
 func _init(_name: String, _description: String, _amount := 1, _turns := -1) -> void:
 	super(_name, _description, _turns)

@@ -281,6 +281,8 @@ func _draw() -> void:
 			continue
 		var rect := _power_rect(i)
 		draw_texture_rect(power.get_icon(), rect, false)
+		if not power.show_amount:
+			continue
 		var corner := rect.end - Vector2(rect.size.x, 2)
 		draw_string_outline(font, corner, str(power.amount), HORIZONTAL_ALIGNMENT_RIGHT, rect.size.x, 20, 4, Color.BLACK)
 		draw_string(font, corner, str(power.amount), HORIZONTAL_ALIGNMENT_RIGHT, rect.size.x, 20, power.get_color())
@@ -364,7 +366,8 @@ func _show_power_info(i: int) -> void:
 	var power := unit.statuses[i] as BasePower
 	if power == null:
 		return
-	_info_box.add_child(InfoPanel.make("%s %d" % [power.name, power.amount], power.get_description(), power.get_color()))
+	var title := "%s %d" % [power.name, power.amount] if power.show_amount else power.name
+	_info_box.add_child(InfoPanel.make(title, power.get_description(), power.get_color()))
 	_info_box.reset_size()
 	var rect := get_global_transform() * _power_rect(i)
 	var pos := Vector2(rect.end.x + InfoPanel.GAP, rect.position.y)
