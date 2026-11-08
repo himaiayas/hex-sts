@@ -81,6 +81,8 @@ func _ready() -> void:
 	if RunState.deck.is_empty():
 		RunState.start_new_run()
 	_floor_background.texture = RunState.combat_background()
+	if testing and _room_type() != Enum.RoomType.BOSS_COMBAT and _floor_of(testing) > 0:
+		_floor_background.texture = RunState.FLOOR_COMBAT_BACKGROUNDS[_floor_of(testing) - 1]  # the test monster's floor
 	combat = RunState.start_combat()
 	for enemy in _enemies_for(_room_type()):
 		combat.enemies.append(enemy)
@@ -731,6 +733,14 @@ static var NORMALS: Array = [
 	[Skeleton, Bat],
 ]
 static var ELITES: Array = [[Hydra], [Hydra]]
+
+
+## The floor whose monster lists have script, or 0.
+func _floor_of(script: Script) -> int:
+	for i in NORMALS.size():
+		if script in NORMALS[i] or script in ELITES[i]:
+			return i + 1
+	return 0
 
 
 func _enemies_for(room_type: Enum.RoomType) -> Array[CombatUnit]:
