@@ -7,9 +7,10 @@ func _init() -> void:
 	cost = 0
 	type = Enum.CardType.ATTACK
 	to_draw_top = true
-	description = "{render:0}\nPut this on top of your draw pile."
+	description = "{render:0}\nReturn this on top of your draw pile."
 	grid_actions = [
 		GridAction.new(Enum.TargetType.ENEMY, [
 			DamageTile.new(Vector2i(0,0)),
+			DamageTile.new(Vector2i(1,0)),
 		]),
 	]

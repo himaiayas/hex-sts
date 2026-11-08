@@ -7,11 +7,12 @@ func _init() -> void:
 	cost = 1
 	type = Enum.CardType.SKILL
 	target = Enum.TargetType.PLAYER
-	description = "Gain 2 energy.\nDraw 1."
+	exhaust = true
+	description = "Gain 1 energy. Draw 2 cards.\n{keyword:Exhaust}."
 
 
 func execute(combat: CombatState, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int])->Array:
 	var hits: Array = await super(combat, units, cells, rotations)
-	GainEnergyAction.new(Enum.TargetType.PLAYER, 2).execute(combat, combat.player, Vector2i.ZERO)
-	DrawAction.new(Enum.TargetType.PLAYER, 1).execute(combat, combat.player, Vector2i.ZERO)
+	GainEnergyAction.new(Enum.TargetType.PLAYER, 1).execute(combat, combat.player, Vector2i.ZERO)
+	DrawAction.new(Enum.TargetType.PLAYER, 2).execute(combat, combat.player, Vector2i.ZERO)
 	return hits

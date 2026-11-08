@@ -13,6 +13,7 @@ func _init() -> void:
 			ShieldTile.new(Vector2i(0,0)),
 			ShieldTile.new(Vector2i(1,0)),
 			ShieldTile.new(Vector2i(0,1)),
+			ShieldTile.new(Vector2i(-1,1)),
 		]),
 	]
 
