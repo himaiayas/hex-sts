@@ -722,13 +722,13 @@ func _room_type() -> Enum.RoomType:
 
 ## The enemy being built, fought in every normal and elite room (and on F6) until it's done.
 ## null = the usual line-ups.
-static var testing: Script = Skeleton
+static var testing: Script = Bat
 
 ## Each floor's monsters: NORMALS[0] / ELITES[0] are floor 1. Floors past the end reuse the last one.
 ## ponytail: floor 2 elites are still the Hydra until Frangenstein and the Lich are built.
 static var NORMALS: Array = [
 	[Slime, Goblin, Vermin, Hound, Ogre, MagicGolem, DarkElf, Griffin],
-	[Skeleton],
+	[Skeleton, Bat],
 ]
 static var ELITES: Array = [[Hydra], [Hydra]]
 

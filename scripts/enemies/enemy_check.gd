@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Ogre / Magic Golem / Dark Elf / Griffin / Hydra / Skeleton / Dragon / Dracula / Ramiel. Exit code = number of failures.
+## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Ogre / Magic Golem / Dark Elf / Griffin / Hydra / Skeleton / Bat / Dragon / Dracula / Ramiel. Exit code = number of failures.
 ## godot --headless --path . -s res://scripts/enemies/enemy_check.gd
 
 var _failures := 0
@@ -44,6 +44,7 @@ func _initialize() -> void:
 	await _check_griffin(combat)
 	await _check_hydra(combat)
 	await _check_skeleton(combat)
+	await _check_bat(combat)
 	await _check_dragon(combat)
 	await _check_dracula(combat)
 	await _check_ramiel(combat)
@@ -413,6 +414,49 @@ func _check_skeleton(combat: CombatState) -> void:
 	await skeleton.on_turn_start(combat)
 	_check(skeleton.power_amount(RetaliatePower) == 0, "retaliate should end at its turn start")
 	await skeleton.on_turn_end(combat)
+
+
+
+func _check_bat(combat: CombatState) -> void:
+	var bat := Bat.new()
+	combat.enemies = [bat]
+	var player := combat.player
+
+	# Bite damages what its intent showed and heals 3 of its own; Screech puts Screech on the player.
+	var names: Array[String] = []
+	for i in 4:
+		_heal(player)
+		_heal(bat)
+		player.statuses.clear()
+		for cell in bat.health.keys().slice(0, 5):
+			bat.health[cell].hp = Enum.HealthTileEnum.DAMAGED
+		bat.plan(combat)
+		var action := bat.intent_actions[0]
+		names.append(action.action_name)
+		var hit: Array = _covered(player, action.parts[0]) if not action.parts.is_empty() else []
+		await bat.take_turn(combat)
+		if action is BatBite:
+			_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == hit.size(), "bite didn't damage what its intent showed")
+			_check(_cells_with(bat, Enum.HealthTileEnum.DAMAGED) == 5 - BatBite.HEAL, "bite should heal 3")
+		else:
+			_check(player.power_amount(ScreechPower) == 1, "screech should put Screech on the player")
+	_check(names == ["Bite", "Screech", "Bite", "Screech"], "bat order: %s" % [names])
+
+	# Screech doesn't stack, and the next turn draws 1 fewer, then it's gone.
+	await bat.actions[1].execute(combat, bat)
+	_check(player.power_amount(ScreechPower) == 1, "screech stacked")
+	combat.discard_hand()
+	var kept := combat.hand.size()  # Retain cards stay in hand
+	await combat.start_turn()
+	_check(combat.hand.size() - kept == CombatState.DRAW_PER_TURN - 1, "screech should draw %d, drew %d" % [CombatState.DRAW_PER_TURN - 1, combat.hand.size() - kept])
+	_check(player.power_amount(ScreechPower) == 1, "screech should stay through the player's turn")
+	await player.on_turn_end(combat)
+	_check(player.power_amount(ScreechPower) == 0, "screech should go away when the player's turn ends")
+	combat.discard_hand()
+	kept = combat.hand.size()
+	await combat.start_turn()
+	_check(combat.hand.size() - kept == CombatState.DRAW_PER_TURN, "the turn after screech should draw normally, drew %d" % (combat.hand.size() - kept))
+	await player.on_turn_end(combat)
 
 
 

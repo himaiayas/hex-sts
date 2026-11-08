@@ -1,7 +1,7 @@
 class_name Bat
 extends BaseEnemy
 
-## Floor 2, Normal.
+## Floor 2, Normal. Cycles Bite -> Screech.
 
 
 func _init() -> void:
@@ -13,4 +13,8 @@ func _init() -> void:
 	]
 	super("Bat", CombatUnit.make_hex_health(coords))
 	sprite = preload("res://assets/enemies/floor_2/bat.png")
-	actions = []
+	actions = [
+		BatBite.new(),
+		EnemyApplyPower.new("Screech", "You draw 1 fewer card next turn.", ScreechPower.new(), true),
+	]
+	p1_cycle = [0, 1]
