@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Ogre / Magic Golem / Dark Elf / Griffin / Hydra / Skeleton / Bat / Zombie / Frangenstein / Jack O Lantern / Dragon / Dracula / Ramiel. Exit code = number of failures.
+## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Ogre / Magic Golem / Dark Elf / Griffin / Hydra / Skeleton / Bat / Zombie / Frangenstein / Jack O Lantern / Lil Ghost / Dragon / Dracula / Ramiel. Exit code = number of failures.
 ## godot --headless --path . -s res://scripts/enemies/enemy_check.gd
 
 var _failures := 0
@@ -48,6 +48,7 @@ func _initialize() -> void:
 	await _check_zombie(combat)
 	await _check_frangenstein(combat)
 	await _check_jack(combat)
+	await _check_lil_ghost(combat)
 	await _check_dragon(combat)
 	await _check_dracula(combat)
 	await _check_ramiel(combat)
@@ -589,6 +590,76 @@ func _check_jack(combat: CombatState) -> void:
 	for i in range(26, 32):
 		jack.damage_health_tile(combat, cells[i])
 	_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == 2 * JackOLantern.BURN, "only Attack cards should count")
+
+
+
+func _check_lil_ghost(combat: CombatState) -> void:
+	var ghost := LilGhost.new()
+	combat.enemies = [ghost]
+	var player := combat.player
+	player.statuses.clear()
+
+	# Boo (3 scattered hits) -> Shiver (on the player).
+	var names: Array[String] = []
+	for i in 2:
+		_heal(player)
+		ghost.plan(combat)
+		var action := ghost.intent_actions[0]
+		names.append(action.action_name)
+		var expect := {}
+		for part in action.parts:
+			for cell in _covered(player, part):
+				expect[cell] = true
+		await ghost.take_turn(combat)
+		if action is EnemyHit:
+			_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == expect.size(), "boo didn't damage what its intent showed")
+		else:
+			_check(player.power_amount(ShiverPower) == 1, "shiver should put Shiver on the player")
+	_check(names == ["Boo", "Shiver"], "lil ghost order: %s" % [names])
+
+	# Shiver: the next card costs 1 more, then it's gone. It doesn't stack, and ends with the player's turn.
+	await ghost.actions[1].execute(combat, ghost)
+	_check(player.power_amount(ShiverPower) == 1, "shiver stacked")
+	var card := ShieldPlayer.new()
+	combat.hand.append(card)
+	combat.energy = card.cost
+	_check(combat.cost_of(card) == card.cost + 1 and not combat.can_play(card), "shiver should add 1 to the cost")
+	combat.energy = card.cost + 1
+	_heal(player)
+	await combat.play_card(card, [player], [player.health.keys()[0]], [0])
+	_check(combat.energy == 0 and player.power_amount(ShiverPower) == 0, "shiver should be paid once, then gone")
+	await ghost.actions[1].execute(combat, ghost)
+	await player.on_turn_end(combat)
+	_check(player.power_amount(ShiverPower) == 0, "shiver should end with the player's turn")
+	# An X-cost card gets 1 less X under Shiver, spends all the energy, and uses Shiver up.
+	await ghost.actions[1].execute(combat, ghost)
+	combat.energy = 3
+	var flurry := Flurry.new()
+	combat.hand.append(flurry)
+	_check(combat.x_energy() == 2 and flurry.clicks(combat.x_energy()) == 2, "shiver should take 1 off X")
+	var targets: Array[CombatUnit] = [ghost, ghost]
+	var cells: Array[Vector2i] = [ghost.health.keys()[0], ghost.health.keys()[1]]
+	await combat.play_card(flurry, targets, cells, [0, 0])
+	_check(combat.energy == 0 and player.power_amount(ShiverPower) == 0 and combat.x_energy() == 0, "an X-cost card should spend everything and use Shiver up")
+
+	# Ethereal: one Attack card lands 5 hits, the rest miss; a new card starts over; other cards aren't capped.
+	cells.assign(ghost.health.keys())
+	_heal(ghost)
+	combat.playing = Strike.new()
+	var landed := 0
+	for i in 8:
+		if ghost.damage_health_tile(combat, cells[i]):
+			landed += 1
+	_check(landed == LilGhost.ETHEREAL, "ethereal should let %d hits land, let %d" % [LilGhost.ETHEREAL, landed])
+	combat.playing = Strike.new()
+	_check(ghost.damage_health_tile(combat, cells[8]), "a new card should hit again")
+	combat.playing = ShieldPlayer.new()
+	landed = 0
+	for i in range(9, 17):
+		if ghost.damage_health_tile(combat, cells[i]):
+			landed += 1
+	combat.playing = null
+	_check(landed == 8, "ethereal capped a non-Attack card")
 
 
 
