@@ -2,7 +2,7 @@ class_name Mimic
 extends BaseEnemy
 
 ## The Lich's Phylactery: a 20-tile object with no moves, fought beside it. While it stands the Lich
-## has Regen; destroying it takes the Regen away.
+## has Regen; destroying it takes the Regen away, and it leaves the screen.
 
 var _lich: WeakRef  # weak: the Lich holds the Mimic, so a strong ref back would keep both alive forever
 
@@ -16,6 +16,7 @@ func _init(lich: BaseEnemy) -> void:
 	sprite = preload("res://assets/enemies/floor_2/mimic.png")
 	image_size = Vector2(150, 150)  # half the usual
 	grid_scale = 0.5
+	leaves_when_dead = true
 	_lich = weakref(lich)
 
 

@@ -489,6 +489,21 @@ func _animate(batch: Array[Dictionary]) -> void:
 		else:
 			_shake(_sprite_for(unit), "position")
 	await get_tree().create_timer(HealthGridView.FLASH_TIME).timeout
+	_hide_departed()
+
+
+## Takes enemies with leaves_when_dead off the screen once they're dead (the Mimic), after their last
+## hit has played. They stay in combat.enemies, dead, so the views keep their order.
+func _hide_departed() -> void:
+	var changed := false
+	for i in combat.enemies.size():
+		var enemy := combat.enemies[i] as BaseEnemy
+		var side := _enemy_views[i].get_parent() as Control
+		if enemy and enemy.leaves_when_dead and enemy.is_dead() and side.visible:
+			side.hide()
+			changed = true
+	if changed:
+		_fit_enemies()
 
 
 ## Moves node LUNGE_DISTANCE toward a point, then back. node rests at ZERO inside its slot.
