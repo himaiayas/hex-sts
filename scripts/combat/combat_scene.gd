@@ -418,7 +418,7 @@ func _animate(batch: Array[Dictionary]) -> void:
 		_ripple(action.ripple_vfx, _center(_sprite_for(attacker)))
 	for change in batch:
 		_view_for(change.unit).flash(change.cell, change.kind, change.effect)
-		if change.effect is MultiHeadPower:  # a Hydra head was cut
+		if change.effect is MultiHeadPower or change.effect is RisePower:  # a Hydra head was cut, a Zombie rose
 			_flash_sprite(_sprite_for(change.unit))
 	for unit in damaged:
 		if unit == combat.player:
@@ -724,13 +724,13 @@ func _room_type() -> Enum.RoomType:
 
 ## The enemy being built, fought in every normal and elite room (and on F6) until it's done.
 ## null = the usual line-ups.
-static var testing: Script = Bat
+static var testing: Script = Zombie
 
 ## Each floor's monsters: NORMALS[0] / ELITES[0] are floor 1. Floors past the end reuse the last one.
 ## ponytail: floor 2 elites are still the Hydra until Frangenstein and the Lich are built.
 static var NORMALS: Array = [
 	[Slime, Goblin, Vermin, Hound, Ogre, MagicGolem, DarkElf, Griffin],
-	[Skeleton, Bat],
+	[Skeleton, Bat, Zombie],
 ]
 static var ELITES: Array = [[Hydra], [Hydra]]
 

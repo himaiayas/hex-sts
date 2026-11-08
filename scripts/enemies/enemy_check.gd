@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Ogre / Magic Golem / Dark Elf / Griffin / Hydra / Skeleton / Bat / Dragon / Dracula / Ramiel. Exit code = number of failures.
+## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Ogre / Magic Golem / Dark Elf / Griffin / Hydra / Skeleton / Bat / Zombie / Dragon / Dracula / Ramiel. Exit code = number of failures.
 ## godot --headless --path . -s res://scripts/enemies/enemy_check.gd
 
 var _failures := 0
@@ -45,6 +45,7 @@ func _initialize() -> void:
 	await _check_hydra(combat)
 	await _check_skeleton(combat)
 	await _check_bat(combat)
+	await _check_zombie(combat)
 	await _check_dragon(combat)
 	await _check_dracula(combat)
 	await _check_ramiel(combat)
@@ -457,6 +458,50 @@ func _check_bat(combat: CombatState) -> void:
 	await combat.start_turn()
 	_check(combat.hand.size() - kept == CombatState.DRAW_PER_TURN, "the turn after screech should draw normally, drew %d" % (combat.hand.size() - kept))
 	await player.on_turn_end(combat)
+
+
+
+func _check_zombie(combat: CombatState) -> void:
+	var zombie := Zombie.new()
+	combat.enemies = [zombie]
+	var player := combat.player
+
+	# Lumber -> Groan -> Rot Bite, looped. Rot Bite poisons the tiles past its ends.
+	var names: Array[String] = []
+	for i in 6:
+		_heal(player)
+		_heal(zombie)
+		zombie.plan(combat)
+		var action := zombie.intent_actions[0]
+		names.append(action.action_name)
+		var expect_damaged := {}
+		var expect_poisoned := {}
+		for part in action.parts:
+			for t in part.tiles:
+				var cell: Vector2i = part.cell + t.coords
+				if player.health.has(cell):
+					if t is DamageTile:
+						expect_damaged[cell] = true
+					else:
+						expect_poisoned[cell] = true
+		await zombie.take_turn(combat)
+		if action is EnemyShieldSelf:
+			_check(_cells_with(zombie, Enum.HealthTileEnum.SHIELDED) == 6, "groan should shield 6")
+		else:
+			var poisoned := player.health.keys().filter(func(c: Vector2i) -> bool: return player.health[c].has_effect(PoisonTileEffect))
+			_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == expect_damaged.size() and poisoned.size() == expect_poisoned.size(),
+				"%s didn't match its intent" % action.action_name)
+	_check(names == ["Lumber", "Groan", "Rot Bite", "Lumber", "Groan", "Rot Bite"], "zombie order: %s" % [names])
+
+	# Rise: the first death brings back 12 tiles at once and uses it up; the second death is final.
+	_heal(zombie)
+	for cell in zombie.health:
+		zombie.damage_health_tile(combat, cell)
+	_check(not zombie.is_dead() and _cells_with(zombie, Enum.HealthTileEnum.UNDAMAGED) == Zombie.RISE and zombie.power_amount(RisePower) == 0,
+		"zombie should rise with %d tiles" % Zombie.RISE)
+	for cell in zombie.health:
+		zombie.damage_health_tile(combat, cell)
+	_check(zombie.is_dead(), "zombie rose twice")
 
 
 
