@@ -3,7 +3,8 @@ extends BaseArtifact
 
 
 func _init() -> void:
-	super("Iron Ring", "At the start of combat, Shield 4 random tiles.", Enum.ArtifactRarity.COMMON)
+	super("Iron Ring", "At the start of combat, Shield 4 random tiles.", Enum.ArtifactRarity.COMMON,
+		preload("res://assets/artifacts/iron_ring.png"))
 
 const SHIELDS := 4
 

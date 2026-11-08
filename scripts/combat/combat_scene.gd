@@ -74,6 +74,7 @@ var _hover_info := HoverInfo.new()  # keywords of cards in the pile viewer and c
 @onready var _gold_button: Button = %GoldButton
 @onready var _exp_button: Button = %ExpButton
 @onready var _card_button: Button = %CardButton
+@onready var _artifact_button: Button = %ArtifactRewardButton
 @onready var _card_choice_panel: Control = %CardChoicePanel
 @onready var _card_choices: HBoxContainer = %CardChoices
 @onready var _defeat_panel: Control = %DefeatPanel
@@ -879,6 +880,16 @@ func _refresh_rewards() -> void:
 	_gold_button.visible = not _rewards.gold_taken
 	_exp_button.visible = not _rewards.exp_taken
 	_card_button.visible = not _rewards.card_taken
+	_artifact_button.visible = _rewards.artifact != null and not _rewards.artifact_taken
+	if _rewards.artifact:
+		_artifact_button.text = _rewards.artifact.name
+		_artifact_button.tooltip_text = _rewards.artifact.description
+		_artifact_button.icon = _rewards.artifact.image
+
+
+func _on_artifact_reward_pressed() -> void:
+	_rewards.take_artifact(RunState)
+	_refresh_rewards()
 
 
 func _on_gold_reward_pressed() -> void:
@@ -921,10 +932,11 @@ func _on_card_choice_back_pressed() -> void:
 	_card_choice_panel.hide()
 
 
-## Coins and EXP left on the table are collected on the way out; an unpicked card is lost.
+## Coins, EXP and a boss's artifact left on the table are collected on the way out; an unpicked card is lost.
 func _on_continue_pressed() -> void:
 	_rewards.take_gold(RunState)
 	_rewards.take_exp(RunState)
+	_rewards.take_artifact(RunState)
 	RunState.leave_room()
 
 

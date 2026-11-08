@@ -3,7 +3,8 @@ extends BaseArtifact
 
 
 func _init() -> void:
-	super("Eagle Eye", "When your attack lands on an enemy's edge tile, damage 1 more random edge tile of that enemy.", Enum.ArtifactRarity.UNCOMMON)
+	super("Eagle Eye", "When your attack lands on an enemy's edge tile, damage 1 more random edge tile of that enemy.", Enum.ArtifactRarity.UNCOMMON,
+		preload("res://assets/artifacts/eagle_eye.png"))
 
 ## Edge tile: fewer than 6 neighbours on its grid. Once per enemy per attack, never a tile it landed on.
 func on_attack_landed(combat: CombatState, landed: Array) -> Array[Vector2i]:

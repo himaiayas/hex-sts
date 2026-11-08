@@ -2,7 +2,16 @@ class_name LuckyCharm
 extends BaseArtifact
 
 
-func _init() -> void:
-	super("Lucky Charm", "Rare and Legendary cards and artifacts are twice as likely to show up.", Enum.ArtifactRarity.UNCOMMON)
+const ARTIFACT_MULTIPLIERS := {
+	Enum.ArtifactRarity.RARE: 2.0,
+	Enum.ArtifactRarity.LEGENDARY: 2.0,
+}
+const CARD_MULTIPLIERS := {
+	Enum.CardRarity.RARE: 2.0,
+	Enum.CardRarity.LEGENDARY: 2.0,
+}
 
-const FACTOR := 2  # RunState.luck_factor
+
+func _init() -> void:
+	super("Lucky Charm", "You are more lucky :D", Enum.ArtifactRarity.UNCOMMON,
+		preload("res://assets/artifacts/lucky_charm.png"))

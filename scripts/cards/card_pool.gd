@@ -66,25 +66,30 @@ static var CARDS: Array = [
 	SturdySteps,
 ]
 
-## count different random cards. Every card is as likely, unless Lucky Charm favours Rare and Legendary.
+## count different random cards. Every card is as likely, unless Lucky Charm changes it
+## (LuckyCharm.CARD_MULTIPLIERS).
 static func random_cards(count: int) -> Array[BaseCard]:
 	var pool: Array[BaseCard] = []
 	for card_class in CARDS:
 		pool.append(card_class.new())
 	var result: Array[BaseCard] = []
 	while result.size() < count and not pool.is_empty():
-		var total := 0
+		var total := 0.0
 		for card in pool:
 			total += _weight(card)
-		var roll := randi_range(1, total)
+		if total <= 0.0:
+			break
+		var roll := randf() * total
+		var picked: BaseCard = pool.back()  # float rounding
 		for card in pool:
 			roll -= _weight(card)
-			if roll <= 0:
-				result.append(card)
-				pool.erase(card)
+			if roll < 0.0:
+				picked = card
 				break
+		result.append(picked)
+		pool.erase(picked)
 	return result
 
 
-static func _weight(card: BaseCard) -> int:
-	return RunState.luck_factor(card.rarity >= Enum.CardRarity.RARE)
+static func _weight(card: BaseCard) -> float:
+	return LuckyCharm.CARD_MULTIPLIERS.get(card.rarity, 1.0) if RunState.has_artifact(LuckyCharm) else 1.0

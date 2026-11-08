@@ -3,7 +3,8 @@ extends BaseArtifact
 
 
 func _init() -> void:
-	super("Phoenix Feather", "The first time you die, revive with your core and the 6 tiles around it healed. Once per run.", Enum.ArtifactRarity.RARE)
+	super("Phoenix Feather", "The first time you die, revive with your core and the 6 tiles around it healed. Once per run.", Enum.ArtifactRarity.RARE,
+		preload("res://assets/artifacts/phoenix_feather.png"))
 
 var used := false
 

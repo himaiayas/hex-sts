@@ -41,6 +41,9 @@ const LEVEL_UP_TILES := 3
 ## Level-ups not yet claimed in the level-up modal.
 var pending_level_ups := 0
 var pending_tile_slots := 0  # health tiles to place from an artifact (Spare Hex), in the level-up modal
+## Artifacts offered in this room and not taken yet (a boss reward, a shop shelf, a level-up while a
+## chest is open). ArtifactPool skips them so two offers can't be the same artifact. Cleared on leaving.
+var offered_artifacts: Array[BaseArtifact] = []
 
 var map: MapState = null
 var current_room: MapRoom = null
@@ -63,6 +66,7 @@ func start_new_run() -> void:
 	xp = 0
 	pending_level_ups = 0
 	pending_tile_slots = 0
+	offered_artifacts = []
 	dungeon_floor = 1
 
 	deck.append(CureAilment.new())
@@ -107,6 +111,7 @@ func enter_room(room: MapRoom) -> void:
 func leave_room() -> void:
 	var beat_boss := current_room != null and current_room.type == Enum.RoomType.BOSS_COMBAT
 	current_room = null
+	offered_artifacts.clear()
 	if beat_boss:
 		_next_floor()
 	get_tree().change_scene_to_file(MAP_SCENE)
@@ -146,7 +151,12 @@ func add_xp(amount: int) -> void:
 
 
 ## Gives the player an artifact and runs its pick-up effect.
+## Never owns two of the same artifact: a duplicate is ignored.
 func add_artifact(artifact: BaseArtifact) -> void:
+	offered_artifacts.erase(artifact)
+	if has_artifact(artifact.get_script()):
+		push_warning("Already own %s; not added again" % artifact.name)
+		return
 	artifacts.append(artifact)
 	artifact.on_pickup()
 
@@ -159,10 +169,6 @@ func has_artifact(script: Script) -> bool:
 func shop_price(base: int) -> int:
 	return ceili(base * TradingSigil.PRICE_FACTOR) if has_artifact(TradingSigil) else base
 
-
-## Drop weight factor of a rarity: Lucky Charm favours Rare and Legendary cards and artifacts.
-func luck_factor(rare_or_better: bool) -> int:
-	return LuckyCharm.FACTOR if rare_or_better and has_artifact(LuckyCharm) else 1
 
 
 func is_max_level() -> bool:

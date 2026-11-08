@@ -3,7 +3,8 @@ extends BaseArtifact
 
 
 func _init() -> void:
-	super("Dragon Fang", "Whenever one of your tiles gains Fracture, gain 1 Strength (at most 2 each combat).", Enum.ArtifactRarity.LEGENDARY)
+	super("Dragon Fang", "Whenever one of your tiles gains Fracture, gain 1 Strength (at most 2 each combat).", Enum.ArtifactRarity.LEGENDARY,
+		preload("res://assets/artifacts/dragon_fang.png"))
 
 const MAX_STRENGTH := 2
 

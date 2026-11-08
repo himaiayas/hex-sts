@@ -3,7 +3,8 @@ extends BaseArtifact
 
 
 func _init() -> void:
-	super("Chalk Marker", "At the end of your turn, you may choose 1 card to keep in your hand.", Enum.ArtifactRarity.UNCOMMON)
+	super("Chalk Marker", "At the end of your turn, you may choose 1 card to keep in your hand.", Enum.ArtifactRarity.UNCOMMON,
+		preload("res://assets/artifacts/chalk_marker.png"))
 
 func before_discard(combat: CombatState) -> void:
 	var cards: Array[BaseCard] = []

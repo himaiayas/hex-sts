@@ -3,7 +3,8 @@ extends BaseArtifact
 
 
 func _init() -> void:
-	super("Dragon Scale", "On pick up, gain 1 Level.", Enum.ArtifactRarity.LEGENDARY)
+	super("Dragon Scale", "On pick up, gain 1 Level.", Enum.ArtifactRarity.LEGENDARY,
+		preload("res://assets/artifacts/dragon_scale.png"))
 
 func on_pickup() -> void:
 	if RunState.is_max_level():

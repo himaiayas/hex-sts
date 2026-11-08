@@ -3,7 +3,8 @@ extends BaseArtifact
 
 
 func _init() -> void:
-	super("Worn Gauntlet", "After winning a combat, heal 2 random damaged tiles.", Enum.ArtifactRarity.UNCOMMON)
+	super("Worn Gauntlet", "After winning a combat, heal 2 random damaged tiles.", Enum.ArtifactRarity.UNCOMMON,
+		preload("res://assets/artifacts/worn_gauntlet.png"))
 
 const HEALS := 2
 

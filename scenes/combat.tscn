@@ -328,6 +328,15 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 28
 text = "Choose a card"
 
+[node name="ArtifactRewardButton" type="Button" parent="RewardPanel/Center/Panel/Box" unique_id=1804908843]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Artifact"
+expand_icon = true
+
 [node name="ContinueButton" type="Button" parent="RewardPanel/Center/Panel/Box" unique_id=1705992731]
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
@@ -445,6 +454,7 @@ text = "Main Menu"
 [connection signal="pressed" from="RewardPanel/Center/Panel/Box/GoldButton" to="." method="_on_gold_reward_pressed"]
 [connection signal="pressed" from="RewardPanel/Center/Panel/Box/ExpButton" to="." method="_on_exp_reward_pressed"]
 [connection signal="pressed" from="RewardPanel/Center/Panel/Box/CardButton" to="." method="_on_card_reward_pressed"]
+[connection signal="pressed" from="RewardPanel/Center/Panel/Box/ArtifactRewardButton" to="." method="_on_artifact_reward_pressed"]
 [connection signal="pressed" from="RewardPanel/Center/Panel/Box/ContinueButton" to="." method="_on_continue_pressed"]
 [connection signal="pressed" from="CardChoicePanel/Center/Box/CardChoiceButtons/BackButton" to="." method="_on_card_choice_back_pressed"]
 [connection signal="pressed" from="CardChoicePanel/Center/Box/CardChoiceButtons/SkipCardButton" to="." method="_on_skip_card_pressed"]

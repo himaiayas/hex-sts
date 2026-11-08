@@ -3,7 +3,8 @@ extends BaseArtifact
 
 
 func _init() -> void:
-	super("Echo Bell", "Each turn, your second Attack is played twice.", Enum.ArtifactRarity.RARE)
+	super("Echo Bell", "Each turn, your second Attack is played twice.", Enum.ArtifactRarity.RARE,
+		preload("res://assets/artifacts/echo_bell.png"))
 
 func extra_plays(combat: CombatState, card: BaseCard) -> int:
 	if card.type != Enum.CardType.ATTACK:

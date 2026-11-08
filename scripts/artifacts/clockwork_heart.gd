@@ -3,7 +3,8 @@ extends BaseArtifact
 
 
 func _init() -> void:
-	super("Clockwork Heart", "Every 10th Attack you play gives 1 Energy.", Enum.ArtifactRarity.RARE)
+	super("Clockwork Heart", "Every 10th Attack you play gives 1 Energy.", Enum.ArtifactRarity.RARE,
+		preload("res://assets/artifacts/clockwork_heart.png"))
 
 const EVERY := 10
 

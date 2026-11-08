@@ -3,7 +3,8 @@ extends BaseArtifact
 
 
 func _init() -> void:
-	super("Mason's Trowel", "At the start of combat, choose 1 of 3 random Defense cards to add to your hand. It costs 0 until played.", Enum.ArtifactRarity.COMMON)
+	super("Mason's Trowel", "At the start of combat, choose 1 of 3 random Defense cards to add to your hand. It costs 0 until played.", Enum.ArtifactRarity.COMMON,
+		preload("res://assets/artifacts/masons_trowel.png"))
 
 const CHOICES := 3
 
