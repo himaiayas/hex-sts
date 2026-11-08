@@ -130,6 +130,14 @@ func _check_goblin(combat: CombatState) -> void:
 			"goblin %s should damage %d tiles, damaged %d" % [action.action_name, 5 if i % 2 == 0 else 3, _cells_with(player, Enum.HealthTileEnum.DAMAGED)])
 	_check(names == ["Stab", "Backstab", "Stab", "Backstab"], "goblin order: %s" % [names])
 
+	# Pierce goes through Shield, so Backstab scores a shielded tile like an open one.
+	for tile in player.health.values():
+		tile.hp = Enum.HealthTileEnum.SHIELDED
+	var backstab := goblin.actions[1]
+	backstab.plan(combat, goblin)
+	var score := backstab.score_cell(backstab.parts[0], backstab.parts[0].cell, player)
+	_check(score == 6, "backstab on 3 shielded tiles should score 6, got %d" % score)
+
 
 
 func _check_vermin(combat: CombatState) -> void:
@@ -155,6 +163,13 @@ func _check_vermin(combat: CombatState) -> void:
 		if action is EnemyShieldSelf:
 			_check(_cells_with(vermin, Enum.HealthTileEnum.SHIELDED) == 5, "skitter should shield 5")
 	_check(names == ["Gnaw", "Gnaw", "Skitter", "Gnaw", "Gnaw", "Skitter"], "vermin order: %s" % [names])
+
+	# Scattered bites skip poor spots: on an open grid the first bite covers all 3 tiles.
+	_heal(player)
+	var gnaw := vermin.actions[0]
+	for i in 20:
+		gnaw.plan(combat, vermin)
+		_check(_covered(player, gnaw.parts[0]).size() == 3, "gnaw's first bite should cover 3 open tiles")
 
 
 
