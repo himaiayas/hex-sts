@@ -230,7 +230,7 @@ func _on_card_clicked(card: BaseCard) -> void:
 	if selected == card:
 		_select(null)
 	elif not combat.can_play(card):
-		_hint_label.text = "Not enough energy."
+		_hint_label.text = _unplayable_hint(card)
 		return
 	elif card.grid_actions.is_empty():
 		_hint_label.text = "Drag it to the middle of the screen to play."
@@ -249,7 +249,7 @@ func _on_card_cast(card: BaseCard) -> void:
 		return
 	_select(null)
 	if not combat.can_play(card):
-		_hint_label.text = "Not enough energy."
+		_hint_label.text = _unplayable_hint(card)
 		_refresh()
 		return
 	_select(card)
@@ -885,3 +885,9 @@ func _on_new_run_pressed() -> void:
 
 func _on_main_menu_pressed() -> void:
 	get_tree().change_scene_to_file(RunState.MENU_SCENE)
+
+
+func _unplayable_hint(card: BaseCard) -> String:
+	if not combat.can_afford(card):
+		return "Not enough energy."
+	return "Can't play this right now."

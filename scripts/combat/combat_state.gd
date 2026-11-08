@@ -25,6 +25,7 @@ var max_energy := 3
 var energy := 0
 var turn := 0
 var exhausted_this_turn := 0  # cards exhausted since the player's turn started
+var exhausted_this_combat := 0
 var playing: BaseCard  # the card whose effect is running now, for powers that react per card
 
 
@@ -125,9 +126,10 @@ func spawn(enemy: CombatUnit, next_to: CombatUnit, replace := true) -> void:
 
 
 
-## In hand, affordable, and every must_land pattern fits somewhere it can go.
+## In hand, affordable, its own rule (BaseCard.can_play) allows it, and every must_land pattern
+## fits somewhere it can go.
 func can_play(card: BaseCard) -> bool:
-	if card not in hand or not (card.x_cost or cost_of(card) <= energy):
+	if card not in hand or not can_afford(card) or not card.can_play(self):
 		return false
 	for action in card.placements():
 		var units: Array[CombatUnit] = [player]
@@ -136,6 +138,10 @@ func can_play(card: BaseCard) -> bool:
 		if not units.any(func(u: CombatUnit) -> bool: return action.can_place_anywhere(u)):
 			return false
 	return true
+
+
+func can_afford(card: BaseCard) -> bool:
+	return card.x_cost or cost_of(card) <= energy
 
 
 ## What card costs now: Shiver adds 1 to the next card.
@@ -180,11 +186,16 @@ func discard(card: BaseCard) -> void:
 	discard_pile.append(card)
 
 
-## Moves card from wherever it is to the exhaust pile, and counts it for this turn.
+## Moves card from wherever it is to the exhaust pile, counts it, and tells every card (Burnout).
 func exhaust(card: BaseCard) -> void:
 	hand.erase(card)
 	exhaust_pile.append(card)
 	exhausted_this_turn += 1
+	exhausted_this_combat += 1
+	for other in draw_pile + hand + discard_pile + exhaust_pile:
+		other.on_card_exhausted(self)
+	if playing:
+		playing.on_card_exhausted(self)
 
 
 ## The unit whose turn it is: the player, or the enemy taking its turn. Null between turns.

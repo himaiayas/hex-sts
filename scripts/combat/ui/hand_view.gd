@@ -61,6 +61,7 @@ func set_hand(cards: Array[BaseCard], selected: BaseCard, can_play: Callable, pi
 			remove_child(old)
 			old.queue_free()
 			_holders.erase(card)
+			card.changed.disconnect(_redraw_card)
 
 	for card in cards:
 		if not _holders.has(card):
@@ -72,6 +73,7 @@ func set_hand(cards: Array[BaseCard], selected: BaseCard, can_play: Callable, pi
 			holder.add_child(view)
 			add_child(holder)
 			_holders[card] = holder
+			card.changed.connect(_redraw_card.bind(card))
 		_holders[card].modulate = Color.WHITE if can_play.call(card) else COLOR_UNPLAYABLE
 		if cost_of.is_valid():
 			var cost: int = cost_of.call(card)
@@ -208,6 +210,20 @@ func _update_order() -> void:
 	if _dragged:
 		move_child(_holders[_dragged], -1)
 	move_child(_keyword_box, -1)
+
+
+## The card's look changed (e.g. Burnout grew): swap in a fresh view, in the same holder.
+func _redraw_card(card: BaseCard) -> void:
+	var holder: Node2D = _holders.get(card)
+	if holder == null:
+		return
+	var old := holder.get_child(0)
+	var view := RenderCard.create_card(card)
+	view.position = old.position
+	view.get_node("Panel").mouse_filter = Control.MOUSE_FILTER_IGNORE
+	holder.remove_child(old)
+	old.queue_free()
+	holder.add_child(view)
 
 
 func _set_border(card: BaseCard, on: bool, color := COLOR_SELECTED) -> void:

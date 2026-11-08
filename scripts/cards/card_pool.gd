@@ -3,7 +3,9 @@ class_name CardPool
 static var CARDS: Array = [
 	Slash,
 	CrushingCombo,
+	XSlash,
 	Guard,
+	BurningStab,
 	ShieldBash,
 	GreatWall,
 	RedSpot,
@@ -39,6 +41,8 @@ static var CARDS: Array = [
 	FlurryStorm,
 	Glock,
 	DeepBreath,
+	CureAilment,
+	Burnout,
 ]
 
 static func random_cards(count: int) -> Array[BaseCard]:

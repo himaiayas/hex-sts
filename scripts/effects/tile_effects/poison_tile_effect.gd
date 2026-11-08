@@ -10,6 +10,7 @@ var countdown := 2  # owner's turn starts left until it explodes
 
 func _init() -> void:
 	super("Poison", "Explodes at the start of its owner's 2nd turn: this tile is damaged through Shield and Plate, and each tile next to it takes 1 damage.")
+	debuff = true
 	allow_damaged = true
 
 func on_trigger(trigger: Enum.Trigger, combat: CombatState, unit: CombatUnit, cell: Vector2i) -> void:

@@ -9,6 +9,7 @@ static var _spreading := false  # a Fracture is hitting its neighbours right now
 
 func _init() -> void:
 	super("Fracture", "When this tile is damaged, each tile next to it takes 1 damage.")
+	debuff = true
 
 
 func on_trigger(trigger: Enum.Trigger, combat: CombatState, unit: CombatUnit, cell: Vector2i) -> void:

@@ -28,6 +28,19 @@ func execute(combat: CombatState, units: Array[CombatUnit], cells: Array[Vector2
 	return hits
 
 
+## Card-specific rule for playing it, checked on top of energy and placement (CombatState.can_play).
+## Override for cards that need something, e.g. another card in hand to exhaust.
+## The card itself is still in combat.hand while this is checked.
+func can_play(_combat: CombatState) -> bool:
+	return true
+
+
+## Called on every card in the fight whenever a card is exhausted (combat.exhausted_this_combat).
+## A card whose look changes should call emit_changed() so the hand redraws it.
+func on_card_exhausted(_combat: CombatState) -> void:
+	pass
+
+
 ## The grid action click i places: placements()[i], or the only one, again, on an X-cost card.
 func grid_action(i: int) -> GridAction:
 	return pattern(0) if x_cost else placements()[i]
