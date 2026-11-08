@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Ogre / Magic Golem / Dark Elf / Griffin / Hydra / Skeleton / Bat / Zombie / Frangenstein / Jack O Lantern / Lil Ghost / Mummy / Dragon / Dracula / Ramiel. Exit code = number of failures.
+## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Ogre / Magic Golem / Dark Elf / Griffin / Hydra / Skeleton / Bat / Zombie / Frangenstein / Jack O Lantern / Lil Ghost / Mummy / Warewolf / Dragon / Dracula / Ramiel. Exit code = number of failures.
 ## godot --headless --path . -s res://scripts/enemies/enemy_check.gd
 
 var _failures := 0
@@ -50,6 +50,7 @@ func _initialize() -> void:
 	await _check_jack(combat)
 	await _check_lil_ghost(combat)
 	await _check_mummy(combat)
+	await _check_warewolf(combat)
 	await _check_dragon(combat)
 	await _check_dracula(combat)
 	await _check_ramiel(combat)
@@ -732,6 +733,57 @@ func _check_mummy(combat: CombatState) -> void:
 			landed += 1
 	combat.playing = null
 	_check(landed == 2, "wrapped should halve the first card again next turn")
+
+
+
+func _check_warewolf(combat: CombatState) -> void:
+	var wolf := Warewolf.new()
+	combat.enemies = [wolf]
+	var player := combat.player
+
+	# Guard (Shield 10 + Hit 5, normal colour) -> Howl & Maul (Strength 1, then Hit 12, red), looped.
+	var names: Array[String] = []
+	for i in 4:
+		_heal(player)
+		_heal(wolf)
+		wolf.plan(combat)
+		var action := wolf.intent_actions[0]
+		names.append(action.action_name)
+		var hit := _covered(player, action.parts[0])
+		var strength := wolf.power_amount(StrengthPower)
+		_check(wolf.tint == (Warewolf.WOLF_TINT if action is WarewolfWolf else Color.WHITE), "warewolf tint doesn't match its form")
+		var full := action is WarewolfWolf
+		_check(wolf.power_amount(FullMoonPower) == int(full) and wolf.power_amount(NewMoonPower) == int(not full), "warewolf should have only %s" % ("Full Moon" if full else "New Moon"))
+		await wolf.take_turn(combat)
+		if action is WarewolfHuman:
+			_check(_cells_with(wolf, Enum.HealthTileEnum.SHIELDED) == WarewolfHuman.SHIELDS, "guard should shield 10")
+			_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == hit.size(), "guard didn't damage what its intent showed")
+		else:
+			_check(wolf.power_amount(StrengthPower) == strength + WarewolfWolf.HOWL, "howl should give 1 Strength")
+			_check(hit.all(func(c: Vector2i) -> bool: return player.health[c].hp == Enum.HealthTileEnum.DAMAGED), "maul missed its intent")
+	_check(names == ["Guard", "Howl & Maul", "Guard", "Howl & Maul"], "warewolf order: %s" % [names])
+
+	# Wolf form: the first hit of each Attack card also hits 3 more tiles. Not in Human form, not other cards.
+	var cells: Array = wolf.health.keys()
+	_heal(wolf)
+	wolf.plan(combat)  # Guard: Human form
+	combat.playing = Strike.new()
+	wolf.damage_health_tile(combat, cells[0])
+	_check(_cells_with(wolf, Enum.HealthTileEnum.DAMAGED) == 1, "human form took extra hits")
+	wolf.plan(combat)  # Howl & Maul: Wolf form
+	combat.playing = Strike.new()
+	wolf.damage_health_tile(combat, cells[1])
+	wolf.damage_health_tile(combat, wolf.health.keys().filter(func(c: Vector2i) -> bool: return wolf.health[c].hp == Enum.HealthTileEnum.UNDAMAGED)[0])
+	_check(_cells_with(wolf, Enum.HealthTileEnum.DAMAGED) == 3 + FullMoonPower.EXTRA, "wolf form should add %d hits once per card" % FullMoonPower.EXTRA)
+	var before := _cells_with(wolf, Enum.HealthTileEnum.DAMAGED)
+	combat.playing = ShieldPlayer.new()
+	wolf.damage_health_tile(combat, wolf.health.keys().filter(func(c: Vector2i) -> bool: return wolf.health[c].hp == Enum.HealthTileEnum.UNDAMAGED)[0])
+	_check(_cells_with(wolf, Enum.HealthTileEnum.DAMAGED) == before + 1, "wolf form took extra hits from a non-Attack card")
+	combat.playing = Strike.new()
+	wolf.damage_health_tile(combat, wolf.health.keys().filter(func(c: Vector2i) -> bool: return wolf.health[c].hp == Enum.HealthTileEnum.UNDAMAGED)[0])
+	combat.playing = null
+	_check(_cells_with(wolf, Enum.HealthTileEnum.DAMAGED) == before + 2 + FullMoonPower.EXTRA, "a new Attack card should add the extra hits again")
+	_check(not FullMoonPower.new().show_amount and not NewMoonPower.new().show_amount, "moon badges shouldn't show an amount")
 
 
 
