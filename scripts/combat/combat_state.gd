@@ -22,6 +22,7 @@ var max_energy := 3
 var energy := 0
 var turn := 0
 var exhausted_this_turn := 0  # cards exhausted since the player's turn started
+var playing: BaseCard  # the card whose effect is running now, for powers that react per card
 
 
 func _init(run: Node) -> void:
@@ -130,9 +131,11 @@ func play_card(card: BaseCard, units: Array[CombatUnit], cells: Array[Vector2i],
 	for cell in tile_picks:
 		card.pick_tile.inflict(self, player, cell)
 	await flush()
+	playing = card
 	await card.execute(self, units, cells, rotations)
 	if card.type == Enum.CardType.ATTACK and EchoPower.use(player):
 		await card.execute(self, units, cells, rotations)
+	playing = null
 	if card.exhaust:
 		exhaust(card)
 	elif card.to_draw_top:
