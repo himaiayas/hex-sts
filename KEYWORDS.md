@@ -128,7 +128,8 @@ Agreed with Mai in issue #8, and for issue #19. Where this differs from the shee
 - The player chooses X damaged hexes of their own to restore. If fewer are damaged, all of them are restored.
 
 **Stun / Regen**
-- Powers. Not implemented.
+- Powers. Stun isn't implemented.
+- Regen is `RegenPower`: at the start of its owner's turn it heals X random damaged tiles. An optional guard skips the heal if the owner lost that many tiles since its last turn (Hydra: Regen 3, guard 8).
 - Ramiel's stun is its own move instead: an interrupted Charge becomes a "Stunned" turn that does nothing.
 
 **Triggers** (task #8, already on main)

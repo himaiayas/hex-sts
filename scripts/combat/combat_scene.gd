@@ -25,6 +25,7 @@ const SHAKE_STEPS := 6
 const SHAKE_TIME := 0.25
 const PROJECTILE_WIDTH := 200.0  # px; its height keeps the texture's aspect
 const PROJECTILE_SPEED := 2400.0  # px per second, steady
+const SPRITE_FLASH := Color(2.5, 2.5, 2.5)  # a sprite's brightest, fading back over the hex flash
 
 var combat: CombatState
 var selected: BaseCard = null
@@ -400,6 +401,8 @@ func _animate(batch: Array[Dictionary]) -> void:
 		_ripple(action.ripple_vfx, _center(_sprite_for(attacker)))
 	for change in batch:
 		_view_for(change.unit).flash(change.cell, change.kind, change.effect)
+		if change.effect is MultiHeadPower:  # a Hydra head was cut
+			_flash_sprite(_sprite_for(change.unit))
 	for unit in damaged:
 		if unit == combat.player:
 			_shake(_player_view, "shake")
@@ -495,6 +498,12 @@ func _set_aim(texture: Texture2D) -> void:
 	tween.tween_method(func(t: float) -> void:
 		aim.position = (_player_image.size - AIM_SIZE) / 2.0 + Vector2(sin(t), sin(2.0 * t) * 0.6) * AIM_DRIFT, 0.0, TAU, AIM_LOOP_TIME)
 	_aim = aim
+
+
+## Brightens a unit's sprite to SPRITE_FLASH and fades it back, as long as the hex flash.
+func _flash_sprite(sprite: Control) -> void:
+	sprite.self_modulate = SPRITE_FLASH
+	sprite.create_tween().tween_property(sprite, "self_modulate", Color.WHITE, HealthGridView.FLASH_TIME)
 
 
 ## Jolts a Vector2 property that rests at ZERO in random directions, smaller each time, then back to ZERO.
@@ -698,7 +707,7 @@ func _room_type() -> Enum.RoomType:
 
 ## The enemy being built, fought in every normal and elite room (and on F6) until it's done.
 ## null = the usual line-ups.
-static var testing: Script = Griffin
+static var testing: Script = Hydra
 
 
 ## Placeholder line-ups until there are more enemies.
@@ -711,8 +720,7 @@ func _enemies_for(room_type: Enum.RoomType) -> Array[CombatUnit]:
 		enemies.append(testing.new())
 		return enemies
 	if room_type == Enum.RoomType.ELITE_COMBAT:
-		enemies.append(Slime.new())
-		enemies.append(Slime.new())
+		enemies.append(Hydra.new())
 		return enemies
 	enemies.append([Slime, Goblin, Vermin, Hound, Ogre, MagicGolem, DarkElf, Griffin].pick_random().new())
 	return enemies

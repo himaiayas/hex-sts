@@ -1,6 +1,6 @@
 extends SceneTree
 
-## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Ogre / Magic Golem / Dark Elf / Griffin / Dragon / Dracula / Ramiel. Exit code = number of failures.
+## Headless check for BaseEnemy / Slime / Goblin / Vermin / Hound / Ogre / Magic Golem / Dark Elf / Griffin / Hydra / Dragon / Dracula / Ramiel. Exit code = number of failures.
 ## godot --headless --path . -s res://scripts/enemies/enemy_check.gd
 
 var _failures := 0
@@ -41,6 +41,7 @@ func _initialize() -> void:
 	await _check_golem(combat)
 	await _check_dark_elf(combat)
 	await _check_griffin(combat)
+	await _check_hydra(combat)
 	await _check_dragon(combat)
 	await _check_dracula(combat)
 	await _check_ramiel(combat)
@@ -260,6 +261,71 @@ func _check_griffin(combat: CombatState) -> void:
 	_check(griffin.damage_health_tile(combat, cells[4]), "aerial cancelled a hit during its own turn")
 	await griffin.on_turn_end(combat)
 	_check(not griffin.damage_health_tile(combat, cells[5]), "aerial should miss again after its turn")
+
+
+
+func _check_hydra(combat: CombatState) -> void:
+	var hydra := Hydra.new()
+	combat.enemies = [hydra]
+	var player := combat.player
+	var cells: Array = hydra.health.keys()
+	_check(hydra.power_amount(MultiHeadPower) == 3 and hydra.power_amount(RegenPower) == 3, "hydra should start with 3 heads and Regen 3")
+
+	# 9 lost tiles in the player's turn keep 3 heads; the 10th cuts one at once. The intent drops a bite,
+	# keeps the other two where they were aimed, and stops counting. 10 more that turn cut nothing.
+	_heal(player)
+	hydra.plan(combat)
+	var planned: Array = hydra.intent_actions[0].parts.map(func(p: EnemyActionPart) -> Vector2i: return p.cell)
+	_check(_rows(hydra) == "Bite (0/10)" and planned.size() == 3, "3 heads should plan 3 bites: %s" % _rows(hydra))
+	for i in 9:
+		hydra.damage_health_tile(combat, cells[i])
+	_check(hydra.power_amount(MultiHeadPower) == 3 and _rows(hydra) == "Bite (9/10)", "9 lost tiles: %s" % _rows(hydra))
+	hydra.damage_health_tile(combat, cells[9])
+	var bite := hydra.intent_actions[0]
+	_check(hydra.power_amount(MultiHeadPower) == 2 and _rows(hydra) == "Bite", "10 lost tiles should cut a head: %s" % _rows(hydra))
+	_check(bite.parts.size() == 2 and bite.parts[0].cell == planned[0] and bite.parts[1].cell == planned[1], "the cut bite moved the others")
+	_check(hydra.idle_frames[0] == Hydra.ART[2], "the sprite should show 2 heads")
+	for i in range(10, 20):
+		hydra.damage_health_tile(combat, cells[i])
+	_check(hydra.power_amount(MultiHeadPower) == 2, "a second head went in the same turn")
+
+	# Lost 8+: no Regen. Then the 2 bites land where the intent showed.
+	await hydra.on_turn_start(combat)
+	_check(_cells_with(hydra, Enum.HealthTileEnum.DAMAGED) == 20, "regen healed after a heavy turn")
+	var expect := {}
+	for part in bite.parts:
+		for cell in _covered(player, part):
+			expect[cell] = true
+	await hydra.take_turn(combat)
+	_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == expect.size(), "hydra bites didn't damage what the intent showed")
+	await hydra.on_turn_end(combat)
+
+	# A light turn: 3 lost, no cut, Regen heals 3. Hits during its own turn don't count.
+	hydra.plan(combat)
+	_check(_rows(hydra) == "Bite (0/10)" and hydra.intent_actions[0].parts.size() == 2, "2 heads next turn: %s" % _rows(hydra))
+	for i in range(20, 23):
+		hydra.damage_health_tile(combat, cells[i])
+	await hydra.on_turn_start(combat)
+	_check(_cells_with(hydra, Enum.HealthTileEnum.DAMAGED) == 20, "regen should heal 3 after a light turn")
+	for i in range(30, 45):
+		hydra.damage_health_tile(combat, cells[i])
+	_check(hydra.power_amount(MultiHeadPower) == 2, "tiles lost in its own turn cut a head")
+	await hydra.on_turn_end(combat)
+
+	# Two more heavy turns leave no heads: no intent, no attack.
+	_heal(hydra)
+	for turn in 2:
+		hydra.plan(combat)
+		for i in 10:
+			hydra.damage_health_tile(combat, cells[turn * 10 + i])
+		await hydra.on_turn_start(combat)
+		await hydra.on_turn_end(combat)
+	hydra.plan(combat)
+	_check(hydra.power_amount(MultiHeadPower) == 0 and hydra.intent_actions.is_empty(), "no heads should mean no intent")
+	_check(hydra.idle_frames[0] == Hydra.ART[0], "the sprite should show no heads")
+	_heal(player)
+	await hydra.take_turn(combat)
+	_check(_cells_with(player, Enum.HealthTileEnum.DAMAGED) == 0, "a headless hydra attacked")
 
 
 
