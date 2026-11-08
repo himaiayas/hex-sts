@@ -8,3 +8,7 @@ func _init(_amount := 1) -> void:
 	super(_amount)
 	name = "Rune Armor"
 	description = "At the start of its turn, Shield 1 random tile of its own per Rune Armor."
+
+
+func get_description() -> String:
+	return "At the start of its turn, Shield %s of its own." % plural(amount, "random tile")

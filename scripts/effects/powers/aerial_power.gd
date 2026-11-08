@@ -12,6 +12,10 @@ func _init(_amount := 1) -> void:
 	left = _amount
 
 
+func get_description() -> String:
+	return "Each of your turns, the first %s on it miss%s, even on a Shield or with Pierce." % [plural(amount, "hit"), "es" if amount == 1 else ""]
+
+
 func on_trigger(trigger: Enum.Trigger, _combat: CombatState, _unit: CombatUnit, _cell: Vector2i) -> void:
 	if trigger == Enum.Trigger.TURN_END:
 		left = amount  # the opponent's turn comes next

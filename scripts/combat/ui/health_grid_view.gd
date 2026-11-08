@@ -364,7 +364,7 @@ func _show_power_info(i: int) -> void:
 	var power := unit.statuses[i] as BasePower
 	if power == null:
 		return
-	_info_box.add_child(InfoPanel.make("%s %d" % [power.name, power.amount], power.description, power.get_color()))
+	_info_box.add_child(InfoPanel.make("%s %d" % [power.name, power.amount], power.get_description(), power.get_color()))
 	_info_box.reset_size()
 	var rect := get_global_transform() * _power_rect(i)
 	var pos := Vector2(rect.end.x + InfoPanel.GAP, rect.position.y)

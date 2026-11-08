@@ -14,6 +14,17 @@ func _init(_name: String, _description: String, _amount := 1, _turns := -1) -> v
 
 @abstract func get_color() -> Color
 
+
+## The badge tooltip, with this power's amount filled in. description stays the generic
+## per-stack text for card keywords.
+func get_description() -> String:
+	return description
+
+
+## "1 tile", "3 tiles".
+static func plural(n: int, word: String) -> String:
+	return "%d %s%s" % [n, word, "" if n == 1 else "s"]
+
 ## Badge art. ponytail: placeholder until each power has its own icon.
 func get_icon() -> Texture2D:
 	return preload("res://icon.svg")
