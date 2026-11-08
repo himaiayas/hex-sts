@@ -21,6 +21,10 @@ func get_color()->Color
 func get_icon() -> Texture2D:
 	return null
 
+## What it does to a tile, for the card's hover info. Defaults to the keyword of the same name.
+func describe() -> String:
+	return Keywords.describe(display_name())
+
 ## Shown when choosing between tiles (e.g. Expansion Augment).
 @abstract
 func display_name() -> String

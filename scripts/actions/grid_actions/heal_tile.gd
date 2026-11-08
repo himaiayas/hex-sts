@@ -15,5 +15,11 @@ func can_inflict(unit: CombatUnit, cell: Vector2i)->bool:
 func get_color()->Color:
 	return HealthGridView.COLOR_HEAL
 
+func get_icon() -> Texture2D:
+	return preload("res://assets/grid_effects/heal.png")
+
+func describe() -> String:
+	return "Heals this tile if it's damaged."
+
 func display_name() -> String:
 	return "Heal"

@@ -38,6 +38,8 @@ signal _choice_confirmed
 var _choice := {}  # what the card being played asks the player to pick (see CombatState.chooser); empty if nothing
 var _picks: Array[BaseCard] = []  # cards picked for _choice, from the hand or the discard pile
 var _pile_picking := false  # the pile viewer is open for _choice
+signal _relocated(cell: Vector2i)
+var _relocating := {}  # the enemy part Taunt lets the player move (see CombatState.relocator); empty if none
 
 var _enemy_views: Array[HealthGridView] = []
 var _enemy_images: Array[UnitImage] = []  # one per enemy, same order as _enemy_views
@@ -106,6 +108,8 @@ func _ready() -> void:
 	_fit_enemies()
 
 	combat.animator = _animate
+	combat.chooser = _choose
+	combat.relocator = _relocate
 	_busy = true
 	await combat.start_turn()
 	_busy = false
@@ -230,7 +234,7 @@ func _on_card_clicked(card: BaseCard) -> void:
 	if selected == card:
 		_select(null)
 	elif not combat.can_play(card):
-		_hint_label.text = "Not enough energy."
+		_hint_label.text = _unplayable_hint(card)
 		return
 	elif card.grid_actions.is_empty():
 		_hint_label.text = "Drag it to the middle of the screen to play."
@@ -249,7 +253,7 @@ func _on_card_cast(card: BaseCard) -> void:
 		return
 	_select(null)
 	if not combat.can_play(card):
-		_hint_label.text = "Not enough energy."
+		_hint_label.text = _unplayable_hint(card)
 		_refresh()
 		return
 	_select(card)
@@ -257,6 +261,9 @@ func _on_card_cast(card: BaseCard) -> void:
 
 
 func _on_cell_clicked(unit: CombatUnit, cell: Vector2i) -> void:
+	if not _relocating.is_empty():
+		_place_relocated(unit, cell)
+		return
 	if _over or _busy:
 		return
 	if selected == null:
@@ -278,6 +285,9 @@ func _on_cell_clicked(unit: CombatUnit, cell: Vector2i) -> void:
 
 
 func _on_confirm_pressed() -> void:
+	if not _relocating.is_empty():
+		_relocated.emit(_relocating.part.cell)  # keep it where it is
+		return
 	if not _choice.is_empty() and _picked_count() == _choice.count:
 		_choice_confirmed.emit()
 
@@ -293,6 +303,26 @@ func _choose(request: Dictionary) -> Array:
 	_picks.clear()
 	_refresh()
 	return picked
+
+
+## combat.relocator: the player clicks their grid to move the part there, or Confirm to keep it.
+func _relocate(request: Dictionary) -> Vector2i:
+	_relocating = request
+	_refresh()
+	var cell: Vector2i = await _relocated
+	_relocating = {}
+	_refresh()
+	return cell
+
+
+func _place_relocated(unit: CombatUnit, cell: Vector2i) -> void:
+	if unit != combat.player:
+		_hint_label.text = "Move the attack on your own grid."
+		return
+	if combat.part_hits(_relocating.part, cell) < _relocating.min_hits:
+		_hint_label.text = "It must still hit at least %d tiles." % _relocating.min_hits
+		return
+	_relocated.emit(cell)
 
 
 func _toggle_pick(card: BaseCard) -> void:
@@ -321,6 +351,9 @@ func _play_selected() -> void:
 	_busy = false
 	_refresh()
 	_check_combat_end()
+	if combat.end_turn_requested:  # Chronokinesis
+		combat.end_turn_requested = false
+		_on_end_turn_pressed()
 
 
 func _picked_count() -> int:
@@ -602,8 +635,12 @@ func _refresh() -> void:
 	var choosing := not _choice.is_empty()
 	var discard_picking: bool = choosing and not _choice.in_hand
 	var hand_picking: bool = choosing and _choice.in_hand
-	_pick_buttons.visible = choosing and not discard_picking
-	if choosing:
+	var relocating := not _relocating.is_empty()
+	_pick_buttons.visible = (choosing and not discard_picking) or relocating
+	if relocating:
+		_confirm_button.disabled = false
+		_hint_label.text = "Taunt: click your grid to move this attack (it must hit at least %d tiles). Confirm keeps it there." % _relocating.min_hits
+	elif choosing:
 		_confirm_button.disabled = _picked_count() < _choice.count
 		_hint_label.text = _choice.prompt
 	elif selected:
@@ -644,6 +681,11 @@ func _refresh() -> void:
 		view.refresh()
 	_player_view.preview = pattern if on_player else none
 	_player_view.random_target = random_tile if on_player else null
+	if relocating:  # the part being moved follows the cursor
+		var moving: Dictionary[Vector2i, BaseActionTile] = {}
+		for t: BaseActionTile in _relocating.part.tiles:
+			moving[t.coords] = t
+		_player_view.preview = moving
 
 	# Grid actions already clicked flicker where they will land.
 	for view in _enemy_views:
@@ -668,6 +710,8 @@ func _refresh() -> void:
 			for part in action.parts:
 				var intent := {cell = part.cell, tiles = part.tiles, faded = _hovered_enemy != -1 and _hovered_enemy != i}
 				if part.side == Enum.Side.PLAYER:
+					if relocating and part == _relocating.part:
+						intent.faded = true  # where it is now, while the preview shows where it would go
 					player_intents.append(intent)
 				else:
 					self_intents.append(intent)
@@ -885,3 +929,9 @@ func _on_new_run_pressed() -> void:
 
 func _on_main_menu_pressed() -> void:
 	get_tree().change_scene_to_file(RunState.MENU_SCENE)
+
+
+func _unplayable_hint(card: BaseCard) -> String:
+	if not combat.can_afford(card):
+		return "Not enough energy."
+	return "Can't play this right now."

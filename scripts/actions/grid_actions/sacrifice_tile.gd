@@ -11,6 +11,9 @@ func _init(_coord: Vector2i)->void:
 func get_color()->Color:
 	return Color("#b03a48")
 
+func describe() -> String:
+	return "Destroys one of your own undamaged tiles, even through Shield."
+
 func display_name() -> String:
 	return "Sacrifice"
 

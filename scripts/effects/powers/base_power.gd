@@ -32,6 +32,17 @@ func on_card_played(_combat: CombatState, _unit: CombatUnit, _card: BaseCard) ->
 	pass
 
 
+## Called on the player's powers whenever a card is exhausted (Oblation).
+func on_card_exhausted(_combat: CombatState, _unit: CombatUnit, _card: BaseCard) -> void:
+	pass
+
+
+## Called on the owner's powers when one of its tiles gets a tile effect it didn't have (Living Wall).
+## No flush: what it changes plays with whatever applied the effect.
+func on_tile_effect_gained(_combat: CombatState, _unit: CombatUnit, _cell: Vector2i, _effect: BaseTileEffect) -> void:
+	pass
+
+
 ## "1 tile", "3 tiles".
 static func plural(n: int, word: String) -> String:
 	return "%d %s%s" % [n, word, "" if n == 1 else "s"]

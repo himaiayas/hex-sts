@@ -10,6 +10,11 @@ func _init() -> void:
 	description = "{keyword:Exhaust} 1 card in your hand.\nDraw 2."
 
 
+## Needs another card in hand to exhaust.
+func can_play(combat: CombatState) -> bool:
+	return combat.hand.size() > 1
+
+
 func execute(combat: CombatState, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int])->Array:
 	var hits: Array = await super(combat, units, cells, rotations)
 	await ExhaustFromHandAction.new(1).execute(combat, combat.player, Vector2i.ZERO)

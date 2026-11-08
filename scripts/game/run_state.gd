@@ -63,16 +63,16 @@ func start_new_run() -> void:
 	pending_level_ups = 0
 	dungeon_floor = 1
 
-	deck.append(Slash.new())
+	deck.append(CureAilment.new())
 	deck.append(LuckyShield.new())
-	deck.append(DonutBlast.new())
-	deck.append(Enhance.new())
-	deck.append(ShoulderCharge.new())
+	deck.append(XSlash.new())
+	deck.append(SacredBlessing.new())
+	#deck.append(ShoulderCharge.new())
 	deck.append(Guard.new())
-	# deck.append(LastLight.new())
-	# deck.append(SteadyGuard.new())
+	deck.append(Taunt.new())
+	deck.append(BurningStab.new())
 	deck.append(Kindling.new())
-	# deck.append(CinderStrike.new())
+	deck.append(OpenVein.new())
 	# deck.append(Mend.new())
 	# deck.append(BloodPrice.new())
 	# deck.append(SpikedGuard.new())

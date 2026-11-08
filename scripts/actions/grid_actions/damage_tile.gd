@@ -13,11 +13,14 @@ func inflict(combat: CombatState, unit: CombatUnit, cell: Vector2i)->bool:
 	return unit.health.has(cell) and unit.damage_health_tile(combat, cell, pierce)
 
 func get_color()->Color:
-	return Color("#c46bff") if pierce else Color("#ff7a7a")
+	return Color("#ff7a7a")
 
 ## Pierce (and so Sacrifice) has its own icon.
 func get_icon() -> Texture2D:
 	return preload("res://assets/grid_effects/piercing.png") if pierce else preload("res://assets/grid_effects/damage.png")
+
+func describe() -> String:
+	return "Damages this tile, even through Shield." if pierce else "Damages this tile. A Shield absorbs it instead."
 
 func display_name() -> String:
 	return "Pierce" if pierce else "Damage"
