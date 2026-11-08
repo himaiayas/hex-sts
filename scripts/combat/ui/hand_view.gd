@@ -40,6 +40,7 @@ var _hovered := -1
 var _dragged: BaseCard = null
 var _can_play: Callable
 var picking := false  # the scene's pick step: clicking a card picks it instead of dragging it
+var cost_of: Callable  # set by the scene: a card's cost now, shown on it when it differs (Shiver)
 
 var _keyword_box := VBoxContainer.new()
 var _keyword_card: BaseCard = null  # card the panels are counting down for or showing
@@ -72,6 +73,9 @@ func set_hand(cards: Array[BaseCard], selected: BaseCard, can_play: Callable, pi
 			add_child(holder)
 			_holders[card] = holder
 		_holders[card].modulate = Color.WHITE if can_play.call(card) else COLOR_UNPLAYABLE
+		if cost_of.is_valid():
+			var cost: int = cost_of.call(card)
+			RenderCard.set_cost(_holders[card].get_child(0), "X" if card.x_cost else str(cost), cost > card.cost)
 		if card == selected:
 			_set_border(card, true)
 		else:

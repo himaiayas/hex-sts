@@ -89,6 +89,7 @@ func _ready() -> void:
 
 	_hand.card_clicked.connect(_on_card_clicked)
 	_hand.card_cast.connect(_on_card_cast)
+	_hand.cost_of = combat.cost_of
 	_player_view.setup(combat.player, true)
 	_player_view.cell_clicked.connect(_on_cell_clicked)
 	combat.player.blocked.connect(_on_player_blocked)
@@ -172,7 +173,7 @@ func _on_card_clicked(card: BaseCard) -> void:
 		return
 	else:
 		_select(card)
-		if card.clicks(combat.energy) == 0:  # an X-cost card with no energy left
+		if card.clicks(combat.x_energy()) == 0:  # an X-cost card with no energy left
 			_play_selected()
 			return
 	_refresh()
@@ -206,7 +207,7 @@ func _on_cell_clicked(unit: CombatUnit, cell: Vector2i) -> void:
 	_units.append(unit)
 	_cells.append(cell)
 	_rotations.append(_rotation)
-	if _cells.size() < selected.clicks(combat.energy): #store intents in _cells, when all grid has been chosen, this condition reeturn false
+	if _cells.size() < selected.clicks(combat.x_energy()): #store intents in _cells, when all grid has been chosen, this condition reeturn false
 		_refresh()
 		return
 	_play_selected()
@@ -563,8 +564,8 @@ func _refresh() -> void:
 			_hint_label.text = "Pick %d card%s in your hand to exhaust. Right-click to cancel." % [count, "" if count == 1 else "s"]
 	elif selected:
 		var step := ""
-		if selected.clicks(combat.energy) > 1:
-			step = " (pattern %d/%d)" % [_cells.size() + 1, selected.clicks(combat.energy)]
+		if selected.clicks(combat.x_energy()) > 1:
+			step = " (pattern %d/%d)" % [_cells.size() + 1, selected.clicks(combat.x_energy())]
 		if _next_grid_action() is RandomGridAction:
 			_hint_label.text = "Click %s%s. Right-click to cancel." % ["your grid" if _targets_player() else "an enemy", step]
 		else:
@@ -638,7 +639,7 @@ func _refresh() -> void:
 
 ## The selected card's grid action the next click places, or null.
 func _next_grid_action() -> GridAction:
-	if selected and _cells.size() < selected.clicks(combat.energy):
+	if selected and _cells.size() < selected.clicks(combat.x_energy()):
 		return selected.grid_action(_cells.size())
 	return null
 
@@ -663,7 +664,7 @@ func _select(card: BaseCard) -> void:
 ## Whether the next click goes on the player's grid: the current grid action's target, or the card's.
 func _targets_player() -> bool:
 	var target := selected.target
-	if _cells.size() < selected.clicks(combat.energy):
+	if _cells.size() < selected.clicks(combat.x_energy()):
 		target = selected.grid_action(_cells.size()).target
 	return target == Enum.TargetType.PLAYER
 

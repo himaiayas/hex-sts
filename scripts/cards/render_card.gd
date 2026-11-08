@@ -20,6 +20,7 @@ const INLINE_PATTERN_HEIGHT := PatternView.MAX_HEIGHT  # tallest a {render:N} sh
 const INLINE_SPACING := 4  # between text and an inline pattern
 const FONT_SIZE :=16  # description
 const COLOR_DESCRIPTION := Color(0.117647, 0.117647, 0.137255)  # dark, like the name
+const COLOR_RAISED_COST := Color("#ff4a4a")  # a cost raised by a debuff
 
 ## Background, name frame and outline images are 1034x1436 with the card drawn in this
 ## part; it's cropped out so the layers line up.
@@ -128,6 +129,15 @@ static func create_card(data: BaseCard) -> Node2D:
 	var augments_width := data.augments.size() * (AUGMENT_SIZE + AUGMENT_SPACING) - AUGMENT_SPACING
 	_place(augments, Rect2((CARD_SIZE.x - augments_width) / 2, -AUGMENT_OFFSET, augments_width, AUGMENT_SIZE))
 	return card
+
+
+## Shows cost ("2", "X") on a card made by create_card, in COLOR_RAISED_COST when a debuff raised it (Shiver).
+static func set_cost(card: Node2D, cost: String, raised: bool) -> void:
+	var cost_label: Label = card.get_node("%CostLabel")
+	cost_label.text = cost
+	if not cost_label.has_meta("cost_color"):  # Card.tscn's own colour, to go back to
+		cost_label.set_meta("cost_color", cost_label.get_theme_color("font_color"))
+	cost_label.add_theme_color_override("font_color", COLOR_RAISED_COST if raised else cost_label.get_meta("cost_color"))
 
 
 ## Shrinks the description when it's taller or wider than DESCRIPTION_RECT, keeping it centred.

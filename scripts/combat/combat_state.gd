@@ -108,7 +108,17 @@ func spawn(enemy: CombatUnit, in_place_of: CombatUnit) -> void:
 
 
 func can_play(card: BaseCard) -> bool:
-	return card in hand and (card.x_cost or card.cost <= energy)
+	return card in hand and (card.x_cost or cost_of(card) <= energy)
+
+
+## What card costs now: Shiver adds 1 to the next card.
+func cost_of(card: BaseCard) -> int:
+	return card.cost + player.power_amount(ShiverPower)
+
+
+## Energy an X-cost card gets to use: all of it, minus Shiver's extra 1.
+func x_energy() -> int:
+	return maxi(0, energy - player.power_amount(ShiverPower))
 
 
 ## Pays the cost, runs each grid action on units[i] at cells[i], then discards the card.
@@ -120,7 +130,8 @@ func can_play(card: BaseCard) -> bool:
 func play_card(card: BaseCard, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int], picks: Array[BaseCard] = [], tile_picks: Array[Vector2i] = []) -> bool:
 	if not can_play(card):
 		return false
-	energy -= energy if card.x_cost else card.cost
+	energy = 0 if card.x_cost else energy - cost_of(card)
+	player.statuses.assign(player.statuses.filter(func(p: BaseEffect) -> bool: return not p is ShiverPower))
 	hand.erase(card)
 	for pick in picks:
 		if card.pick_from_discard > 0:
