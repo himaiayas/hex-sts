@@ -26,6 +26,11 @@ func dodges(_combat: CombatState, _unit: CombatUnit) -> bool:
 	return false
 
 
+## Called on the player's powers after each card they play finishes.
+func on_card_played(_combat: CombatState, _unit: CombatUnit, _card: BaseCard) -> void:
+	pass
+
+
 ## "1 tile", "3 tiles".
 static func plural(n: int, word: String) -> String:
 	return "%d %s%s" % [n, word, "" if n == 1 else "s"]

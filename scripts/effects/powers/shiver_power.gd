@@ -14,6 +14,10 @@ func on_trigger(trigger: Enum.Trigger, _combat: CombatState, unit: CombatUnit, _
 		unit.statuses.erase(self)
 
 
+func on_card_played(_combat: CombatState, unit: CombatUnit, _card: BaseCard) -> void:
+	unit.statuses.erase(self)
+
+
 func stack(_other: BaseEffect) -> void:
 	pass
 

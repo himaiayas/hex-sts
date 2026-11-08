@@ -131,7 +131,6 @@ func play_card(card: BaseCard, units: Array[CombatUnit], cells: Array[Vector2i],
 	if not can_play(card):
 		return false
 	energy = 0 if card.x_cost else energy - cost_of(card)
-	player.statuses.assign(player.statuses.filter(func(p: BaseEffect) -> bool: return not p is ShiverPower))
 	hand.erase(card)
 	for pick in picks:
 		if card.pick_from_discard > 0:
@@ -147,6 +146,9 @@ func play_card(card: BaseCard, units: Array[CombatUnit], cells: Array[Vector2i],
 	if card.type == Enum.CardType.ATTACK and EchoPower.use(player):
 		await card.execute(self, units, cells, rotations)
 	playing = null
+	for power in player.statuses.duplicate():
+		if power is BasePower:
+			power.on_card_played(self, player, card)
 	if card.exhaust:
 		exhaust(card)
 	elif card.to_draw_top:
