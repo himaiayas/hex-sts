@@ -74,7 +74,7 @@ func start_turn() -> void:
 	if turn == 1:
 		await player.fire(Enum.Trigger.COMBAT_START, self)
 	await player.on_turn_start(self)
-	draw(DRAW_PER_TURN)
+	draw(DRAW_PER_TURN - player.power_amount(ScreechPower))
 	for e in enemies:
 		var enemy := e as BaseEnemy
 		if enemy and not enemy.is_dead():
