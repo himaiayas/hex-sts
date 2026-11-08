@@ -16,6 +16,7 @@ const NO_CELL := Vector2i(999999, 999999)  # not (0,0): that's a real cell
 const INTENT_PERIOD := 1.4  # seconds per pulse
 const FLICKER_PERIOD := 0.4  # random targets: faster than intents so the two read differently
 const INTENT_FADE := 0.25  # a faded intent's alpha, relative: another enemy is hovered
+const NAME_SCREEN_MARGIN := 27.0  # a spilled name stays this far from the screen's sides (the combat Margin's)
 const PLACED_PERIOD := 1.2  # grid actions already clicked: a slow flash of the whole tile
 const PLACED_FILL := 0.6  # strongest fill of that flash
 const ICON_SIZE := 40.0  # action icons on targeted tiles (a hex is ~62 wide)
@@ -276,7 +277,13 @@ func _draw() -> void:
 
 	var font := ThemeDB.fallback_font
 	var title := "%s  %d/%d" % [unit.display_name, alive, coords.size()]
-	draw_string(font, Vector2(0, 27), title, HORIZONTAL_ALIGNMENT_CENTER, size.x, 27, COLOR_TEXT)
+	# Centred over the grid; a small grid's name spills past its sides instead of being cut,
+	# but stays NAME_SCREEN_MARGIN inside the screen.
+	var title_width := font.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, 27).x
+	var title_x := (size.x - title_width) / 2.0
+	title_x = clampf(title_x, NAME_SCREEN_MARGIN - global_position.x,
+		get_viewport_rect().size.x - NAME_SCREEN_MARGIN - global_position.x - title_width)
+	draw_string(font, Vector2(title_x, 27), title, HORIZONTAL_ALIGNMENT_LEFT, -1, 27, COLOR_TEXT)
 
 	# Power badges: icon with its stack count in the corner.
 	for i in unit.statuses.size():
