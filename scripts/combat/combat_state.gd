@@ -128,8 +128,9 @@ func add_to_hand(card: BaseCard) -> void:
 		hand.append(card)
 
 
-## Retain cards stay in hand, and this turn's retained_once.
+## Retain cards stay in hand, and this turn's retained_once. Temporary cards just go.
 func discard_hand() -> void:
+	hand.assign(hand.filter(func(c: BaseCard) -> bool: return not c.temporary))
 	var stays := func(c: BaseCard) -> bool: return c.retain or c in retained_once
 	discard_pile.append_array(hand.filter(func(c: BaseCard) -> bool: return not stays.call(c)))
 	hand.assign(hand.filter(stays))

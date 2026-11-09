@@ -19,6 +19,7 @@ var augments: Array[BaseAugment] = []  # applied upgrades, shown as icons above 
 var max_augments := 1  # raise for cards that say they hold more
 var free_until_played := false  # costs 0 until it's played once (Mason's Trowel)
 var free_on_turn := -1  # costs 0 on this combat turn (Sacred Blessing); see CombatState.cost_of
+var temporary := false  # leaves the game, not the discard pile, if it is still in hand at the end of the turn (Sacred Blessing)
 
 
 ## units[i], cells[i], rotations[i] = the grid, cell and rotation chosen for grid_action(i), in order.
