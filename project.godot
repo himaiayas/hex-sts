@@ -31,6 +31,7 @@ window/stretch/aspect="expand"
 [gui]
 
 theme/default_theme_scale=1.667
+theme/custom_font="res://assets/fonts/AlegreyaSans-Regular.ttf"
 
 [physics]
 
