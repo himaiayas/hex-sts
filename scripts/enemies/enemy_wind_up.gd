@@ -8,6 +8,7 @@ extends BaseEnemyAction
 func _init(_name: String, _description: String, move: BaseEnemyAction) -> void:
 	super(Enum.BaseEnemyActionEnum.WIND_UP, _name, 1.0)
 	description = _description
+	lands_in = 1  # the move it aims comes next turn
 	parts = [move.parts[0]]
 
 

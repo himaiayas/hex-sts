@@ -16,6 +16,15 @@ var hit_vfx: Texture2D # optional, faded over the target's grid when the hit lan
 var ripple_vfx: Texture2D # optional, one ring that ripples out from the enemy, under the arena, when the move changes its grid
 var aim_vfx: Texture2D # optional, a sight drifting over the player's sprite while the move is in the intent
 var projectile_vfx: Texture2D # optional, flies left from the enemy's sprite to the player's before the hit lands
+## Shields or heals this move puts on some of its own tiles, as [tile script, amount] (ShieldTile,
+## HealTile): add_own_effect() in _init. plan_own() picks those tiles when the intent is planned,
+## so they show on the enemy's grid and as intent icons; inflict_random_own() then uses them.
+## Kept apart from parts, which many moves run against the player.
+var own_effects: Array = []
+var _own_parts := {}  # tile script -> the SELF part of its planned tiles
+## Turns until this move's damage lands: 0 = this turn. A wind-up (EnemyWindUp, Ramiel's Charge)
+## shows where a later attack will hit; its damage tiles then show the charge icon, not damage.
+var lands_in := 0
 var heavy_impact := false # a boss's big move: plays a heavy layered impact sound when it lands (Sfx boss_boom + boss_crash)
 var extra_types: Array[Enum.BaseEnemyActionEnum] = [] # a combo move's other types, each one more icon in its intent row
 var intent_icon: Texture2D # optional, replaces action_type's icon (Summon, Stunned)
@@ -41,6 +50,39 @@ func _init(_action_type: Enum.BaseEnemyActionEnum,_action_name: String, _probabi
     action_type = _action_type
     action_name = _action_name
     probability = _probability
+
+
+
+func add_own_effect(tile_script: Script, amount: int) -> void:
+    own_effects.append([tile_script, amount])
+
+
+## Picks the tiles each own effect will go on (BaseEnemy.plan calls it after plan()).
+func plan_own(owner: CombatUnit) -> void:
+    for effect: Array in own_effects:
+        var script: Script = effect[0]
+        var probe: BaseActionTile = script.new(Vector2i.ZERO)
+        var cells: Array = owner.health.keys().filter(func(c: Vector2i) -> bool: return probe.can_inflict(owner, c))
+        cells.shuffle()
+        var tiles: Array[BaseActionTile] = []
+        for cell: Vector2i in cells.slice(0, effect[1]):
+            tiles.append(script.new(cell))
+        var part: EnemyActionPart = _own_parts.get(script)
+        if part == null:
+            part = EnemyActionPart.new(Enum.Side.SELF, tiles)
+            _own_parts[script] = part
+        part.cell = Vector2i.ZERO
+        part.tiles = tiles
+
+
+## The planned own-effect parts (on its own grid, cell ZERO, tiles at their cells).
+func own_parts() -> Array:
+    return _own_parts.values()
+
+
+## Turns until its damage lands (lands_in; overridden where it counts down, like Ramiel's Charge).
+func delay() -> int:
+    return lands_in
 
 
 ## Its row in the intent label.
@@ -156,9 +198,17 @@ func pick_random_cell(part: EnemyActionPart, target: CombatUnit) -> Vector2i:
 
 ## Inflicts tile on amount random tiles of the owner's own grid that it can change (heal, shield).
 ## Picked when the move runs, so it uses the grid as the player's turn left it.
+## amount of its own tiles get tile: the ones plan_own() picked first (the intent shown), then, if some
+## can't take it any more (the player damaged one picked for a Shield), random others.
 func inflict_random_own(combat: CombatState, owner: CombatUnit, tile: BaseActionTile, amount: int) -> void:
-    var cells: Array = owner.health.keys().filter(func(c: Vector2i) -> bool: return tile.can_inflict(owner, c))
-    cells.shuffle()
+    var valid := func(c: Vector2i) -> bool: return tile.can_inflict(owner, c)
+    var cells: Array = []
+    var part: EnemyActionPart = _own_parts.get(tile.get_script())
+    if part:
+        cells = part.tiles.map(func(t: BaseActionTile) -> Vector2i: return t.coords).filter(valid)
+    var others: Array = owner.health.keys().filter(func(c: Vector2i) -> bool: return valid.call(c) and c not in cells)
+    others.shuffle()
+    cells.append_array(others)
     for cell in cells.slice(0, amount):
         tile.inflict(combat, owner, cell)
     await combat.flush()

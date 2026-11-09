@@ -8,12 +8,28 @@ const START_STEPS := 50
 const BUILD_COST := 3
 const START_DOORS := 3
 const OPTION_COUNT := 3
-## Door falloff: rooms within SAFE_RINGS of the entrance roll 2-4 doors. Past that, each door other
-## than the one entered by is kept with chance 1 - DOOR_FALLOFF per ring beyond SAFE_RINGS
-## (at least MIN_DOOR_CHANCE), so far rooms tend to be dead ends.
-const SAFE_RINGS := 2
-const DOOR_FALLOFF := 0.25
-const MIN_DOOR_CHANCE := 0.1
+const MIN_DOOR_CHANCE := 0.1  # a door's chance never drops below this, however crowded the map
+## Crowding: the more open spots (frontier) the map already has, the fewer doors new rooms get.
+## Each open spot beyond FREE_SPOTS (not counting the one being built) cuts each extra door's chance
+## by SPOT_FALLOFF. Opening doors everywhere leads to dead ends; aiming them where you want to go doesn't.
+const FREE_SPOTS := 4
+## Doors each room type rolls, [min, max] counting the one it's entered by, before crowding
+## (door_chance). Good rooms get fewer: taking one tends to close that branch, so a crowded map (from
+## opening doors everywhere) mostly offers them as dead ends. Types not listed roll 2-4.
+const DOOR_RANGE := {
+	Enum.RoomType.NORMAL_COMBAT: Vector2i(3, 4),
+	Enum.RoomType.ELITE_COMBAT: Vector2i(2, 3),
+	Enum.RoomType.EVENT: Vector2i(2, 3),
+	Enum.RoomType.MERCHANT: Vector2i(1, 2),
+	Enum.RoomType.BLACKSMITH: Vector2i(1, 2),
+	Enum.RoomType.CAMPFIRE: Vector2i(1, 1),
+	Enum.RoomType.TREASURE: Vector2i(1, 1),
+	Enum.RoomType.INTERSECTION: Vector2i(6, 6),
+}
+## Rooms that keep every door they roll: crowding (door_chance) doesn't remove any.
+## Only a neighbour with no door back still blocks a side.
+const KEEPS_DOORS := [Enum.RoomType.INTERSECTION]
+const SPOT_FALLOFF := 0.2
 
 
 const ROOM_WEIGHTS := {
@@ -25,6 +41,7 @@ const ROOM_WEIGHTS := {
 	Enum.RoomType.BLACKSMITH: 10,
 	Enum.RoomType.TREASURE: 10,
 	Enum.RoomType.EVENT: 0, # dropped
+	Enum.RoomType.INTERSECTION: 10,
 }
 
 const DIRS: Array[Vector2i] = [
@@ -41,7 +58,14 @@ static func opposite(dir: int) -> int:
 	return (dir + 3) % 6
 
 
-func start() -> void:
+## The map's own random numbers, seeded per floor from the run seed (RunState.floor_seed): the same
+## seed gives the same drafts for the same choices, whatever happens in fights. Saved with the run.
+var rng := RandomNumberGenerator.new()
+
+
+## map_seed: the floor's seed (RunState.floor_seed); random if not given (tests).
+func start(map_seed: int = randi()) -> void:
+	rng.seed = map_seed
 	rooms.clear()
 	steps = START_STEPS
 	current = Vector2i.ZERO
@@ -102,8 +126,8 @@ func walk(path: Array[Vector2i]) -> void:
 
 
 ## Rooms to choose from for cell, entered through door. They never have a door toward a
-## neighbouring room that has no door back, have fewer doors the farther cell is from the
-## entrance (door_chance), and never leave the map without a spot to build (_ensure_exit).
+## neighbouring room that has no door back, have fewer doors on a crowded map (door_chance), and
+## at least one of them keeps a spot to build (_ensure_exit).
 func draft_options(cell: Vector2i, door: int) -> Array[MapRoom]:
 	var keep := door_chance(cell)
 	var allowed := _allowed_doors(cell)
@@ -114,27 +138,36 @@ func draft_options(cell: Vector2i, door: int) -> Array[MapRoom]:
 	while options.size() < OPTION_COUNT and attempts < 50:
 		attempts += 1
 		var type := random_room_type(used_types if attempts < 30 else {})
-		var doors := _random_doors(randi_range(2, 4), door, allowed)
-		doors = doors.filter(func(d: int) -> bool: return d == door or randf() < keep)
-		_ensure_exit(cell, doors, allowed)
+		var door_range: Vector2i = DOOR_RANGE.get(type, Vector2i(2, 4))
+		var doors := _random_doors(rng.randi_range(door_range.x, door_range.y), door, allowed)
+		if type not in KEEPS_DOORS:
+			doors = doors.filter(func(d: int) -> bool: return d == door or rng.randf() < keep)
 		var key := str([type, doors])
 		if seen.has(key):
 			continue
 		seen[key] = true
 		used_types[type] = true
 		options.append(MapRoom.new(cell, type, doors))
+	# Guaranteed exit: if every option would leave nowhere to build, one of them (the one with the
+	# most doors already) gets another. Only one, so a dead end there still ends the floor early.
+	if not options.is_empty() and not options.any(func(o: MapRoom) -> bool: return _has_spot_after(cell, o.doors)):
+		var widest := options[0]
+		for option in options:
+			if option.doors.size() > widest.doors.size():
+				widest = option
+		_ensure_exit(cell, widest.doors, allowed)
 	return options
 
 
 ## Weighted random room type, skipping types in `exclude` (unless nothing else is left).
-static func random_room_type(exclude := {}) -> Enum.RoomType:
+func random_room_type(exclude := {}) -> Enum.RoomType:
 	var total := 0
 	for type in ROOM_WEIGHTS:
 		if not exclude.has(type):
 			total += ROOM_WEIGHTS[type]
 	if total <= 0:
 		return random_room_type() if not exclude.is_empty() else Enum.RoomType.NORMAL_COMBAT
-	var roll := randi_range(1, total)
+	var roll := rng.randi_range(1, total)
 	for type in ROOM_WEIGHTS:
 		if exclude.has(type):
 			continue
@@ -144,14 +177,16 @@ static func random_room_type(exclude := {}) -> Enum.RoomType:
 	return Enum.RoomType.NORMAL_COMBAT
 
 
-## Rings between cell and the entrance (0 for the entrance itself).
-static func ring(cell: Vector2i) -> int:
-	return (absi(cell.x) + absi(cell.y) + absi(cell.x + cell.y)) / 2
+## Chance a new room at cell keeps each door other than its entry door: how crowded with open
+## spots the map is (at least MIN_DOOR_CHANCE).
+func door_chance(cell: Vector2i) -> float:
+	return maxf(crowding_chance(cell), MIN_DOOR_CHANCE)
 
 
-## Chance a new room at cell keeps each door other than its entry door.
-static func door_chance(cell: Vector2i) -> float:
-	return clampf(1.0 - DOOR_FALLOFF * (ring(cell) - SAFE_RINGS), MIN_DOOR_CHANCE, 1.0)
+## 1 with up to FREE_SPOTS other open spots, less for each one beyond.
+func crowding_chance(cell: Vector2i) -> float:
+	var others := frontier().filter(func(c: Vector2i) -> bool: return c != cell).size()
+	return clampf(1.0 - SPOT_FALLOFF * (others - FREE_SPOTS), 0.0, 1.0)
 
 
 ## Guaranteed exit: if a room at cell with these doors would leave no spot to build anywhere,
@@ -162,7 +197,7 @@ func _ensure_exit(cell: Vector2i, doors: Array[int], allowed: Array[int]) -> voi
 	var open := allowed.filter(func(d: int) -> bool: return d not in doors and not rooms.has(cell + DIRS[d]))
 	if open.is_empty():
 		return
-	doors.append(open.pick_random())
+	doors.append(open[rng.randi_range(0, open.size() - 1)])
 	doors.sort()
 
 
@@ -205,7 +240,7 @@ func place(room: MapRoom) -> void:
 ## count doors (fewer if allowed runs out), always including required.
 func _random_doors(count: int, required := -1, allowed: Array[int] = [0, 1, 2, 3, 4, 5]) -> Array[int]:
 	var pool := allowed.duplicate()
-	pool.shuffle()
+	_shuffle(pool)
 	var result: Array[int] = []
 	if required >= 0:
 		result.append(required)
@@ -241,3 +276,12 @@ func _path(prev: Dictionary, target: Vector2i) -> Array[Vector2i]:
 		path.push_front(cell)
 		cell = prev[cell]
 	return path
+
+
+## Array.shuffle(), but with this map's rng so it follows the seed.
+func _shuffle(array: Array) -> void:
+	for i in range(array.size() - 1, 0, -1):
+		var j := rng.randi_range(0, i)
+		var tmp: Variant = array[i]
+		array[i] = array[j]
+		array[j] = tmp

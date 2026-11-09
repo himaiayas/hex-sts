@@ -12,6 +12,7 @@ func _init(_heal: int) -> void:
 	description = "Hit 8 tiles in two fang marks, then heal %d of its own." % _heal
 	heal = _heal
 	extra_types = [Enum.BaseEnemyActionEnum.BUFF]  # the heal
+	add_own_effect(HealTile, heal)
 	hit_vfx = preload("res://assets/enemies/floor_2/dracula_attack_bite.png")
 	var fangs: Array[BaseActionTile] = []
 	for x in [0, 3]:

@@ -55,7 +55,8 @@ const COLOR_NEW := Color("#ffe9a8")
 var unit: CombatUnit
 var clickable := false
 var preview: Dictionary[Vector2i, BaseActionTile] = {} # next grid action of the selected card, rotated: offset from cursor -> tile
-var intents: Array = [] # enemy attacks aimed at this grid: [{cell: Vector2i, tiles: Array[BaseActionTile], faded: bool, later: bool}]
+var intents: Array = [] # enemy attacks aimed at this grid: [{cell: Vector2i, tiles: Array[BaseActionTile], faded: bool, delayed: bool, turns: int}]
+const COLOR_CHARGE := Color("#ff6b6b")  # the Charge Attack panel's title
 var placed: Array = [] # selected card's grid actions already clicked on this grid: [{cell: Vector2i, tiles: Dictionary[Vector2i, BaseActionTile]}]
 var random_target: BaseActionTile = null # selected card's next grid action hits random tiles of a grid: this whole grid flickers
 var candidates: Array[Vector2i] = [] # empty cells drawn as outlines and clickable (level-up tile placement)
@@ -167,6 +168,19 @@ func _process(delta: float) -> void:
 			else:
 				_show_info(_info_cell)
 	_sync_particles()
+
+
+## Turns until the soonest delayed attack that will damage cell lands, or 0 if none aims at it.
+func _charge_turns(cell: Vector2i) -> int:
+	var soonest := 0
+	for intent in intents:
+		if not intent.get("delayed", false):
+			continue
+		for t: BaseActionTile in intent.tiles:
+			if t is DamageTile and intent.cell + t.coords == cell:
+				var turns: int = intent.get("turns", 1)
+				soonest = turns if soonest == 0 else mini(soonest, turns)
+	return soonest
 
 
 ## One emitter per effect on each tile, using the effect's icon; added and removed as effects come and go.
@@ -328,9 +342,9 @@ func _draw() -> void:
 		draw_polyline(corners, COLOR_CANDIDATE, width)
 
 	var font := ThemeDB.fallback_font
-	var title := "%s  %d/%d" % [unit.display_name, alive, coords.size()]
-	# Centred over the grid; a small grid's name spills past its sides instead of being cut,
-	# but stays NAME_SCREEN_MARGIN inside the screen.
+	var title := "%d/%d" % [alive, coords.size()]  # the unit's name is under its image (combat scene)
+	# Centred over the grid; past a small grid's sides instead of being cut,
+	# but NAME_SCREEN_MARGIN inside the screen.
 	var title_width := font.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, 27).x
 	var title_x := (size.x - title_width) / 2.0
 	title_x = clampf(title_x, NAME_SCREEN_MARGIN - global_position.x,
@@ -410,6 +424,10 @@ func _show_info(cell: Vector2i) -> void:
 	for effect in tile.status_effects:
 		var turns := "" if effect.turns < 0 else " (%d turn%s)" % [effect.turns, "" if effect.turns == 1 else "s"]
 		_info_box.add_child(InfoPanel.make(effect.name + turns, effect.description, effect.get_color()))
+	var charge_turns := _charge_turns(cell)
+	if charge_turns > 0:
+		_info_box.add_child(InfoPanel.make("Charge Attack", "An enemy is charging an attack at this tile. It hits in %d turn%s."
+			% [charge_turns, "" if charge_turns == 1 else "s"], COLOR_CHARGE))
 	if _info_box.get_child_count() == 0:
 		return
 	_info_box.reset_size()

@@ -1,7 +1,8 @@
 extends Control
 
 ## Merchant: CARD_COUNT random cards and ARTIFACT_COUNT random artifacts, bought with coins.
-## Prices depend on rarity; tune them here.
+## Prices depend on rarity; tune them here. The stock is kept on the room (MapRoom.stock), so walking
+## back in shows the same items, with the ones bought still sold.
 
 const RenderCard := preload("res://scripts/cards/render_card.gd")
 
@@ -39,9 +40,37 @@ func _ready() -> void:
 		RunState.start_new_run()
 	_hover_info.is_blocked = _top_bar.is_modal_open
 	add_child(_hover_info)
-	_cards = CardPool.random_cards(CARD_COUNT)
-	_artifacts = ArtifactPool.random_artifacts(ARTIFACT_COUNT, RunState.artifacts)
+	var room := RunState.current_room
+	if room and room.stock.has("cards"):  # been here before
+		_cards.assign(room.stock.cards)
+		_artifacts.assign(room.stock.artifacts)
+		for i: int in room.stock.sold_cards:
+			_sold.append(_cards[i])
+		for i: int in room.stock.sold_artifacts:
+			_sold.append(_artifacts[i])
+	else:
+		_cards = CardPool.random_cards(CARD_COUNT)
+		_artifacts = ArtifactPool.random_artifacts(ARTIFACT_COUNT, RunState.artifacts)
+	# Got elsewhere since (shouldn't happen, but never sell an artifact the player owns).
+	for artifact in _artifacts:
+		if RunState.has_artifact(artifact.get_script()) and artifact not in _sold:
+			_sold.append(artifact)
+	_store_stock()
 	_refresh()
+
+
+## Keeps the offers and what's sold on the room for the next visit (sold items as indexes, so it
+## survives saving).
+func _store_stock() -> void:
+	var room := RunState.current_room
+	if room == null:
+		return
+	room.stock = {
+		cards = _cards,
+		artifacts = _artifacts,
+		sold_cards = range(_cards.size()).filter(func(i: int) -> bool: return _cards[i] in _sold),
+		sold_artifacts = range(_artifacts.size()).filter(func(i: int) -> bool: return _artifacts[i] in _sold),
+	}
 
 
 func _refresh() -> void:
@@ -90,6 +119,7 @@ func _on_artifact_bought(artifact: BaseArtifact) -> void:
 
 func _sell(item: Resource, message: String) -> void:
 	_sold.append(item)
+	_store_stock()
 	_hint.text = message
 	_refresh.call_deferred()  # the pressed button is still handling its click
 

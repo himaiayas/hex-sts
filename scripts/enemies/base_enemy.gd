@@ -29,6 +29,7 @@ func plan(combat: CombatState) -> void: #triggered at the start of player turn
 		intent_actions = _choose_actions()
 	for action in intent_actions:
 		action.plan(combat, self)
+		action.plan_own(self)
 
 
 ## A move can be dropped mid-turn (Ramiel's interrupt), so each one is checked before it runs.

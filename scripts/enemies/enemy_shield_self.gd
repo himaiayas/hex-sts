@@ -10,6 +10,7 @@ var amount: int
 func _init(_name: String, _amount: int, _description := "") -> void:
 	super(Enum.BaseEnemyActionEnum.DEFEND, _name, 1.0)
 	amount = _amount
+	add_own_effect(ShieldTile, amount)
 	description = _description
 
 

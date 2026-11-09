@@ -2,6 +2,7 @@ extends Control
 
 ## Blacksmith: OFFER_COUNT random augments (repeats allowed), each bought with coins and
 ## applied to a card straight away. An augment no card in the deck can take can't be bought.
+## The stock is kept on the room (MapRoom.stock), so walking back in shows the same augments.
 
 const OFFER_COUNT := 4
 const OFFER_SIZE := Vector2(280, 380)
@@ -21,8 +22,22 @@ func _ready() -> void:
 	if RunState.deck.is_empty():
 		RunState.start_new_run()
 	_modal.finished.connect(_on_augment_applied)
-	_stock = AugmentPool.random_augments(OFFER_COUNT)
+	var room := RunState.current_room
+	if room and room.stock.has("augments"):  # been here before
+		_stock.assign(room.stock.augments)
+		for i: int in room.stock.sold:
+			_sold.append(_stock[i])
+	else:
+		_stock = AugmentPool.random_augments(OFFER_COUNT)
+	_store_stock()
 	_refresh()
+
+
+## Keeps the offers and what's sold on the room for the next visit (sold as indexes, so it survives saving).
+func _store_stock() -> void:
+	var room := RunState.current_room
+	if room:
+		room.stock = {augments = _stock, sold = range(_stock.size()).filter(func(i: int) -> bool: return _stock[i] in _sold)}
 
 
 func _refresh() -> void:
@@ -52,6 +67,7 @@ func _on_buy_pressed(augment: BaseAugment) -> void:
 func _on_augment_applied(card: BaseCard) -> void:
 	if card:
 		_sold.append(_buying)
+		_store_stock()
 		_hint.text = "%s put on %s." % [_buying.name, card.card_name]
 	else:  # nothing could take it after all
 		RunState.gold += RunState.shop_price(_buying.price)

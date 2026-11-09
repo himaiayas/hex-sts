@@ -16,6 +16,7 @@ func _init() -> void:
 	]
 	super("Shadow Step", "Shield 5 random tiles of its own, then hit 5 tiles in a slash.", slash)
 	extra_types = [Enum.BaseEnemyActionEnum.DEFEND]
+	add_own_effect(ShieldTile, SHIELDS)
 
 
 func execute(combat: CombatState, owner: CombatUnit) -> void:

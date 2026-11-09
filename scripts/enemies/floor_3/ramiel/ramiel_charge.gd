@@ -28,6 +28,10 @@ func plan(combat: CombatState, owner: CombatUnit) -> void:
 		locked = true
 
 
+func delay() -> int:
+	return turns_left
+
+
 func intent_text() -> String:
 	return "Charge: %d turn%s (%d/%d)" % [turns_left, "" if turns_left == 1 else "s", damage, INTERRUPT]
 

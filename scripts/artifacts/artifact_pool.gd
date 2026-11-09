@@ -53,6 +53,7 @@ const BOSS_WEIGHTS := {
 static func random_artifact(owned: Array[BaseArtifact], weights: Dictionary = NORMAL_WEIGHTS) -> BaseArtifact:
 	var taken: Array[BaseArtifact] = owned.duplicate()
 	taken.append_array(RunState.offered_artifacts)
+	taken.append_array(RunState.shelved_artifacts())
 	var artifact := _roll(taken, weights)
 	if artifact:
 		RunState.offered_artifacts.append(artifact)

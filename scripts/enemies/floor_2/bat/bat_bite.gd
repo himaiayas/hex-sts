@@ -16,6 +16,7 @@ func _init() -> void:
 	]
 	super("Bite", "Hit 5 tiles, then heal 3 of its own.", bite)
 	extra_types = [Enum.BaseEnemyActionEnum.BUFF]  # the heal
+	add_own_effect(HealTile, HEAL)
 
 
 func execute(combat: CombatState, owner: CombatUnit) -> void:

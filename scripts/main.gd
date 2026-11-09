@@ -52,6 +52,7 @@ func _on_new_run_pressed() -> void:
 
 
 func _start_new_run() -> void:
+	SaveGame.delete()  # start_new_run() leaves the save alone (test scenes call it too)
 	RunState.start_new_run()
 	get_tree().change_scene_to_file(RunState.MAP_SCENE)
 

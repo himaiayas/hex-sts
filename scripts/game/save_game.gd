@@ -51,10 +51,12 @@ static func pack(value: Variant) -> Variant:
 			return {"$script": value.resource_path}
 		if value is CombatState or value is Node:
 			return null
+		if value is RandomNumberGenerator:  # a seeded generator: keeps going exactly where it was
+			return {"$rng": [value.seed, value.state]}
 		if value is BaseCard:
 			return _pack_card(value)
 		if value is MapRoom:
-			return {"$room": [value.coord, value.type, value.doors, value.number]}
+			return {"$room": [value.coord, value.type, value.doors, value.number], "stock": pack(value.stock)}
 		var script: Script = value.get_script()
 		if script == null:  # an engine resource: a texture, a sound
 			return {"$res": value.resource_path} if value is Resource and not value.resource_path.is_empty() else null
@@ -86,12 +88,18 @@ static func unpack(value: Variant) -> Variant:
 		doors.assign(r[2])
 		var room := MapRoom.new(r[0], r[1], doors)
 		room.number = r[3]
+		room.stock = unpack(value.get("stock", {}))
 		return room
 	if value.has("$obj"):
 		var object: Object = load(value["$obj"]).new()
 		for name: String in value.props:
 			_assign(object, name, unpack(value.props[name]))
 		return object
+	if value.has("$rng"):
+		var rng := RandomNumberGenerator.new()
+		rng.seed = value["$rng"][0]
+		rng.state = value["$rng"][1]
+		return rng
 	if value.has("$res"):
 		return load(value["$res"])
 	if value.has("$script"):
