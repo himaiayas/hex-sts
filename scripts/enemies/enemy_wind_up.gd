@@ -6,7 +6,7 @@ extends BaseEnemyAction
 
 
 func _init(_name: String, _description: String, move: BaseEnemyAction) -> void:
-	super(Enum.BaseEnemyActionEnum.BUFF, _name, 1.0)
+	super(Enum.BaseEnemyActionEnum.WIND_UP, _name, 1.0)
 	description = _description
 	parts = [move.parts[0]]
 

@@ -15,6 +15,7 @@ func _init() -> void:
 		DamageTile.new(Vector2i(0, 1)),
 	]
 	super("Bite", "Hit 5 tiles, then heal 3 of its own.", bite)
+	extra_types = [Enum.BaseEnemyActionEnum.BUFF]  # the heal
 
 
 func execute(combat: CombatState, owner: CombatUnit) -> void:

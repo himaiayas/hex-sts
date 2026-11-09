@@ -11,6 +11,7 @@ const SHIELDS := 5
 func _init() -> void:
 	super(Enum.BaseEnemyActionEnum.DEBUFF, "Shred", 1.0)
 	description = "Remove Plate from %d of your tiles, then Shield %d of its own." % [SHRED, SHIELDS]
+	extra_types = [Enum.BaseEnemyActionEnum.DEFEND]
 	parts = [EnemyActionPart.new(Enum.Side.PLAYER, [])]
 
 

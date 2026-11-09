@@ -15,6 +15,7 @@ func _init() -> void:
 		DamageTile.new(Vector2i(1, -1)),
 	]
 	super("Shadow Step", "Shield 5 random tiles of its own, then hit 5 tiles in a slash.", slash)
+	extra_types = [Enum.BaseEnemyActionEnum.DEFEND]
 
 
 func execute(combat: CombatState, owner: CombatUnit) -> void:

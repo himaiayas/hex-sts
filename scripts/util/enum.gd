@@ -20,6 +20,7 @@ enum BaseEnemyActionEnum {
 	DEFEND,
 	BUFF,
 	DEBUFF,
+	WIND_UP, # no effect now: aims a move that lands on a later turn
 }
 
 enum Side {

@@ -13,7 +13,7 @@ var damage := 0  # tiles Ramiel has lost since the first Charge of this run
 
 
 func _init() -> void:
-	super(Enum.BaseEnemyActionEnum.BUFF, "Charge", 1.0)
+	super(Enum.BaseEnemyActionEnum.WIND_UP, "Charge", 1.0)
 	description = "No attack. Charges the Particle Beam; losing %d tiles first cancels it." % INTERRUPT
 	var band: Array[BaseActionTile] = []
 	for r in 3:

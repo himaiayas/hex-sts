@@ -8,11 +8,13 @@ extends BaseEnemyAction
 func _init() -> void:
 	super(Enum.BaseEnemyActionEnum.BUFF, "Summon Lil Ghost", 1.0)
 	description = "Summon a Lil Ghost."
+	intent_icon = preload("res://assets/icons/intent_summon.png")
 
 
 func execute(combat: CombatState, owner: CombatUnit) -> void:
 	var ghost := LilGhost.new()
 	ghost.image_size = Vector2(150, 150)  # half the usual, to fit beside the Lich
 	ghost.grid_scale = 0.5
+	ghost.leaves_when_dead = true  # its empty grid would sit beside the next one (only 1 is alive at a time)
 	(owner as Lich).summons.append(ghost)
 	combat.spawn(ghost, owner, false)
