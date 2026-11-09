@@ -127,15 +127,6 @@ theme_override_font_sizes/font_size = 28
 autowrap_mode = 3
 text = "+0 Coins"
 
-[node name="ExpButton" type="Button" parent="RewardModal/Center/Panel/Margin/Box/Rewards"]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(320, 120)
-layout_mode = 2
-size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 28
-autowrap_mode = 3
-text = "+0 EXP"
-
 [node name="ArtifactButton" type="Button" parent="RewardModal/Center/Panel/Margin/Box/Rewards"]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(320, 120)
@@ -155,6 +146,5 @@ text = "Leave"
 
 [connection signal="pressed" from="Center/Box/Chest" to="." method="_on_chest_pressed"]
 [connection signal="pressed" from="RewardModal/Center/Panel/Margin/Box/Rewards/GoldButton" to="." method="_on_gold_pressed"]
-[connection signal="pressed" from="RewardModal/Center/Panel/Margin/Box/Rewards/ExpButton" to="." method="_on_exp_pressed"]
 [connection signal="pressed" from="RewardModal/Center/Panel/Margin/Box/Rewards/ArtifactButton" to="." method="_on_artifact_pressed"]
 [connection signal="pressed" from="RewardModal/Center/Panel/Margin/Box/LeaveButton" to="." method="_on_leave_pressed"]
