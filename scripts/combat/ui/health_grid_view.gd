@@ -78,6 +78,12 @@ func _ready() -> void:
 	_info_box.top_level = true  # positioned in screen space, outside the grid
 	_info_box.z_index = 10  # above the hand's cards
 	add_child(_info_box)
+	set_notify_transform(true)  # the name's screen clamp depends on where the grid is
+
+
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_TRANSFORM_CHANGED:
+		queue_redraw()  # moved (an enemy spawned or shrank): clamp the name again
 
 
 func setup(_unit: CombatUnit, _clickable: bool) -> void:
