@@ -8,3 +8,9 @@ func _on_start_pressed() -> void:
 
 func _on_quit_pressed() -> void:
 	get_tree().quit()
+
+
+func _on_credits_toggled() -> void:
+	$Credits.visible = not $Credits.visible
+	$Logo.visible = not $Credits.visible
+	$Menu.visible = not $Credits.visible
