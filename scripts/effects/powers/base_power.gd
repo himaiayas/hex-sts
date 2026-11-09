@@ -47,9 +47,18 @@ func on_tile_effect_gained(_combat: CombatState, _unit: CombatUnit, _cell: Vecto
 static func plural(n: int, word: String) -> String:
 	return "%d %s%s" % [n, word, "" if n == 1 else "s"]
 
-## Badge art. ponytail: placeholder until each power has its own icon.
+## Badge art: assets/powers/i_<name>.png, named after the script (strength_power.gd -> i_strength.png).
+## A power without one shows PLACEHOLDER_ICON. Loaded once per power type.
 func get_icon() -> Texture2D:
-	return preload("res://icon.svg")
+	var script_path: String = get_script().resource_path
+	if not _icons.has(script_path):
+		var path := "res://assets/powers/i_%s.png" % script_path.get_file().get_basename().trim_suffix("_power")
+		_icons[script_path] = load(path) if ResourceLoader.exists(path) else PLACEHOLDER_ICON
+	return _icons[script_path]
+
+
+const PLACEHOLDER_ICON := preload("res://icon.svg")
+static var _icons := {}  # script path -> its badge texture
 
 
 func copy() -> BaseEffect:
