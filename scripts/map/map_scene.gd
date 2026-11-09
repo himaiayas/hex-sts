@@ -14,7 +14,6 @@ var _busy := false  # walking, having popup modal or in a room.
 @onready var _draft_panel: Control = %DraftPanel
 @onready var _draft_options: HBoxContainer = %DraftOptions
 @onready var _room_title: Label = %RoomTitle
-@onready var _game_over_panel: Control = %GameOverPanel
 
 
 func _ready() -> void:
@@ -37,7 +36,6 @@ func _start() -> void:
 	map = RunState.map
 	_map_view.setup(map)
 	_draft_panel.hide()
-	_game_over_panel.hide()
 	_hint_label.text = ""
 	_busy = false
 	_refresh()
@@ -137,6 +135,7 @@ func _on_room_chosen(room: MapRoom) -> void:
 	_map_view.drafting_cell = MapView.NO_CELL
 	Sfx.play("build")
 	map.place(room)
+	RunState.rooms_built += 1
 	_refresh()
 	await _map_view.animate_path([room.coord] as Array[Vector2i])
 	if room.scene_path().is_empty():  # nothing inside (an Intersection): stay on the map
@@ -149,10 +148,6 @@ func _on_room_chosen(room: MapRoom) -> void:
 func _on_leave_pressed() -> void:
 	_busy = false
 	_check_out_of_steps()
-
-
-func _on_restart_pressed() -> void:
-	get_tree().change_scene_to_file(RunState.MENU_SCENE)
 
 
 ## Out of steps, or (only if a fully walled-in spot made _ensure_exit impossible) nowhere left to build.

@@ -180,43 +180,5 @@ size_flags_horizontal = 4
 theme_override_font_sizes/font_size = 24
 text = "Leave"
 
-[node name="GameOverPanel" type="ColorRect" parent="." unique_id=405203395]
-unique_name_in_owner = true
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0, 0, 0, 0.8)
-
-[node name="Center" type="CenterContainer" parent="GameOverPanel" unique_id=234353674]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-
-[node name="Box" type="VBoxContainer" parent="GameOverPanel/Center" unique_id=769081432]
-layout_mode = 2
-theme_override_constants/separation = 32
-
-[node name="GameOverTitle" type="Label" parent="GameOverPanel/Center/Box" unique_id=311434852]
-layout_mode = 2
-theme_override_font_sizes/font_size = 56
-text = "Out of steps"
-horizontal_alignment = 1
-
-[node name="RestartButton" type="Button" parent="GameOverPanel/Center/Box" unique_id=1327074418]
-custom_minimum_size = Vector2(220, 60)
-layout_mode = 2
-size_flags_horizontal = 4
-theme_override_font_sizes/font_size = 26
-text = "Restart"
-
 [connection signal="cell_clicked" from="MapView" to="." method="_on_map_view_cell_clicked"]
 [connection signal="pressed" from="RoomPanel/Center/Panel/Box/LeaveButton" to="." method="_on_leave_pressed"]
-[connection signal="pressed" from="GameOverPanel/Center/Box/RestartButton" to="." method="_on_restart_pressed"]

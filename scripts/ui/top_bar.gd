@@ -61,7 +61,7 @@ func _ready() -> void:
 
 ## Icons show their numbers; EXP only in its hover text.
 func refresh() -> void:
-	_location_label.text = _location()
+	_location_label.text = RunState.location_text()
 	_health_button.text = "%d/%d" % [_alive_tiles(), RunState.health.size()]
 	_gold_display.text = str(RunState.gold)
 	_deck_button.text = str(RunState.deck.size())
@@ -93,19 +93,6 @@ func is_modal_open() -> bool:
 		or _level_up_modal.visible or _menu.visible
 
 
-## "Floor 1 - Room 3": the room the player is in, or stands on in the map.
-func _location() -> String:
-	if RunState.map == null:
-		return ""
-	var room: MapRoom = RunState.current_room
-	if room == null:
-		room = RunState.map.rooms.get(RunState.map.current)
-	var where := "Entrance"
-	if room and room.type == Enum.RoomType.BOSS_COMBAT:
-		where = "Boss"
-	elif room and room.number > 0:
-		where = "Room %d" % room.number
-	return "Floor %d - %s" % [RunState.dungeon_floor, where]
 
 
 # --- Menu ---------------------------------------------------------------------------
