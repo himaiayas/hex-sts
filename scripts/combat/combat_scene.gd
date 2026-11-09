@@ -130,7 +130,8 @@ func _add_enemy(enemy: BaseEnemy) -> void:
 	var view := HealthGridView.new()
 	view.setup(enemy, true)
 	view.cell_clicked.connect(_on_cell_clicked)
-	view.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	# An enlarged boss grid sits at the top, so its intents stay clear of End Turn.
+	view.size_flags_vertical = Control.SIZE_SHRINK_BEGIN if enemy.grid_scale > 1.0 else Control.SIZE_SHRINK_CENTER
 	# The intent hangs under the grid, as wide as it, and grows down only,
 	# so a longer or shorter intent never moves the enemy.
 	var intent_box := VBoxContainer.new()
