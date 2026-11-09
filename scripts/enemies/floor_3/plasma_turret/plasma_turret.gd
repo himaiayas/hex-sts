@@ -21,16 +21,15 @@ func _init() -> void:
 		DamageTile.new(Vector2i(-1, 0)),
 		DamageTile.new(Vector2i(0, 0)),
 		DamageTile.new(Vector2i(1, 0)),
-		DamageTile.new(Vector2i(0, 1)),
 	]
 	var block: Array[BaseActionTile] = []
-	for r in 5:
-		for q in 4:
+	for r in 3:
+		for q in 5:
 			block.append(DamageTile.new(Vector2i(q - floori(r / 2.0), r)))  # rows line up, not slant
-	var burst := EnemyHit.new("Plasma Burst", "Hit 20 tiles in a 5x4 block.", block)
+	var burst := EnemyHit.new("Plasma Burst", "Hit 15 tiles in a 3x5 block.", block)
 	burst.aimed = true
 	actions = [
-		EnemyHit.new("Chip", "Hit 5 tiles.", chip),
+		EnemyHit.new("Chip", "Hit 4 tiles.", chip),
 		EnemyWindUp.new("Charge", "No attack. Aims the next Plasma Burst.", burst),
 		burst,
 	]

@@ -8,7 +8,7 @@ func _init() -> void:
 	type = Enum.CardType.POWER
 	rarity = Enum.CardRarity.UNCOMMON
 	target = Enum.TargetType.PLAYER
-	description = "The first time you play an Attack costing 2 or more each turn, Cleanse 1 random tile."
+	description = "The first time you play an Attack costing 2 or more each turn, {keyword:Cleanse} 1 random tile."
 	image = preload("res://assets/cards/cards/hallowed_knight.png")
 
 

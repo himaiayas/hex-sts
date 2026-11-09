@@ -23,10 +23,10 @@ func _init() -> void:
 	sprite = preload("res://assets/enemies/floor_1/dark_elf.png")
 	# A line of 4, with Poison on the tile past its tip.
 	var dart: Array[BaseActionTile] = []
-	for q in 4:
+	for q in 3:
 		dart.append(DamageTile.new(Vector2i(q, 0)))
-	dart.append(ApplyEffectTile.new(Vector2i(4, 0), PoisonTileEffect.new()))
-	var poison_dart := EnemyHit.new("Poison Dart", "Hit 4 tiles in a line and Poison the tile past its tip.", dart)
+	dart.append(ApplyEffectTile.new(Vector2i(3, 0), PoisonTileEffect.new()))
+	var poison_dart := EnemyHit.new("Poison Dart", "Hit 3 tiles in a line and Poison the tile past its tip.", dart)
 	# The arrow alone, without the image's empty margin.
 	var arrow := AtlasTexture.new()
 	arrow.atlas = preload("res://assets/enemies/floor_1/dark_elf_arrow.png")

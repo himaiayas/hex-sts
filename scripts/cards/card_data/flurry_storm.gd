@@ -6,6 +6,7 @@ func _init() -> void:
 	card_name = "Flurry Storm"
 	x_cost = true
 	type = Enum.CardType.ATTACK
+	rarity = Enum.CardRarity.UNCOMMON
 	description = "{render:0}\nX times."
 	image = preload("res://assets/cards/cards/flurry_storm.png")
 	grid_actions = [

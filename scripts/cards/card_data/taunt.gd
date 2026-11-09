@@ -6,6 +6,7 @@ func _init() -> void:
 	card_name = "Taunt"
 	cost = 1
 	type = Enum.CardType.SKILL
+	rarity = Enum.CardRarity.UNCOMMON
 	target = Enum.TargetType.PLAYER
 	description = "Move enemy attack aimed at you this turn. It must still hit at least 1 tile fewer."
 	image = preload("res://assets/cards/cards/taunt.png")

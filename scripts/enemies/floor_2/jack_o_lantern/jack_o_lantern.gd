@@ -26,20 +26,20 @@ func _init() -> void:
 	# A cone 3 then 4 wide, with Poison on 2 tiles past its wide end.
 	var spit: Array[BaseActionTile] = []
 	for q in 2:
-		for r in q + 3:
+		for r in q + 2:
 			spit.append(DamageTile.new(Vector2i(-q, r)))
 	for c: Vector2i in [Vector2i(-2, 1), Vector2i(-2, 2)]:
 		spit.append(ApplyEffectTile.new(c, PoisonTileEffect.new()))
-	# Rows of 3, 4 and 4: each row's first and last q.
+	# Rows of 2, 3 and 3: each row's first and last q.
 	var smash: Array[BaseActionTile] = []
-	var rows: Array[Vector2i] = [Vector2i(0, 2), Vector2i(-1, 2), Vector2i(-2, 1)]
+	var rows: Array[Vector2i] = [Vector2i(0, 1), Vector2i(-1, 1), Vector2i(-2, 0)]
 	for r in rows.size():
 		for q in range(rows[r].x, rows[r].y + 1):
 			smash.append(DamageTile.new(Vector2i(q, r)))
 	actions = [
-		EnemyHit.new("Flame Spit", "Hit 7 tiles in a cone and Poison 2 tiles past it.", spit),
+		EnemyHit.new("Flame Spit", "Hit 5 tiles in a cone and Poison 2 tiles past it.", spit),
 		EnemyApplyPower.new("Grin", "Gain %d Strength." % GRIN, StrengthPower.new(GRIN), false),
-		EnemyHit.new("Pumpkin Smash", "Hit 11 tiles in a blob.", smash),
+		EnemyHit.new("Pumpkin Smash", "Hit 8 tiles in a blob.", smash),
 	]
 	p1_cycle = [0, 1, 2]
 	statuses.append(BurningHeadPower.new(BURN))

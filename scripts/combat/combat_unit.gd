@@ -40,6 +40,9 @@ func shield_health_tile(combat: CombatState, coords:Vector2i)->void:
 ## Returns true if the tile was damaged.
 func damage_health_tile(combat: CombatState, coords: Vector2i, pierce := false)->bool:
 	var tile: HealthTile = health[coords]
+	if tile.hp > Enum.HealthTileEnum.DAMAGED and AtFieldTileEffect.protects(self, coords):  # even Pierce
+		combat.record(self, coords, Enum.Change.BLOCK)
+		return false
 	if tile.hp > Enum.HealthTileEnum.DAMAGED:
 		for power in statuses:
 			if power is BasePower and power.dodges(combat, self):

@@ -34,16 +34,15 @@ func _init() -> void:
 	var missile: Array[BaseActionTile] = [
 		DamageTile.new(Vector2i(0, 0)),
 		DamageTile.new(Vector2i(1, 0)),
-		DamageTile.new(Vector2i(-1, 1)),
 		DamageTile.new(Vector2i(0, 1)),
 	]
 	var foot: Array[BaseActionTile] = []
-	for r in 3:
+	for r in 2:
 		for q in 3:
 			foot.append(DamageTile.new(Vector2i(q - floori(r / 2.0), r)))  # rows line up, not slant
 	actions = [
-		EnemyHit.new("Missile Salvo", "Hit 4 tiles 4 times.", missile, 4),
-		EnemyHit.new("Stomp", "Hit 9 tiles in a 3x3 block.", foot),
+		EnemyHit.new("Missile Salvo", "Hit 3 tiles 4 times.", missile, 4),
+		EnemyHit.new("Stomp", "Hit 6 tiles in a 2x3 block.", foot),
 		EnemyShieldSelf.new("Shield Up", 12, "Shield 12 random tiles of its own."),
 		_armor,
 	]

@@ -1,26 +1,29 @@
 class_name Ramiel
 extends BaseEnemy
 
-## Floor 3, Boss. P1 cycles Scan -> Charge x3 -> Particle Beam. Below half its tiles (P2, from the
-## next cycle) it cycles Charge x2 -> Particle Beam, with a Shard Drill on every Charge turn.
-## Losing RamielCharge.INTERRUPT tiles from the first Charge until the beam turns the Charge into a Stunned turn,
-## and the cycle starts over. Absolute Terror Field: starts with 20 Shields and tops them back up
-## every 3rd turn, before its move.
+## Floor 3, Boss. P1 cycles Scan -> Charge x2 -> Particle Beam -> Absolute Terror Field, with a
+## Particle Shards (5 random undamaged tiles) on every Charge turn. Below half its tiles (P2, from the
+## next cycle) it cycles Charge x2 -> Particle Beam -> Absolute Terror Field, with a Shard Drill on
+## every Charge turn instead. Losing RamielCharge.INTERRUPT tiles from the first Charge until the beam
+## turns the Charge into a Stunned turn; the Absolute Terror Field follows, then the cycle starts over.
+## Absolute Terror Field (its own turn, after every Beam or stun): tops its Shields back up to
+## FIELD_SHIELDS and adds AT Field to its most central tile without one (RamielField). It starts with
+## 20 Shields and AT Field on its centre.
 
-const FIELD_EVERY := 3
 const FIELD_SHIELDS := 20
-const P1_CHARGES := 3
+const P1_CHARGES := 2
 const P2_CHARGES := 2
 
 var _counting := false  # from the first Charge until the beam is planned
 var _step := 0  # turns into the current cycle
-var _turns := 0  # turns planned, for the Field
+var _field_next := false  # the next turn is the Absolute Terror Field (after a Beam or a stun)
 
-var _field := EnemyField.new("Absolute Terror Field", FIELD_SHIELDS)
+var _field := RamielField.new("Absolute Terror Field", FIELD_SHIELDS)
 var _scan := EnemyShieldSelf.new("Scan", 15, "Shield 15 random tiles of its own.")
 var _charge := RamielCharge.new()
 var _beam := RamielParticleBeam.new(_charge)
 var _drill := RamielShardDrill.new()
+var _shards := RamielParticleShards.new()
 var _stunned := RamielStunned.new()
 
 
@@ -66,15 +69,16 @@ func _init() -> void:
 	# Aimed at the player from the first Charge until the beam fires.
 	_charge.aim_vfx = preload("res://assets/enemies/floor_3/ramiel_charge.png")
 	_beam.aim_vfx = _charge.aim_vfx
-	actions = [_field, _scan, _charge, _beam, _drill, _stunned]
+	actions = [_field, _scan, _charge, _beam, _drill, _stunned, _shards]
 	EnemyField.shield_start(self, FIELD_SHIELDS)
+	RamielField.field_start(self)  # AT Field on its most central tile
 
 
 func _choose_actions() -> Array[BaseEnemyAction]:
-	_turns += 1
+	if _field_next:  # its own turn; the cycle carries on after it
+		_field_next = false
+		return [_field]
 	var rows: Array[BaseEnemyAction] = []
-	if _turns % FIELD_EVERY == 0 and EnemyField.shields(self) < FIELD_SHIELDS:
-		rows.append(_field)
 	var undamaged := health.values().filter(func(t: HealthTile) -> bool: return t.hp > Enum.HealthTileEnum.DAMAGED).size()
 	if _step == 0 and undamaged * 2 < health.size():
 		in_p2 = true
@@ -89,11 +93,11 @@ func _choose_actions() -> Array[BaseEnemyAction]:
 			_charge.locked = false
 		_charge.turns_left = scans + charges - _step
 		rows.append(_charge)
-		if in_p2:
-			rows.append(_drill)
+		rows.append(_drill if in_p2 else _shards)
 	else:
 		_counting = false
 		rows.append(_beam)
+		_field_next = true
 	_step = (_step + 1) % (scans + charges + 1)
 	return rows
 
@@ -107,13 +111,10 @@ func fire_at(trigger: Enum.Trigger, combat: CombatState, cell: Vector2i) -> void
 			_interrupt()
 
 
-## The Charge (and its Shard Drill) becomes Stunned; a planned Field still restores.
-## The next turn starts the cycle over.
+## The Charge (and its Particle Shards or Shard Drill) becomes Stunned. The next turn is the
+## Absolute Terror Field, then the cycle starts over.
 func _interrupt() -> void:
 	_counting = false
 	_step = 0
-	var rows: Array[BaseEnemyAction] = []
-	if _field in intent_actions:
-		rows.append(_field)
-	rows.append(_stunned)
-	intent_actions = rows
+	_field_next = true
+	intent_actions = [_stunned]

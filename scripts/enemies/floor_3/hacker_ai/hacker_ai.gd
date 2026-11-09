@@ -23,14 +23,14 @@ func _init() -> void:
 	sprite = preload("res://assets/enemies/floor_3/hacker_ai.png")
 	var crash: Array[BaseActionTile] = []
 	for r in 2:
-		for q in 6:
+		for q in 4:
 			crash.append(DamageTile.new(Vector2i(q - floori(r / 2.0), r)))  # rows line up, not slant
 	var hack := EnemyApplyPower.new("Hack", "A random card in your next hand is Exhausted.", HackedPower.new(), true)
 	hack.pose = preload("res://assets/enemies/floor_3/hacker_ai_hack.png")
 	actions = [
 		hack,
 		EnemyApplyPower.new("Lockdown", "Your next card costs 1 more.", LockdownPower.new(), true),
-		EnemyHit.new("System Crash", "Hit 12 tiles in 2 rows.", crash),
+		EnemyHit.new("System Crash", "Hit 8 tiles in 2 rows.", crash),
 	]
 	p1_cycle = [0, 1, 2]
 	statuses.append(FirewallPower.new())

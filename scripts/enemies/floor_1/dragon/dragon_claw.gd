@@ -1,9 +1,9 @@
 class_name DragonClaw
 extends BaseEnemyAction
 
-## Hit 8: the 8 best player tiles wherever they are, picked at plan time. Ties are random.
+## Hit HITS: the HITS best player tiles wherever they are, picked at plan time. Ties are random.
 
-const HITS := 8
+const HITS := 6
 
 
 func _init() -> void:

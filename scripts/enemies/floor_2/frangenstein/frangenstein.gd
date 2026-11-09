@@ -26,16 +26,16 @@ func _init() -> void:
 	super("Frangenstein", CombatUnit.make_hex_health(coords))
 	sprite = preload("res://assets/enemies/floor_2/frangenstein.png")
 	var fist: Array[BaseActionTile] = []
-	for r in 3:
+	for r in 2:
 		for q in 5:
 			fist.append(DamageTile.new(Vector2i(q - floori(r / 2.0), r)))  # rows line up, not slant
 	# A zigzag bolt down the grid.
 	var bolt: Array[BaseActionTile] = []
-	for c: Vector2i in [Vector2i(1, -2), Vector2i(1, -1), Vector2i(0, 0), Vector2i(0, 1), Vector2i(-1, 2)]:
+	for c: Vector2i in [Vector2i(1, -2), Vector2i(1, -1), Vector2i(0, 0), Vector2i(0, 1)]:
 		bolt.append(DamageTile.new(c, true))
 	actions = [
-		EnemyHit.new("Thunder Fist", "Hit 15 tiles in a 3x5 block.", fist),
-		EnemyHit.new("Static", "Hit 5 tiles in a zigzag with Pierce.", bolt),
+		EnemyHit.new("Thunder Fist", "Hit 10 tiles in a 2x5 block.", fist),
+		EnemyHit.new("Static", "Hit 4 tiles in a zigzag with Pierce.", bolt),
 		EnemyApplyPower.new("Overcharge", "Gain %d Strength." % OVERCHARGE, StrengthPower.new(OVERCHARGE), false),
 	]
 	p1_cycle = [0, 1, 2]

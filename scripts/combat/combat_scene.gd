@@ -80,7 +80,6 @@ var _intent_info := HoverInfo.new()  # each intent row's description; not _hover
 @onready var _artifact_button: Button = %ArtifactRewardButton
 @onready var _card_choice_panel: Control = %CardChoicePanel
 @onready var _card_choices: HBoxContainer = %CardChoices
-@onready var _defeat_panel: Control = %DefeatPanel
 
 var _rewards: CombatRewards
 var _over := false  # won or lost: ignore combat input
@@ -518,14 +517,15 @@ func _on_pile_viewer_input(event: InputEvent) -> void:
 	if event is InputEventMouseButton and event.pressed:
 		_close_pile()
 
+## Debug: win the fight now, the same way as a real win (the final boss still ends the run).
 func _on_win_combat_pressed()->void:
+	if _over:
+		return
 	_end_combat()
 	if not return_scene.is_empty():
 		_return_to_test("win")
 		return
-	_rewards = CombatRewards.roll(_room_type())
-	_refresh_rewards()
-	_reward_panel.show()
+	_win()
 
 ## _input, not _unhandled_input: the grids and this root stop mouse events, so right-clicks never arrive unhandled.
 func _input(event: InputEvent) -> void:
@@ -1061,17 +1061,44 @@ func _check_combat_end() -> void:
 	if combat.is_lost():
 		_end_combat()
 		Sfx.play("lose")
-		SaveGame.delete()  # the run is over
-		_defeat_panel.show()
+		_finish_run(false, _killer())
 	elif combat.is_won():
 		_end_combat()
-		Sfx.play("win")
-		_rewards = CombatRewards.roll(_room_type())
-		_refresh_rewards()
-		_reward_panel.show()
+		_win()
+
+
+## A won fight: the final boss ends the run (victory screen); any other fight shows its rewards.
+func _win() -> void:
+	Sfx.play("win")
+	RunState.fights_won += 1
+	if _room_type() == Enum.RoomType.BOSS_COMBAT and RunState.is_final_floor():
+		_finish_run(true, combat.enemies[0].display_name)
+		return
+	_rewards = CombatRewards.roll(_room_type())
+	_refresh_rewards()
+	_reward_panel.show()
 
 
 const TEST_RETURN_DELAY := 1.2  # seconds to see how the fight ended before going back
+const RUN_END_DELAY := 1.5  # seconds to see the final blow before the end screen
+
+
+## The run is over: a moment to see how the fight ended, then RunState's end screen.
+func _finish_run(won: bool, killer: String) -> void:
+	_hint_label.text = "Victory!" if won else "Defeated..."
+	await get_tree().create_timer(RUN_END_DELAY).timeout
+	RunState.finish_run(won, killer)
+
+
+## The enemy that landed the last blow (whose turn it is), or the first one still standing.
+func _killer() -> String:
+	var acting := combat.acting_unit()
+	if acting and acting != combat.player:
+		return acting.display_name
+	for enemy in combat.enemies:
+		if not enemy.is_dead():
+			return enemy.display_name
+	return "an enemy"
 
 
 ## Monster test: no rewards, defeat screen or save changes; back to the picker after a moment.
@@ -1091,10 +1118,45 @@ func _end_combat() -> void:
 	RunState.end_combat()
 
 
+const COIN_ICON := preload("res://assets/icons/coin.png")
+const EXP_ICON := preload("res://assets/icons/exp.png")
+const REWARD_ICON_SIZE := 44
+
+
+## A reward button showing its icon (like the top bar's) and amount side by side, centred.
+## The icon and number are a child row, made once; the button's own text stays empty.
+func _reward_amount(button: Button, icon: Texture2D, amount: int, what: String) -> void:
+	button.text = ""
+	button.tooltip_text = what
+	var label: Label = button.get_meta("amount_label", null)
+	if label == null:
+		var center := CenterContainer.new()
+		center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		button.add_child(center)
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 12)
+		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		center.add_child(row)
+		var image := TextureRect.new()
+		image.texture = icon
+		image.custom_minimum_size = Vector2.ONE * REWARD_ICON_SIZE
+		image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(image)
+		label = Label.new()
+		label.add_theme_font_size_override("font_size", button.get_theme_font_size("font_size"))
+		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(label)
+		button.set_meta("amount_label", label)
+	label.text = str(amount)
+
+
 func _refresh_rewards() -> void:
 	_top_bar.refresh()
-	_gold_button.text = "%d Coins" % _rewards.gold
-	_exp_button.text = "%d EXP" % _rewards.exp_points
+	_reward_amount(_gold_button, COIN_ICON, _rewards.gold, "Coins")
+	_reward_amount(_exp_button, EXP_ICON, _rewards.exp_points, "EXP")
 	_gold_button.visible = not _rewards.gold_taken
 	_exp_button.visible = not _rewards.exp_taken
 	_card_button.visible = not _rewards.card_taken
@@ -1161,16 +1223,6 @@ func _on_continue_pressed() -> void:
 		get_tree().change_scene_to_file(return_scene)
 		return
 	RunState.leave_room()
-
-
-func _on_new_run_pressed() -> void:
-	SaveGame.delete()
-	RunState.start_new_run()
-	get_tree().change_scene_to_file(RunState.MAP_SCENE)
-
-
-func _on_main_menu_pressed() -> void:
-	get_tree().change_scene_to_file(RunState.MENU_SCENE)
 
 
 func _unplayable_hint(card: BaseCard) -> String:

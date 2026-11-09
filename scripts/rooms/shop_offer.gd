@@ -3,6 +3,7 @@ class_name ShopOffer
 ## The look of one item for sale, shared by the Blacksmith and the Merchant:
 ## a dark panel holding the item, with a coin price button below it.
 
+const KEYWORD_COLOR := Color(1, 0.831373, 0.352941)  # keyword tags in descriptions, as on artifacts
 const COIN := preload("res://assets/icons/coin.png")
 const COLOR_BG := Color(0.0784314, 0.0862745, 0.109804)
 const COLOR_BORDER := Color(0.231373, 0.254902, 0.321569)
@@ -95,11 +96,16 @@ static func _make_text(title: String, description: String, alignment: Horizontal
 	title_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	title_label.add_theme_font_size_override("font_size", 26)
 	box.add_child(title_label)
-	var description_label := Label.new()
-	description_label.text = description
+	# {keyword:X} tags show coloured; hovering the offer explains them (the caller's HoverInfo).
+	var description_label := RichTextLabel.new()
+	description_label.bbcode_enabled = true
+	description_label.fit_content = true
+	description_label.scroll_active = false
+	description_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	description_label.horizontal_alignment = alignment
 	description_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	description_label.modulate = COLOR_TEXT_DIM
-	description_label.add_theme_font_size_override("font_size", 20)
+	description_label.add_theme_color_override("default_color", COLOR_TEXT_DIM)
+	description_label.add_theme_font_size_override("normal_font_size", 20)
+	description_label.text = Keywords.markup(description, "[color=#%s]" % KEYWORD_COLOR.to_html(false), "[/color]")
 	box.add_child(description_label)
 	return box

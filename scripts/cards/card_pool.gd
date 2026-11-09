@@ -71,7 +71,9 @@ static var CARDS: Array = [
 static func random_cards(count: int) -> Array[BaseCard]:
 	var pool: Array[BaseCard] = []
 	for card_class in CARDS:
-		pool.append(card_class.new())
+		var card: BaseCard = card_class.new()
+		if card.rarity != Enum.CardRarity.STARTER:  # starter cards come only in the opening deck
+			pool.append(card)
 	var result: Array[BaseCard] = []
 	while result.size() < count and not pool.is_empty():
 		var total := 0.0

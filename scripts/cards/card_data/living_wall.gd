@@ -8,7 +8,7 @@ func _init() -> void:
 	type = Enum.CardType.POWER
 	rarity = Enum.CardRarity.UNCOMMON
 	target = Enum.TargetType.PLAYER
-	description = "Whenever you gain Plate, deal damage to 1 random enemy tile."
+	description = "Whenever you gain {keyword:Plate}, deal damage to 1 random enemy tile."
 	image = preload("res://assets/cards/cards/living_wall.png")
 
 

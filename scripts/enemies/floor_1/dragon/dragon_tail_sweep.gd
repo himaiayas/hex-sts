@@ -1,7 +1,7 @@
 class_name DragonTailSweep
 extends BaseEnemyAction
 
-## Hit 6 x2: two rows of 6. The first goes on the best row, the second on the best row
+## Hit 4 x2: two rows of 4. The first goes on the best row, the second on the best row
 ## after the first one has landed.
 
 var _first_hits: Array[Vector2i] = []
@@ -9,11 +9,11 @@ var _first_hits: Array[Vector2i] = []
 
 func _init() -> void:
 	super(Enum.BaseEnemyActionEnum.ATTACK, "Tail Sweep", 1.0)
-	description = "Hit 2 rows of 6 tiles."
+	description = "Hit 2 rows of 4 tiles."
 	hit_vfx = preload("res://assets/enemies/floor_1/dragon_attack_tail_sweep.png")
 	for i in 2:
 		var row: Array[BaseActionTile] = []
-		for q in 6:
+		for q in 4:
 			row.append(DamageTile.new(Vector2i(q, 0)))
 		parts.append(EnemyActionPart.new(Enum.Side.PLAYER, row))
 

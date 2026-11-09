@@ -76,8 +76,9 @@ func _show_cards() -> void:
 			panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		_card_grid.add_child(slot)
 		_hover_info.add_card(slot, card, _card_page)
-	_hint.text = "%s\nChoose a card for it." % augment.description if any \
+	_hint.text = "%s\nChoose a card for it." % augment.plain_description() if any \
 		else "No card in your deck can take this augment."
+	_hover_info.add(_hint, augment.keyword_entries(), false, null, true)
 	_confirm_button.text = "Confirm" if any else "Continue"
 	_confirm_button.disabled = any
 

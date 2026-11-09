@@ -61,7 +61,7 @@ func _ready() -> void:
 
 ## Icons show their numbers; EXP only in its hover text.
 func refresh() -> void:
-	_location_label.text = _location()
+	_location_label.text = RunState.location_text()
 	_health_button.text = "%d/%d" % [_alive_tiles(), RunState.health.size()]
 	_gold_display.text = str(RunState.gold)
 	_deck_button.text = str(RunState.deck.size())
@@ -93,19 +93,6 @@ func is_modal_open() -> bool:
 		or _level_up_modal.visible or _menu.visible
 
 
-## "Floor 1 - Room 3": the room the player is in, or stands on in the map.
-func _location() -> String:
-	if RunState.map == null:
-		return ""
-	var room: MapRoom = RunState.current_room
-	if room == null:
-		room = RunState.map.rooms.get(RunState.map.current)
-	var where := "Entrance"
-	if room and room.type == Enum.RoomType.BOSS_COMBAT:
-		where = "Boss"
-	elif room and room.number > 0:
-		where = "Room %d" % room.number
-	return "Floor %d - %s" % [RunState.dungeon_floor, where]
 
 
 # --- Menu ---------------------------------------------------------------------------
@@ -321,17 +308,30 @@ func _on_level_up_confirm_pressed() -> void:
 	refresh()  # opens the next level-up, if any
 
 
-## Empty cells next to the grid are clickable until all tiles are placed.
+## Empty cells next to the grid, within this floor's radius (RunState.health_radius), are clickable
+## until all tiles are placed. With no such cell left, Confirm works anyway and the rest are skipped.
 func _refresh_level_up() -> void:
 	var left := _placing - _level_up_grid.new_cells.size()
+	var radius := RunState.health_radius()
 	_level_up_grid.candidates.clear()
 	if left > 0:
 		for cell: Vector2i in _level_up_health:
 			for offset in NEIGHBORS:
 				var next := cell + offset
-				if not _level_up_health.has(next) and not _level_up_grid.candidates.has(next):
+				if not _level_up_health.has(next) and not _level_up_grid.candidates.has(next) \
+						and _ring(next) <= radius:
 					_level_up_grid.candidates.append(next)
-	_level_up_hint.text = "Place %d more health tile%s" % [left, "" if left == 1 else "s"] \
-		if left > 0 else "All tiles placed"
-	_confirm_button.disabled = left > 0
+	var full := left > 0 and _level_up_grid.candidates.is_empty()
+	if full:
+		_level_up_hint.text = "No room left: your grid reaches ring %d, the limit for this floor." % radius
+	elif left > 0:
+		_level_up_hint.text = "Place %d more health tile%s (up to ring %d)" % [left, "" if left == 1 else "s", radius]
+	else:
+		_level_up_hint.text = "All tiles placed"
+	_confirm_button.disabled = left > 0 and not full
 	_level_up_grid.refresh()
+
+
+## Rings between cell and the centre of the health grid (0 for the centre).
+static func _ring(cell: Vector2i) -> int:
+	return (absi(cell.x) + absi(cell.y) + absi(cell.x + cell.y)) / 2

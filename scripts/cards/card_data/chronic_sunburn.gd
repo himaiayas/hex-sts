@@ -8,7 +8,7 @@ func _init() -> void:
 	type = Enum.CardType.POWER
 	rarity = Enum.CardRarity.LEGENDARY
 	target = Enum.TargetType.PLAYER
-	description = "At the start of your turn, apply Fracture to 1 random enemy tile."
+	description = "At the start of your turn, apply {keyword:Fracture} to 1 random enemy tile."
 	image = preload("res://assets/cards/cards/chronic_sunburn.png")
 
 

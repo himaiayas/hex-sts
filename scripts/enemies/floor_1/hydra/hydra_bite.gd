@@ -11,10 +11,9 @@ func _init(count: int, _heads: MultiHeadPower) -> void:
 	var bite: Array[BaseActionTile] = [
 		DamageTile.new(Vector2i(0, 0)),
 		DamageTile.new(Vector2i(1, 0)),
-		DamageTile.new(Vector2i(-1, 1)),
 		DamageTile.new(Vector2i(0, 1)),
 	]
-	super("Bite", "Hit 4 tiles %d time%s." % [count, "" if count == 1 else "s"], bite, count, true)
+	super("Bite", "Hit 3 tiles %d time%s." % [count, "" if count == 1 else "s"], bite, count, true)
 	heads = _heads
 
 

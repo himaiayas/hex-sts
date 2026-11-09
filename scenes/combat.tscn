@@ -93,6 +93,7 @@ offset_top = -20.0
 offset_right = 150.0
 offset_bottom = 20.0
 grow_vertical = 2
+tooltip_text = "This btn is intended"
 text = "WinCombat :)"
 
 [node name="HintLabel" type="Label" parent="Margin/Layout/StatusBar" unique_id=2117940320]
@@ -457,50 +458,6 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 28
 text = "Skip"
 
-[node name="DefeatPanel" type="ColorRect" parent="." unique_id=782311784]
-unique_name_in_owner = true
-visible = false
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0, 0, 0, 0.85)
-
-[node name="Center" type="CenterContainer" parent="DefeatPanel" unique_id=80355052]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-
-[node name="Box" type="VBoxContainer" parent="DefeatPanel/Center" unique_id=1935881017]
-layout_mode = 2
-theme_override_constants/separation = 32
-
-[node name="DefeatTitle" type="Label" parent="DefeatPanel/Center/Box" unique_id=1797336825]
-layout_mode = 2
-theme_override_font_sizes/font_size = 64
-text = "Defeated"
-horizontal_alignment = 1
-
-[node name="NewRunButton" type="Button" parent="DefeatPanel/Center/Box" unique_id=1342314440]
-custom_minimum_size = Vector2(260, 64)
-layout_mode = 2
-size_flags_horizontal = 4
-theme_override_font_sizes/font_size = 30
-text = "New Run"
-
-[node name="MainMenuButton" type="Button" parent="DefeatPanel/Center/Box" unique_id=1842760391]
-custom_minimum_size = Vector2(260, 64)
-layout_mode = 2
-size_flags_horizontal = 4
-theme_override_font_sizes/font_size = 30
-text = "Main Menu"
-
 [connection signal="pressed" from="Margin/Layout/StatusBar/WinCombatButton" to="." method="_on_win_combat_pressed"]
 [connection signal="pressed" from="Margin/Layout/BottomBar/LeftColumn/DrawPileButton" to="." method="_on_draw_pile_pressed"]
 [connection signal="pressed" from="Margin/Layout/BottomBar/RightColumn/EndTurnButton" to="." method="_on_end_turn_pressed"]
@@ -517,5 +474,3 @@ text = "Main Menu"
 [connection signal="pressed" from="RewardPanel/Center/Panel/Box/ContinueButton" to="." method="_on_continue_pressed"]
 [connection signal="pressed" from="CardChoicePanel/Center/Box/CardChoiceButtons/BackButton" to="." method="_on_card_choice_back_pressed"]
 [connection signal="pressed" from="CardChoicePanel/Center/Box/CardChoiceButtons/SkipCardButton" to="." method="_on_skip_card_pressed"]
-[connection signal="pressed" from="DefeatPanel/Center/Box/NewRunButton" to="." method="_on_new_run_pressed"]
-[connection signal="pressed" from="DefeatPanel/Center/Box/MainMenuButton" to="." method="_on_main_menu_pressed"]

@@ -19,6 +19,7 @@ var _hover_info := HoverInfo.new()  # keyword panels of the artifact under the m
 
 func _ready() -> void:
 	add_child(_hover_info)
+	BackToMenu.add_to(self)
 	var artifacts: Array[BaseArtifact] = []
 	for artifact_class in ArtifactPool.ARTIFACTS:
 		artifacts.append(artifact_class.new())

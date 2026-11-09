@@ -21,11 +21,11 @@ func _init() -> void:
 	sprite = preload("res://assets/enemies/floor_2/mummy.png")
 	var lance: Array[BaseActionTile] = []
 	for r in 2:
-		for q in 5:
-			lance.append(DamageTile.new(Vector2i(q, r), true))
+		for q in 4:
+			lance.append(DamageTile.new(Vector2i(q, r), r == 0))  # only the first row pierces
 	actions = [
 		EnemyApplyPower.new("Curse Wrap", "Your next Defense card places %d fewer Shield or Plate." % CURSE_WRAP, CurseWrapPower.new(CURSE_WRAP), true),
-		EnemyHit.new("Pierce", "Hit 10 tiles in 2 rows with Pierce.", lance),
+		EnemyHit.new("Pierce", "Hit 8 tiles in 2 rows; the first row has Pierce.", lance),
 	]
 	p1_cycle = [0, 1]
 	statuses.append(WrappedPower.new())

@@ -6,6 +6,7 @@ func _init() -> void:
 	card_name = "Heroic Stance"
 	cost = 1
 	type = Enum.CardType.SKILL
+	rarity = Enum.CardRarity.UNCOMMON
 	target = Enum.TargetType.PLAYER
 	description = "[Self] {render:0}\n"
 	image = preload("res://assets/cards/cards/heroic_stance.png")

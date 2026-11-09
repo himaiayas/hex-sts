@@ -1,11 +1,19 @@
 extends Control
 
-## Main menu: Continue (only with a saved run), New Run, Options, Credits, Quit.
+## Main menu: Continue (only with a saved run), New Run, Options, Credits, Test Scenes, Quit.
+## Test Scenes swaps the list for the card gallery, artifact gallery and monster test (TEST_SCENES).
+
+const TEST_SCENES := [
+	["Card Gallery", "res://scenes/tests/card_gallery.tscn"],
+	["Artifact Gallery", "res://scenes/tests/artifact_gallery.tscn"],
+	["Monster Test", "res://scenes/tests/monster_test.tscn"],
+]
 
 @onready var _buttons: VBoxContainer = $Menu
 
 var _options: OptionsPanel
 var _confirm_new_run: PanelContainer
+var _test_menu: VBoxContainer  # same place and look as _buttons
 
 
 func _ready() -> void:
@@ -14,7 +22,19 @@ func _ready() -> void:
 	_add_button("New Run", _on_new_run_pressed)
 	_add_button("Options", _on_options_pressed)
 	_add_button("Credits", _on_credits_toggled)
+	_add_button("Test Scenes", _on_test_scenes_toggled)
 	_add_button("Quit", get_tree().quit)
+
+	_test_menu = _buttons.duplicate(0) as VBoxContainer  # its position and theme...
+	for copy in _test_menu.get_children():  # ...but not its buttons (duplicate copies children)
+		_test_menu.remove_child(copy)
+		copy.free()
+	_test_menu.name = "TestMenu"
+	add_child(_test_menu)
+	for entry in TEST_SCENES:
+		_add_button(entry[0], get_tree().change_scene_to_file.bind(entry[1]), _test_menu)
+	_add_button("Back", _on_test_scenes_toggled, _test_menu)
+	_test_menu.hide()
 
 	var center := CenterContainer.new()
 	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -30,12 +50,17 @@ func _ready() -> void:
 	center.add_child(_confirm_new_run)
 
 
-func _add_button(text: String, action: Callable) -> void:
+func _add_button(text: String, action: Callable, to: VBoxContainer = null) -> void:
 	var button := Button.new()
 	button.text = text
 	button.alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	button.pressed.connect(action)
-	_buttons.add_child(button)
+	(to if to else _buttons).add_child(button)
+
+
+func _on_test_scenes_toggled() -> void:
+	_test_menu.visible = not _test_menu.visible
+	_buttons.visible = not _test_menu.visible
 
 
 func _on_continue_pressed() -> void:

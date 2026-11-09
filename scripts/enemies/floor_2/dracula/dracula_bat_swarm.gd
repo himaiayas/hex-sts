@@ -1,14 +1,14 @@
 class_name DraculaBatSwarm
 extends BaseEnemyAction
 
-## Hit 3 x4: four bats, each a 3-hex triangle on a random spot of the player's grid.
+## Hit 3 x3: three bats, each a 3-hex triangle on a random spot of the player's grid.
 
 
 func _init() -> void:
 	super(Enum.BaseEnemyActionEnum.ATTACK, "Bat Swarm", 1.0)
-	description = "Hit 3 tiles 4 times."
+	description = "Hit 3 tiles 3 times."
 	hit_vfx = preload("res://assets/enemies/floor_2/dracula_attack_bat.png")
-	for i in 4:
+	for i in 3:
 		parts.append(EnemyActionPart.new(Enum.Side.PLAYER, [
 			DamageTile.new(Vector2i(0, 0)),
 			DamageTile.new(Vector2i(1, 0)),

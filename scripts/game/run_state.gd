@@ -17,9 +17,10 @@ var normal_fights_on_floor := 0  # the first few of each floor are easy (combat_
 const MAP_SCENE := "res://scenes/map.tscn"
 const COMBAT_SCENE := "res://scenes/combat.tscn"
 const MENU_SCENE := "res://scenes/mainmenu.tscn"
+const RUN_END_SCENE := "res://scenes/run_end.tscn"
 const BOSS_INTRO := preload("res://scenes/ui/boss_intro.tscn")
 
-## Boss of each floor: FLOOR_BOSSES[0] is floor 1. Floors past the end reuse the last one.
+## Boss of each floor: FLOOR_BOSSES[0] is floor 1. Beating the last one (Ramiel) wins the run.
 static var FLOOR_BOSSES: Array = [Dragon, Dracula, Ramiel]
 
 ## Combat room backgrounds of each floor: [0] is floor 1 (medieval, halloween, sci-fi).
@@ -46,8 +47,11 @@ const FLOOR_BOSS_BACKGROUNDS: Array[Texture2D] = [
 
 ## EXP needed for each level-up: LEVEL_XP[0] takes level 0 to 1, ... LEVEL_XP[8] takes 8 to 9 (max).
 ## xp is the progress toward the next level; it resets (keeping the leftover) on level-up.
-const LEVEL_XP: Array[int] = [10, 20, 30, 45, 60, 80, 100, 125, 150]
+const LEVEL_XP: Array[int] = [30, 30, 30, 30, 30, 30, 30, 30, 30]
 const LEVEL_UP_TILES := 3
+## How far from the centre (in rings) new health tiles can go, by floor: level-ups and tile slots
+## (Spare Hex) only offer cells within it. Floors past the last use the last.
+const HEALTH_RADIUS: Array[int] = [4, 5, 6]
 
 ## Level-ups not yet claimed in the level-up modal.
 var pending_level_ups := 0
@@ -61,6 +65,10 @@ var current_room: MapRoom = null
 
 ## Picked in start_new_run; the whole run's randomness starts from it (see floor_seed). Shown in the menu.
 var run_seed := 0
+var rooms_built := 0  # this run, every floor (end screen)
+var fights_won := 0  # this run (end screen)
+## How the last run ended, for the end screen (finish_run). Empty until one ends.
+var last_result: Dictionary = {}
 
 ## Non-null only during a fight.
 var combat: CombatState = null
@@ -83,7 +91,7 @@ func start_new_run(seed_value := -1) -> void:
 		for r in range(maxi(-2, -q - 2), mini(2, -q + 2) + 1):
 			coords.append(Vector2i(q, r))
 	health = CombatUnit.make_hex_health(coords)
-	gold = 0
+	gold = 67
 	deck = []
 	artifacts = []
 	level = 0
@@ -92,10 +100,21 @@ func start_new_run(seed_value := -1) -> void:
 	pending_tile_slots = 0
 	offered_artifacts = []
 	dungeon_floor = 1
+	rooms_built = 0
+	fights_won = 0
 	fought = {}
 	normal_fights_on_floor = 0
 
 	deck.append(Slash.new())
+	deck.append(Slash.new())
+	deck.append(Smash.new())
+	deck.append(Smash.new())
+	deck.append(Thrust.new())
+
+	deck.append(Guard.new())
+	deck.append(Guard.new())
+	deck.append(Guard.new())
+	deck.append(Guard.new())
 	deck.append(Guard.new())
 	#deck.append(LuckyShield.new())
 	#deck.append(XSlash.new())
@@ -167,6 +186,8 @@ func snapshot() -> Dictionary:
 		run_seed = run_seed,
 		fought = SaveGame.pack(fought),
 		normal_fights_on_floor = normal_fights_on_floor,
+		rooms_built = rooms_built,
+		fights_won = fights_won,
 		map = SaveGame.pack(map),
 		room = SaveGame.pack(current_room),
 		room_in_map = current_room != null and map.rooms.get(current_room.coord) == current_room,
@@ -202,6 +223,8 @@ func continue_run() -> bool:
 	run_seed = data.get("run_seed", 0)
 	fought = SaveGame.unpack(data.fought)
 	normal_fights_on_floor = data.normal_fights_on_floor
+	rooms_built = data.get("rooms_built", 0)
+	fights_won = data.get("fights_won", 0)
 	map = SaveGame.unpack(data.map)
 	offered_artifacts = []
 	combat = null
@@ -213,6 +236,54 @@ func continue_run() -> bool:
 	else:
 		enter_room(map.rooms[room.coord] if data.room_in_map else room)
 	return true
+
+
+## The furthest ring from the centre new health tiles can go on this floor (HEALTH_RADIUS).
+func health_radius() -> int:
+	return HEALTH_RADIUS[clampi(dungeon_floor, 1, HEALTH_RADIUS.size()) - 1]
+
+
+## Whether this is the last floor: its boss (Ramiel) ends the run.
+func is_final_floor() -> bool:
+	return dungeon_floor >= FLOOR_BOSSES.size()
+
+
+## "Floor 1 - Room 3": the room the player is in, or stands on in the map.
+func location_text() -> String:
+	if map == null:
+		return ""
+	var room: MapRoom = current_room
+	if room == null:
+		room = map.rooms.get(map.current)
+	var where := "Entrance"
+	if room and room.type == Enum.RoomType.BOSS_COMBAT:
+		where = "Boss"
+	elif room and room.number > 0:
+		where = "Room %d" % room.number
+	return "Floor %d - %s" % [dungeon_floor, where]
+
+
+## The run is over (the final boss beaten, or the player's last tile lost): keeps a summary for
+## the end screen, deletes the save, and shows that screen. killer: the boss beaten, or what won.
+func finish_run(won: bool, killer: String) -> void:
+	last_result = {
+		won = won,
+		killer = killer,
+		where = location_text(),
+		floors_cleared = dungeon_floor if won else dungeon_floor - 1,
+		rooms_built = rooms_built,
+		fights_won = fights_won,
+		level = level,
+		deck = deck.size(),
+		artifacts = artifacts.duplicate(),
+		gold = gold,
+		seed = run_seed,
+	}
+	SaveGame.delete()
+	combat = null
+	current_room = null
+	_entry_snapshot = {}
+	get_tree().change_scene_to_file(RUN_END_SCENE)
 
 
 ## A new instance of this floor's boss.

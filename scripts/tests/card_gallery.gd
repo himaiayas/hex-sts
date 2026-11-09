@@ -11,6 +11,7 @@ var _hover_info := HoverInfo.new()  # keyword panels of the card under the mouse
 
 func _ready() -> void:
 	add_child(_hover_info)
+	BackToMenu.add_to(self)
 	for card_class in CardPool.CARDS:
 		var card: BaseCard = card_class.new()
 		var slot := Control.new()

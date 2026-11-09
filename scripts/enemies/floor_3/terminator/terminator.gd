@@ -32,14 +32,14 @@ func _init() -> void:
 	sprite = preload("res://assets/enemies/floor_3/terminator.png")
 	var burst: Array[BaseActionTile] = []
 	for r in 2:
-		for q in 3:
+		for q in 2:
 			burst.append(DamageTile.new(Vector2i(q - floori(r / 2.0), r)))  # rows line up, not slant
 	var block: Array[BaseActionTile] = []
-	for r in 4:
+	for r in 3:
 		for q in 5:
 			block.append(DamageTile.new(Vector2i(q - floori(r / 2.0), r)))
-	_barrage = EnemyHit.new("Rifle Barrage", "Hit 6 tiles 3 times.", burst, 3)
-	_execute = EnemyHit.new("Execute", "Hit 20 tiles in a 4x5 block. Only when you have half your tiles or fewer.", block)
+	_barrage = EnemyHit.new("Rifle Barrage", "Hit 4 tiles 3 times.", burst, 3)
+	_execute = EnemyHit.new("Execute", "Hit 15 tiles in a 3x5 block. Only when you have half your tiles or fewer.", block)
 	actions = [TerminatorRally.new(), _barrage, _execute]
 	p1_cycle = [0, 1, 2]
 

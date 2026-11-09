@@ -19,13 +19,13 @@ func _init() -> void:
 	sprite = preload("res://assets/enemies/floor_3/cyber_hound.png")
 	# A jaw: rows of 4 and 3.
 	var bite: Array[BaseActionTile] = []
-	for q in 4:
-		bite.append(DamageTile.new(Vector2i(q, 0)))
 	for q in 3:
+		bite.append(DamageTile.new(Vector2i(q, 0)))
+	for q in 2:
 		bite.append(DamageTile.new(Vector2i(q - 1, 1)))
 	actions = [
-		EnemyHit.new("Bite", "Hit 7 tiles. Overclock: 1 more Bite next turn.", bite),
-		EnemyHit.new("Bite", "Hit 7 tiles 2 times. Overclock: 1 more Bite next turn.", bite, 2),
-		EnemyHit.new("Bite", "Hit 7 tiles 3 times. Overclock: back to 1 Bite next turn.", bite, 3),
+		EnemyHit.new("Bite", "Hit 5 tiles. Overclock: 1 more Bite next turn.", bite),
+		EnemyHit.new("Bite", "Hit 5 tiles 2 times. Overclock: 1 more Bite next turn.", bite, 2),
+		EnemyHit.new("Bite", "Hit 5 tiles 3 times. Overclock: back to 1 Bite next turn.", bite, 3),
 	]
 	p1_cycle = [0, 1, 2]

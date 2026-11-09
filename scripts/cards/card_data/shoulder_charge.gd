@@ -6,6 +6,7 @@ func _init() -> void:
 	card_name = "Shoulder Charge"
 	cost = 1
 	type = Enum.CardType.ATTACK
+	rarity = Enum.CardRarity.UNCOMMON
 	description = "{keyword:Sacrifice} 2.\n{render:1}\n[Self] {render:2}"
 	image = preload("res://assets/cards/cards/shoulder_charge.png")
 	grid_actions = [
