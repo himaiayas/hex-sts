@@ -15,6 +15,7 @@ const COLOR_HEADER := Color("#ffd45a")
 func _ready() -> void:
 	CombatScene.testing = null  # left over from the last fight picked here
 	CombatScene.return_scene = ""
+	BackToMenu.add_to.call_deferred(self)  # after the scene's own background and list
 
 	var background := ColorRect.new()
 	background.color = COLOR_BG
