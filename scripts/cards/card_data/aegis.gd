@@ -10,6 +10,7 @@ func _init() -> void:
 	rarity = Enum.CardRarity.LEGENDARY
 	exhaust = true
 	description = "{render:0}\nAll tiles with Shield gain Plate. {keyword:Exhaust}."
+	image = preload("res://assets/cards/cards/aegis.png")
 	grid_actions = [
 		GridAction.new(Enum.TargetType.PLAYER, [
 			ShieldTile.new(Vector2i(0,0)),

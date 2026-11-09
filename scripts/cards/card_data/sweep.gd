@@ -7,6 +7,7 @@ func _init() -> void:
 	cost = 1
 	type = Enum.CardType.ATTACK
 	description = "{render:0}\nPut a card from your discard pile on top of your draw pile."
+	image = preload("res://assets/cards/cards/sweep.png")
 	grid_actions = [
 		GridAction.new(Enum.TargetType.ENEMY, [
 			DamageTile.new(Vector2i(0,0)),

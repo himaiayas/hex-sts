@@ -8,6 +8,7 @@ func _init() -> void:
 	type = Enum.CardType.ATTACK
 	rarity = Enum.CardRarity.RARE
 	description = "Deal damage to 2 random enemy tiles for each of your tiles destroyed this combat."
+	image = preload("res://assets/cards/cards/bloodlust_strike.png")
 
 
 func execute(combat: CombatState, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int])->Array:

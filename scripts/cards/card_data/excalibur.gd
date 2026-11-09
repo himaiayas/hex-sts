@@ -8,6 +8,7 @@ func _init() -> void:
 	type = Enum.CardType.ATTACK
 	rarity = Enum.CardRarity.RARE
 	description = "{keyword:Pierce} the whole row."
+	image = preload("res://assets/cards/cards/excalibur.png")
 	grid_actions = [
 		LineGridAction.new(Enum.TargetType.ENEMY, DamageTile.new(Vector2i.ZERO, true)),
 	]

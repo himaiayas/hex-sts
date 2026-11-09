@@ -9,6 +9,7 @@ func _init() -> void:
 	rarity = Enum.CardRarity.UNCOMMON
 	target = Enum.TargetType.ENEMY
 	description = "{render:0}\nIf this card destroys {keyword:Fracture} tile, Gain 1 energy, Draw 2 cards."
+	image = preload("res://assets/cards/cards/donut_blast.png")
 	grid_actions = [
 		GridAction.new(Enum.TargetType.ENEMY, [
 			DamageTile.new(Vector2i(1,0)),

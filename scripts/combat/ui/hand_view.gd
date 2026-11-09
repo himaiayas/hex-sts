@@ -15,6 +15,7 @@ const RenderCard := preload("res://scripts/cards/render_card.gd")
 const CARD_SIZE := RenderCard.CARD_SIZE
 const CARD_SPACING := 200.0  # distance between card centres
 const MAX_HAND_WIDTH := 1066.0  # big hands squeeze closer instead of getting wider
+const EDGE_ROOM := 1.7  # card widths kept free in all: the outer cards' half widths plus their tilted top corners
 const FAN_RADIUS := 2333.0  # radius of the arc the cards sit on
 const HOVER_SCALE := 1.4
 const HOVER_RAISE := 166.0
@@ -96,6 +97,8 @@ func _process(delta: float) -> void:
 	var hovered := _card_under_mouse()
 	if hovered != _hovered:
 		_hovered = hovered
+		if hovered != -1:
+			Sfx.play("card_hover")
 		_update_order()
 
 	var weight := 1.0 - exp(-SPEED * delta)
@@ -172,7 +175,9 @@ func _target_for(i: int) -> Transform2D:
 func _spacing() -> float:
 	if _cards.size() < 2:
 		return 0.0
-	return minf(CARD_SPACING, MAX_HAND_WIDTH / (_cards.size() - 1))
+	# Narrower than MAX_HAND_WIDTH if this control is: the fan stays inside it (combat's side columns).
+	var width := minf(MAX_HAND_WIDTH, size.x - CARD_SIZE.x * EDGE_ROOM)
+	return minf(CARD_SPACING, maxf(width, 0.0) / (_cards.size() - 1))
 
 
 ## Picks the closest slot by x so overlapping, rotated cards don't flicker.

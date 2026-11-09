@@ -9,6 +9,7 @@ func _init() -> void:
 	type = Enum.CardType.SKILL
 	target = Enum.TargetType.PLAYER
 	description = "Your next Attack this turn is played twice."
+	image = preload("res://assets/cards/cards/echo_heart.png")
 
 
 func execute(combat: CombatState, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int])->Array:

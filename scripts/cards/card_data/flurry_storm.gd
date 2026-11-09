@@ -7,6 +7,7 @@ func _init() -> void:
 	x_cost = true
 	type = Enum.CardType.ATTACK
 	description = "{render:0}\nX times."
+	image = preload("res://assets/cards/cards/flurry_storm.png")
 	grid_actions = [
 		GridAction.new(Enum.TargetType.ENEMY, [
 			DamageTile.new(Vector2i(0,0), true),

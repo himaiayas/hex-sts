@@ -16,6 +16,7 @@ const ARTIFACT_IMAGE_SIZE := 96.0
 @onready var _exp_text: Label = %ExpText
 @onready var _cur_level: Label = %CurrentLevelLabel
 @onready var _next_level: Label = %NextLevelLabel
+@onready var _location_label: Label = %LocationLabel
 
 @onready var _health_modal: Control = %HealthModal
 @onready var _health_grid: HealthGridView = %HealthGrid
@@ -35,21 +36,31 @@ const ARTIFACT_IMAGE_SIZE := 96.0
 const NEIGHBORS: Array[Vector2i] = [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1),
 	Vector2i(0, -1), Vector2i(1, -1), Vector2i(-1, 1)]
 
-var _hover_info := HoverInfo.new()  # keywords of cards in the Deck modal
+var _hover_info := HoverInfo.new()  # keywords of cards in the Deck modal and of artifacts
 
 ## Level-up in progress: a copy of the health grid with the placed tiles, and the artifact on offer.
 var _level_up_health: Dictionary[Vector2i, HealthTile] = {}
 var _level_up_reward: BaseArtifact = null
+var _placing := 0  # tiles this modal places: LEVEL_UP_TILES for a level, or an artifact's tile slots
+var _slots_only := false  # opened for RunState.pending_tile_slots, not a level
+
+
+const MENU_LAYER := 60  # above the hand, the scenes' panels and HoverInfo
+var _menu: Control  # Resume / Options / Save & Quit, over everything (_build_menu)
+var _menu_buttons: Control
+var _options: OptionsPanel
 
 
 func _ready() -> void:
 	add_child(_hover_info)
+	_build_menu()
 	_close_modals()
 	refresh()
 
 
 ## Icons show their numbers; EXP only in its hover text.
 func refresh() -> void:
+	_location_label.text = _location()
 	_health_button.text = "%d/%d" % [_alive_tiles(), RunState.health.size()]
 	_gold_display.text = str(RunState.gold)
 	_deck_button.text = str(RunState.deck.size())
@@ -72,13 +83,108 @@ func refresh() -> void:
 		_next_level.text = "LV%d" % [RunState.level+1]
 		_exp_text.text = "%d/%d" % [RunState.xp, RunState.xp_to_next()]
 		_exp.tooltip_text = "Level %d  %d / %d EXP" % [RunState.level, RunState.xp, RunState.xp_to_next()]
-	if RunState.pending_level_ups > 0 and not _level_up_modal.visible:
+	if (RunState.pending_level_ups > 0 or RunState.pending_tile_slots > 0) and not _level_up_modal.visible:
 		_open_level_up()
 
 
 func is_modal_open() -> bool:
 	return _health_modal.visible or _deck_modal.visible or _artifact_modal.visible \
-		or _level_up_modal.visible
+		or _level_up_modal.visible or _menu.visible
+
+
+## "Floor 1 - Room 3": the room the player is in, or stands on in the map.
+func _location() -> String:
+	if RunState.map == null:
+		return ""
+	var room: MapRoom = RunState.current_room
+	if room == null:
+		room = RunState.map.rooms.get(RunState.map.current)
+	var where := "Entrance"
+	if room and room.type == Enum.RoomType.BOSS_COMBAT:
+		where = "Boss"
+	elif room and room.number > 0:
+		where = "Room %d" % room.number
+	return "Floor %d - %s" % [RunState.dungeon_floor, where]
+
+
+# --- Menu ---------------------------------------------------------------------------
+
+func _build_menu() -> void:
+	_menu = ColorRect.new()
+	_menu.color = Color(0, 0, 0, 0.75)
+	_menu.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_menu.mouse_filter = Control.MOUSE_FILTER_STOP
+	var layer := CanvasLayer.new()
+	layer.layer = MENU_LAYER
+	add_child(layer)
+	layer.add_child(_menu)
+	var center := CenterContainer.new()
+	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_menu.add_child(center)
+
+	var panel := PanelContainer.new()
+	var style := StyleBoxFlat.new()
+	style.bg_color = OptionsPanel.COLOR_BG
+	style.border_color = OptionsPanel.COLOR_BORDER
+	style.set_border_width_all(2)
+	style.set_corner_radius_all(12)
+	style.set_content_margin_all(40)
+	panel.add_theme_stylebox_override("panel", style)
+	center.add_child(panel)
+	_menu_buttons = panel
+	var box := VBoxContainer.new()
+	box.add_theme_constant_override("separation", 20)
+	panel.add_child(box)
+	var title := Label.new()
+	title.text = "Menu"
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_size_override("font_size", 44)
+	box.add_child(title)
+	for entry in [["Resume", _close_menu], ["Options", _show_options], ["Save & Quit", RunState.save_and_quit]]:
+		var button := Button.new()
+		button.text = entry[0]
+		button.custom_minimum_size = Vector2(320, 64)
+		button.add_theme_font_size_override("font_size", 30)
+		button.pressed.connect(entry[1])
+		box.add_child(button)
+
+	_options = OptionsPanel.new()
+	_options.back_pressed.connect(_show_menu_buttons)
+	center.add_child(_options)
+	_menu.hide()
+
+
+func _open_menu() -> void:
+	_close_modals()
+	_show_menu_buttons()
+	_menu.show()
+
+
+func _close_menu() -> void:
+	_menu.hide()
+
+
+func _show_options() -> void:
+	_menu_buttons.hide()
+	_options.show()
+
+
+func _show_menu_buttons() -> void:
+	_options.hide()
+	_menu_buttons.show()
+
+
+## Esc opens the menu, or closes it (Options goes back to the menu first).
+func _unhandled_key_input(event: InputEvent) -> void:
+	if event.is_pressed() and not event.is_echo() and event.keycode == KEY_ESCAPE:
+		if not _menu.visible:
+			_open_menu()
+		elif _options.visible:
+			_show_menu_buttons()
+		else:
+			_close_menu()
+		get_viewport().set_input_as_handled()
 
 
 func _alive_tiles() -> int:
@@ -121,6 +227,7 @@ func _on_deck_pressed() -> void:
 
 func _on_artifacts_pressed() -> void:
 	_close_modals()
+	_hover_info.clear()
 	for child in _artifact_list.get_children():
 		child.queue_free()
 	for artifact in RunState.artifacts:
@@ -135,7 +242,7 @@ func _on_artifacts_pressed() -> void:
 		var text := RichTextLabel.new()
 		text.bbcode_enabled = true
 		text.fit_content = true 
-		text.text = "[b]%s[/b]\n[color=#8d93a5]%s[/color]" % [artifact.name, artifact.description]
+		text.text = "[b]%s[/b]\n[color=#8d93a5]%s[/color]" % [artifact.name, artifact.bbcode_description()]
 		text.add_theme_font_size_override("normal_font_size", 26)
 		text.add_theme_font_size_override("bold_font_size", 26)
 		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -143,6 +250,7 @@ func _on_artifacts_pressed() -> void:
 		text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		row.add_child(text)
 		_artifact_list.add_child(row)
+		_hover_info.add(row, artifact.keyword_entries(), false, _artifact_list.get_parent())
 	if RunState.artifacts.is_empty():
 		var empty := Label.new()
 		empty.text = "No artifacts yet."
@@ -158,13 +266,19 @@ func _on_close_pressed() -> void:
 ## One modal per level gained: place LEVEL_UP_TILES health tiles next to the grid, and take an artifact.
 func _open_level_up() -> void:
 	_close_modals()
-	_level_up_title.text = "Level %d!" % (RunState.level - RunState.pending_level_ups + 1)
-	_level_up_reward = ArtifactPool.random_artifact(RunState.artifacts)
+	_slots_only = RunState.pending_level_ups == 0
+	_placing = RunState.pending_tile_slots if _slots_only else RunState.LEVEL_UP_TILES
+	_level_up_title.text = "New health tiles" if _slots_only \
+		else "Level %d!" % (RunState.level - RunState.pending_level_ups + 1)
+	_level_up_reward = null if _slots_only else ArtifactPool.random_artifact(RunState.artifacts)
+	_level_up_artifact.visible = not _slots_only
 	_level_up_artifact_image.visible = _level_up_reward != null
 	if _level_up_reward:
 		_level_up_artifact_image.texture = _level_up_reward.image
 		_level_up_artifact.text = "[center][b]%s[/b]\n[color=#8d93a5]%s[/color][/center]" % [
-			_level_up_reward.name, _level_up_reward.description]
+			_level_up_reward.name, _level_up_reward.bbcode_description()]
+		_hover_info.clear()
+		_hover_info.add(_level_up_artifact, _level_up_reward.keyword_entries())
 	else:
 		_level_up_artifact.text = "[center]You own every artifact.[/center]"
 	if _level_up_grid.unit == null:
@@ -191,15 +305,18 @@ func _on_level_up_confirm_pressed() -> void:
 	for cell in _level_up_grid.new_cells:
 		RunState.health[cell] = _level_up_health[cell]
 	if _level_up_reward:
-		RunState.artifacts.append(_level_up_reward)
-	RunState.pending_level_ups -= 1
+		RunState.add_artifact(_level_up_reward)
+	if _slots_only:
+		RunState.pending_tile_slots = 0
+	else:
+		RunState.pending_level_ups -= 1
 	_level_up_modal.hide()
 	refresh()  # opens the next level-up, if any
 
 
 ## Empty cells next to the grid are clickable until all tiles are placed.
 func _refresh_level_up() -> void:
-	var left := RunState.LEVEL_UP_TILES - _level_up_grid.new_cells.size()
+	var left := _placing - _level_up_grid.new_cells.size()
 	_level_up_grid.candidates.clear()
 	if left > 0:
 		for cell: Vector2i in _level_up_health:

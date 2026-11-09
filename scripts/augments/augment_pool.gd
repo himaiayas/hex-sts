@@ -2,6 +2,10 @@ class_name AugmentPool
 
 static var AUGMENTS: Array = [
 	ExpansionAugment,
+	EconomicAugment,
+	ImmortalAugment,
+	DuplicationAugment,
+	PowerfulAugment,
 ]
 
 static func random_augments(count: int) -> Array[BaseAugment]:

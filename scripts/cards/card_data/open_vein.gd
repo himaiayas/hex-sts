@@ -7,6 +7,7 @@ func _init() -> void:
 	cost = 0
 	type = Enum.CardType.SKILL
 	description = "[Self] {render:0}\nGain 2 Energy. {keyword:Exhaust}."
+	image = preload("res://assets/cards/cards/open_vein.png")
 	exhaust= true
 	grid_actions = [
 		GridAction.new(Enum.TargetType.PLAYER, [

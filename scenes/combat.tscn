@@ -3,8 +3,8 @@
 [ext_resource type="Script" uid="uid://dqjpwrdt3pnve" path="res://scripts/combat/combat_scene.gd" id="1_combat"]
 [ext_resource type="Script" uid="uid://c4g55kseks0cn" path="res://scripts/combat/ui/health_grid_view.gd" id="2_grid"]
 [ext_resource type="Script" uid="uid://e17p874bkot" path="res://scripts/combat/ui/hand_view.gd" id="3_hand"]
-[ext_resource type="PackedScene" path="res://scenes/ui/top_bar.tscn" id="9_topbar"]
-[ext_resource type="Texture2D" path="res://assets/characters/char_idle1.png" id="10_player"]
+[ext_resource type="PackedScene" uid="uid://b76onrkqqin8t" path="res://scenes/ui/top_bar.tscn" id="9_topbar"]
+[ext_resource type="Texture2D" uid="uid://b38ds7vtgirus" path="res://assets/characters/char_idle1.png" id="10_player"]
 [ext_resource type="Script" uid="uid://cdht0ce1ofkdn" path="res://scripts/combat/ui/unit_image.gd" id="11_player_image"]
 
 [node name="Combat" type="Control" unique_id=1963554734]
@@ -26,7 +26,7 @@ grow_vertical = 2
 mouse_filter = 2
 color = Color(0.105882, 0.113725, 0.141176, 1)
 
-[node name="FloorBackground" type="TextureRect" parent="."]
+[node name="FloorBackground" type="TextureRect" parent="." unique_id=1724296967]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -57,26 +57,34 @@ layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 20
 
-[node name="StatusBar" type="HBoxContainer" parent="Margin/Layout" unique_id=164278894]
+[node name="StatusBar" type="Control" parent="Margin/Layout" unique_id=164278894]
+custom_minimum_size = Vector2(0, 46)
 layout_mode = 2
-
-[node name="StatusLabel" type="Label" parent="Margin/Layout/StatusBar" unique_id=1205878526]
-unique_name_in_owner = true
-layout_mode = 2
-theme_override_font_sizes/font_size = 33
-text = "Turn 1    Energy 3/3"
+mouse_filter = 2
 
 [node name="WinCombatButton" type="Button" parent="Margin/Layout/StatusBar" unique_id=254824290]
-layout_mode = 2
-text = "WinCombat"
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_top = -20.0
+offset_right = 150.0
+offset_bottom = 20.0
+grow_vertical = 2
+text = "WinCombat :)"
 
 [node name="HintLabel" type="Label" parent="Margin/Layout/StatusBar" unique_id=2117940320]
 unique_name_in_owner = true
 modulate = Color(0.8, 0.8, 0.8, 1)
-layout_mode = 2
-size_flags_horizontal = 3
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 text = "Click a card to select it."
-horizontal_alignment = 2
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="Arena" type="HBoxContainer" parent="Margin/Layout" unique_id=548162205]
 layout_mode = 2
@@ -85,7 +93,7 @@ mouse_filter = 2
 theme_override_constants/separation = 24
 alignment = 1
 
-[node name="Player" type="HBoxContainer" parent="Margin/Layout/Arena"]
+[node name="Player" type="HBoxContainer" parent="Margin/Layout/Arena" unique_id=636594809]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 24
@@ -98,13 +106,13 @@ size_flags_vertical = 4
 mouse_filter = 2
 script = ExtResource("2_grid")
 
-[node name="PlayerSlot" type="Control" parent="Margin/Layout/Arena/Player"]
+[node name="PlayerSlot" type="Control" parent="Margin/Layout/Arena/Player" unique_id=1657365934]
 custom_minimum_size = Vector2(300, 300)
 layout_mode = 2
 size_flags_vertical = 4
 mouse_filter = 2
 
-[node name="PlayerImage" type="TextureRect" parent="Margin/Layout/Arena/Player/PlayerSlot"]
+[node name="PlayerImage" type="TextureRect" parent="Margin/Layout/Arena/Player/PlayerSlot" unique_id=559866018]
 unique_name_in_owner = true
 layout_mode = 1
 anchors_preset = 15
@@ -118,7 +126,7 @@ expand_mode = 1
 stretch_mode = 5
 script = ExtResource("11_player_image")
 
-[node name="Gap" type="Control" parent="Margin/Layout/Arena"]
+[node name="Gap" type="Control" parent="Margin/Layout/Arena" unique_id=1289509254]
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
@@ -133,19 +141,27 @@ theme_override_constants/separation = 67
 layout_mode = 2
 theme_override_constants/separation = 13
 
-[node name="DrawPileButton" type="Button" parent="Margin/Layout/BottomBar" unique_id=1059927777]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(217, 60)
+[node name="LeftColumn" type="VBoxContainer" parent="Margin/Layout/BottomBar" unique_id=2128019326]
+custom_minimum_size = Vector2(260, 0)
 layout_mode = 2
 size_flags_vertical = 8
-text = "Draw pile (0)"
+theme_override_constants/separation = 10
 
-[node name="DeckButton" type="Button" parent="Margin/Layout/BottomBar" unique_id=68551890]
+[node name="EnergyLabel" type="Label" parent="Margin/Layout/BottomBar/LeftColumn" unique_id=1677400151]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(217, 60)
 layout_mode = 2
-size_flags_vertical = 8
-text = "Deck (0)"
+theme_override_colors/font_color = Color(1, 0.831373, 0.352941, 1)
+theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
+theme_override_constants/outline_size = 8
+theme_override_font_sizes/font_size = 44
+text = "Energy 3/3"
+horizontal_alignment = 1
+
+[node name="DrawPileButton" type="Button" parent="Margin/Layout/BottomBar/LeftColumn" unique_id=1059927777]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(260, 60)
+layout_mode = 2
+text = "Draw pile (0)"
 
 [node name="HandArea" type="Control" parent="Margin/Layout/BottomBar" unique_id=1145192042]
 custom_minimum_size = Vector2(0, 133)
@@ -160,35 +176,47 @@ anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
-offset_left = 115.0
 offset_top = -132.0
-offset_right = 115.0
 offset_bottom = 184.0
 grow_horizontal = 2
 grow_vertical = 0
 mouse_filter = 1
 script = ExtResource("3_hand")
 
-[node name="ExhaustButton" type="Button" parent="Margin/Layout/BottomBar" unique_id=1874203519]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(217, 60)
+[node name="RightColumn" type="VBoxContainer" parent="Margin/Layout/BottomBar" unique_id=76104748]
+custom_minimum_size = Vector2(260, 0)
 layout_mode = 2
 size_flags_vertical = 8
-text = "Exhausted (0)"
+theme_override_constants/separation = 10
 
-[node name="DiscardButton" type="Button" parent="Margin/Layout/BottomBar" unique_id=1811883424]
+[node name="EndTurnButton" type="Button" parent="Margin/Layout/BottomBar/RightColumn" unique_id=1483384867]
 unique_name_in_owner = true
-custom_minimum_size = Vector2(217, 60)
+custom_minimum_size = Vector2(260, 72)
 layout_mode = 2
-size_flags_vertical = 8
-text = "Discard (0)"
-
-[node name="EndTurnButton" type="Button" parent="Margin/Layout/BottomBar" unique_id=1483384867]
-unique_name_in_owner = true
-custom_minimum_size = Vector2(217, 60)
-layout_mode = 2
-size_flags_vertical = 8
+theme_override_font_sizes/font_size = 28
 text = "End Turn"
+
+[node name="Piles" type="HBoxContainer" parent="Margin/Layout/BottomBar/RightColumn" unique_id=1214608152]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="DiscardButton" type="Button" parent="Margin/Layout/BottomBar/RightColumn/Piles" unique_id=1811883424]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+text = "Discard (0)"
+clip_text = true
+
+[node name="ExhaustButton" type="Button" parent="Margin/Layout/BottomBar/RightColumn/Piles" unique_id=1874203519]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(0, 60)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_font_sizes/font_size = 20
+text = "Exhaust (0)"
+clip_text = true
 
 [node name="PickButtons" type="CenterContainer" parent="." unique_id=1630928471]
 unique_name_in_owner = true
@@ -328,6 +356,15 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 28
 text = "Choose a card"
 
+[node name="ArtifactRewardButton" type="Button" parent="RewardPanel/Center/Panel/Box" unique_id=1804908843]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(0, 64)
+layout_mode = 2
+theme_override_font_sizes/font_size = 28
+text = "Artifact"
+expand_icon = true
+
 [node name="ContinueButton" type="Button" parent="RewardPanel/Center/Panel/Box" unique_id=1705992731]
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
@@ -433,11 +470,10 @@ theme_override_font_sizes/font_size = 28
 text = "Main Menu"
 
 [connection signal="pressed" from="Margin/Layout/StatusBar/WinCombatButton" to="." method="_on_win_combat_pressed"]
-[connection signal="pressed" from="Margin/Layout/BottomBar/DeckButton" to="." method="_on_deck_pressed"]
-[connection signal="pressed" from="Margin/Layout/BottomBar/DrawPileButton" to="." method="_on_draw_pile_pressed"]
-[connection signal="pressed" from="Margin/Layout/BottomBar/ExhaustButton" to="." method="_on_exhaust_pressed"]
-[connection signal="pressed" from="Margin/Layout/BottomBar/DiscardButton" to="." method="_on_discard_pressed"]
-[connection signal="pressed" from="Margin/Layout/BottomBar/EndTurnButton" to="." method="_on_end_turn_pressed"]
+[connection signal="pressed" from="Margin/Layout/BottomBar/LeftColumn/DrawPileButton" to="." method="_on_draw_pile_pressed"]
+[connection signal="pressed" from="Margin/Layout/BottomBar/RightColumn/EndTurnButton" to="." method="_on_end_turn_pressed"]
+[connection signal="pressed" from="Margin/Layout/BottomBar/RightColumn/Piles/DiscardButton" to="." method="_on_discard_pressed"]
+[connection signal="pressed" from="Margin/Layout/BottomBar/RightColumn/Piles/ExhaustButton" to="." method="_on_exhaust_pressed"]
 [connection signal="pressed" from="PickButtons/Box/ConfirmButton" to="." method="_on_confirm_pressed"]
 [connection signal="gui_input" from="PileViewer" to="." method="_on_pile_viewer_input"]
 [connection signal="pressed" from="PileViewer/Center/Panel/Box/PileConfirmButton" to="." method="_on_confirm_pressed"]
@@ -445,6 +481,7 @@ text = "Main Menu"
 [connection signal="pressed" from="RewardPanel/Center/Panel/Box/GoldButton" to="." method="_on_gold_reward_pressed"]
 [connection signal="pressed" from="RewardPanel/Center/Panel/Box/ExpButton" to="." method="_on_exp_reward_pressed"]
 [connection signal="pressed" from="RewardPanel/Center/Panel/Box/CardButton" to="." method="_on_card_reward_pressed"]
+[connection signal="pressed" from="RewardPanel/Center/Panel/Box/ArtifactRewardButton" to="." method="_on_artifact_reward_pressed"]
 [connection signal="pressed" from="RewardPanel/Center/Panel/Box/ContinueButton" to="." method="_on_continue_pressed"]
 [connection signal="pressed" from="CardChoicePanel/Center/Box/CardChoiceButtons/BackButton" to="." method="_on_card_choice_back_pressed"]
 [connection signal="pressed" from="CardChoicePanel/Center/Box/CardChoiceButtons/SkipCardButton" to="." method="_on_skip_card_pressed"]

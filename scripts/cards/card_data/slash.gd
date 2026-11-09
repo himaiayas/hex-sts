@@ -26,6 +26,7 @@ func _init() -> void:
 			# DamageTile.new(Vector2i(2,0)),
 			# DamageTile.new(Vector2i(3,0)),
 			# DamageTile.new(Vector2i(4,0))
+			
 
 			DamageTile.new(Vector2i(0,0)),
 			DamageTile.new(Vector2i(1,0)),

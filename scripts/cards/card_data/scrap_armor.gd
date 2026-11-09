@@ -9,6 +9,7 @@ func _init() -> void:
 	rarity = Enum.CardRarity.UNCOMMON
 	target = Enum.TargetType.PLAYER
 	description = "{keyword:Exhaust} 1 card in your hand.\n{render:0}."
+	image = preload("res://assets/cards/cards/scrap_armor.png")
 	grid_actions = [
         GridAction.new(Enum.TargetType.PLAYER, [
 			ShieldTile.new(Vector2i(0,0)),

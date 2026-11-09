@@ -5,7 +5,9 @@ func _init() -> void:
 	super(
 		"Crimson Shard", 
 		"At the start of your turn, deal 1 damage to a random enemy tile.", 
-		Enum.ArtifactRarity.COMMON)
+		Enum.ArtifactRarity.COMMON,
+		preload("res://assets/artifacts/crimson_shard.png")
+	)
 
 func on_trigger(trigger: Enum.Trigger, combat: CombatState, _unit: CombatUnit, _cell: Vector2i) -> void:
 	if trigger != Enum.Trigger.TURN_START or combat.enemies.is_empty():

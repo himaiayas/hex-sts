@@ -9,6 +9,7 @@ func _init() -> void:
 	rarity = Enum.CardRarity.RARE
 	target = Enum.TargetType.PLAYER
 	description = "The first time you lose a health tile during your turn, gain 1 Energy."
+	image = preload("res://assets/cards/cards/bloody_chalice.png")
 
 
 func execute(combat: CombatState, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int])->Array:

@@ -9,6 +9,7 @@ func _init() -> void:
 	target = Enum.TargetType.PLAYER
 	exhaust = true
 	description = "{render:0}\n{keyword:Exhaust}."
+	image = preload("res://assets/cards/cards/mend.png")
 	grid_actions = [
 		GridAction.new(Enum.TargetType.PLAYER, [
 			HealTile.new(Vector2i(0,0)),

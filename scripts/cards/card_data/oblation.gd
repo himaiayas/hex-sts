@@ -8,7 +8,8 @@ func _init() -> void:
 	type = Enum.CardType.POWER
 	rarity = Enum.CardRarity.RARE
 	target = Enum.TargetType.PLAYER
-	description = "Whenever a card is {keyword:Exhaust}ed, draw 1 card."
+	description = "Whenever a card is {keyword:Exhaust|Exhausted}, draw 1 card."
+	image = preload("res://assets/cards/cards/oblation.png")
 
 
 func execute(combat: CombatState, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int])->Array:

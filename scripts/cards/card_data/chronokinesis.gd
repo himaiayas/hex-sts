@@ -9,6 +9,7 @@ func _init() -> void:
 	rarity = Enum.CardRarity.RARE
 	target = Enum.TargetType.PLAYER
 	description = "Next turn, your Attacks deal Piercing damage. End your turn, then take an extra turn."
+	image = preload("res://assets/cards/cards/chronokinesis.png")
 
 
 func execute(combat: CombatState, units: Array[CombatUnit], cells: Array[Vector2i], rotations: Array[int])->Array:

@@ -20,7 +20,7 @@ func get_icon() -> Texture2D:
 	return preload("res://assets/grid_effects/piercing.png") if pierce else preload("res://assets/grid_effects/damage.png")
 
 func describe() -> String:
-	return "Damages this tile, even through Shield." if pierce else "Damages this tile. A Shield absorbs it instead."
+	return "Damages this tile, ignore Shield." if pierce else "Damages this tile. Can be Blocked by Shield."
 
 func display_name() -> String:
 	return "Pierce" if pierce else "Damage"
