@@ -306,7 +306,7 @@ func _draw() -> void:
 			_draw_action(s.tile, cell, s.alpha, offset, size_scale)
 			if s.count > 1:
 				var label := "x%d" % s.count
-				var count_size := int(20 * size_scale * _hex / HEX_SIZE)
+				var count_size := int(22 * size_scale * _hex / HEX_SIZE)
 				var at := cell_position(cell) + offset + Vector2(-_hex * 0.6, _hex * 0.75) * size_scale
 				draw_string_outline(count_font, at, label, HORIZONTAL_ALIGNMENT_RIGHT, _hex * 1.2 * size_scale, count_size, 4, Color.WHITE)
 				draw_string(count_font, at, label, HORIZONTAL_ALIGNMENT_RIGHT, _hex * 1.2 * size_scale, count_size, COLOR_EDGE)
@@ -345,11 +345,11 @@ func _draw() -> void:
 	var title := "%d/%d" % [alive, coords.size()]  # the unit's name is under its image (combat scene)
 	# Centred over the grid; past a small grid's sides instead of being cut,
 	# but NAME_SCREEN_MARGIN inside the screen.
-	var title_width := font.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, 27).x
+	var title_width := font.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, 29).x
 	var title_x := (size.x - title_width) / 2.0
 	title_x = clampf(title_x, NAME_SCREEN_MARGIN - global_position.x,
 		get_viewport_rect().size.x - NAME_SCREEN_MARGIN - global_position.x - title_width)
-	draw_string(font, Vector2(title_x, 27), title, HORIZONTAL_ALIGNMENT_LEFT, -1, 27, COLOR_TEXT)
+	draw_string(font, Vector2(title_x, 29), title, HORIZONTAL_ALIGNMENT_LEFT, -1, 29, COLOR_TEXT)
 
 	# Power badges: icon with its stack count in the corner.
 	for i in unit.statuses.size():
@@ -361,8 +361,8 @@ func _draw() -> void:
 		if not power.show_amount:
 			continue
 		var corner := rect.end - Vector2(rect.size.x, 2)
-		draw_string_outline(font, corner, str(power.amount), HORIZONTAL_ALIGNMENT_RIGHT, rect.size.x, 20, 4, Color.BLACK)
-		draw_string(font, corner, str(power.amount), HORIZONTAL_ALIGNMENT_RIGHT, rect.size.x, 20, power.get_color())
+		draw_string_outline(font, corner, str(power.amount), HORIZONTAL_ALIGNMENT_RIGHT, rect.size.x, 22, 4, Color.BLACK)
+		draw_string(font, corner, str(power.amount), HORIZONTAL_ALIGNMENT_RIGHT, rect.size.x, 22, power.get_color())
 
 	# Changes being animated, on top of everything: fade out while popping up and back.
 	var now := Time.get_ticks_msec() / 1000.0

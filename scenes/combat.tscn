@@ -193,7 +193,7 @@ theme_override_constants/separation = 10
 unique_name_in_owner = true
 custom_minimum_size = Vector2(260, 72)
 layout_mode = 2
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "End Turn"
 
 [node name="Piles" type="HBoxContainer" parent="Margin/Layout/BottomBar/RightColumn" unique_id=1214608152]
@@ -205,7 +205,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 22
 text = "Discard (0)"
 clip_text = true
 
@@ -214,7 +214,7 @@ unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 60)
 layout_mode = 2
 size_flags_horizontal = 3
-theme_override_font_sizes/font_size = 20
+theme_override_font_sizes/font_size = 22
 text = "Exhaust (0)"
 clip_text = true
 
@@ -273,7 +273,7 @@ theme_override_constants/separation = 17
 [node name="PileTitle" type="Label" parent="PileViewer/Center/Panel/Box" unique_id=801749232]
 unique_name_in_owner = true
 layout_mode = 2
-theme_override_font_sizes/font_size = 33
+theme_override_font_sizes/font_size = 35
 text = "Pile (0)"
 horizontal_alignment = 1
 
@@ -339,21 +339,21 @@ horizontal_alignment = 1
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "0 Coins"
 
 [node name="ExpButton" type="Button" parent="RewardPanel/Center/Panel/Box" unique_id=114095799]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "0 EXP"
 
 [node name="CardButton" type="Button" parent="RewardPanel/Center/Panel/Box" unique_id=1804908842]
 unique_name_in_owner = true
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "Choose a card"
 
 [node name="ArtifactRewardButton" type="Button" parent="RewardPanel/Center/Panel/Box" unique_id=1804908843]
@@ -361,14 +361,14 @@ unique_name_in_owner = true
 visible = false
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "Artifact"
 expand_icon = true
 
 [node name="ContinueButton" type="Button" parent="RewardPanel/Center/Panel/Box" unique_id=1705992731]
 custom_minimum_size = Vector2(0, 64)
 layout_mode = 2
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "Continue"
 
 [node name="CardChoicePanel" type="ColorRect" parent="." unique_id=1379687643]
@@ -416,13 +416,13 @@ alignment = 1
 [node name="BackButton" type="Button" parent="CardChoicePanel/Center/Box/CardChoiceButtons" unique_id=469353582]
 custom_minimum_size = Vector2(200, 60)
 layout_mode = 2
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 28
 text = "Back"
 
 [node name="SkipCardButton" type="Button" parent="CardChoicePanel/Center/Box/CardChoiceButtons" unique_id=1221468663]
 custom_minimum_size = Vector2(200, 60)
 layout_mode = 2
-theme_override_font_sizes/font_size = 26
+theme_override_font_sizes/font_size = 28
 text = "Skip"
 
 [node name="DefeatPanel" type="ColorRect" parent="." unique_id=782311784]
@@ -459,14 +459,14 @@ horizontal_alignment = 1
 custom_minimum_size = Vector2(260, 64)
 layout_mode = 2
 size_flags_horizontal = 4
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "New Run"
 
 [node name="MainMenuButton" type="Button" parent="DefeatPanel/Center/Box" unique_id=1842760391]
 custom_minimum_size = Vector2(260, 64)
 layout_mode = 2
 size_flags_horizontal = 4
-theme_override_font_sizes/font_size = 28
+theme_override_font_sizes/font_size = 30
 text = "Main Menu"
 
 [connection signal="pressed" from="Margin/Layout/StatusBar/WinCombatButton" to="." method="_on_win_combat_pressed"]

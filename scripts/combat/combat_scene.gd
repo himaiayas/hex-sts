@@ -212,7 +212,7 @@ func _set_intent_rows(box: VBoxContainer, actions: Array[BaseEnemyAction]) -> vo
 			_intent_info.add(row, [[action.intent_text(), action.description, icons]], false, null, true)
 
 
-const NAME_FONT_SIZE := 27
+const NAME_FONT_SIZE := 29
 
 ## The unit's name, centred just under its image's slot. In the slot, not the image, so it stays
 ## put while the image lunges and shakes.
