@@ -24,7 +24,7 @@ const ROOM_WEIGHTS := {
 	Enum.RoomType.MERCHANT: 10,
 	Enum.RoomType.BLACKSMITH: 10,
 	Enum.RoomType.TREASURE: 10,
-	Enum.RoomType.EVENT: 20,
+	Enum.RoomType.EVENT: 0, # dropped
 }
 
 const DIRS: Array[Vector2i] = [
