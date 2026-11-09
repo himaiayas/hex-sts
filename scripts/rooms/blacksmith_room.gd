@@ -42,6 +42,7 @@ func _make_offer(augment: BaseAugment) -> Control:
 
 
 func _on_buy_pressed(augment: BaseAugment) -> void:
+	Sfx.play("coins")
 	RunState.gold -= RunState.shop_price(augment.price)
 	_buying = augment
 	_top_bar.refresh()

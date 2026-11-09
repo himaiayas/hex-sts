@@ -50,7 +50,8 @@ var _aim: TextureRect  # an enemy's sight on the player's sprite, while a move w
 @onready var _floor_background: TextureRect = %FloorBackground
 var _hover_info := HoverInfo.new()  # keywords of cards in the pile viewer and card rewards
 var _intent_info := HoverInfo.new()  # each intent row's description; not _hover_info, which the pile viewer clears
-@onready var _status_label: Label = %StatusLabel
+@onready var _end_turn_button: Button = %EndTurnButton
+@onready var _energy_label: Label = %EnergyLabel
 @onready var _hint_label: Label = %HintLabel
 @onready var _player_view: HealthGridView = %PlayerGrid
 @onready var _player_image: UnitImage = %PlayerImage
@@ -58,7 +59,6 @@ var _intent_info := HoverInfo.new()  # each intent row's description; not _hover
 @onready var _arena: HBoxContainer = $Margin/Layout/Arena
 @onready var _player_side: HBoxContainer = $Margin/Layout/Arena/Player
 @onready var _hand: HandView = %Hand
-@onready var _deck_button: Button = %DeckButton
 @onready var _draw_button: Button = %DrawPileButton
 @onready var _exhaust_button: Button = %ExhaustButton
 @onready var _discard_button: Button = %DiscardButton
@@ -116,6 +116,8 @@ func _ready() -> void:
 	combat.animator = _animate
 	combat.chooser = _choose
 	combat.relocator = _relocate
+	combat.reshuffled.connect(Sfx.play.bind("shuffle"))
+	combat.card_exhausted.connect(func(_card: BaseCard) -> void: Sfx.play("exhaust"))
 	_busy = true
 	await combat.start_turn()
 	_busy = false
@@ -250,14 +252,17 @@ func _on_card_clicked(card: BaseCard) -> void:
 		return
 	if selected == card:
 		_select(null)
+		Sfx.play("card_select")
 	elif not combat.can_play(card):
 		_hint_label.text = _unplayable_hint(card)
+		Sfx.play("error")
 		return
 	elif card.grid_actions.is_empty():
 		_hint_label.text = "Drag it to the middle of the screen to play."
 		return
 	else:
 		_select(card)
+		Sfx.play("card_select")
 		if card.clicks(combat.x_energy()) == 0:  # an X-cost card with no energy left
 			_play_selected()
 			return
@@ -271,6 +276,7 @@ func _on_card_cast(card: BaseCard) -> void:
 	_select(null)
 	if not combat.can_play(card):
 		_hint_label.text = _unplayable_hint(card)
+		Sfx.play("error")
 		_refresh()
 		return
 	_select(card)
@@ -291,6 +297,7 @@ func _on_cell_clicked(unit: CombatUnit, cell: Vector2i) -> void:
 		return
 	if not selected.grid_action(_cells.size()).can_place(unit, cell, _rotation):
 		_hint_label.text = "Every tile of this pattern must land on an undamaged tile."
+		Sfx.play("error")
 		return
 	_units.append(unit)
 	_cells.append(cell)
@@ -352,6 +359,14 @@ func _toggle_pick(card: BaseCard) -> void:
 	_refresh()
 
 
+const PLAY_SOUNDS := {
+	Enum.CardType.ATTACK: "play_attack",
+	Enum.CardType.DEFENSE: "play_defense",
+	Enum.CardType.SKILL: "play_skill",
+	Enum.CardType.POWER: "play_power",
+}
+
+
 ## Plays the selected card at the cells clicked so far.
 func _play_selected() -> void:
 	# Deselect first so the preview is gone while the card plays out.
@@ -364,6 +379,7 @@ func _play_selected() -> void:
 	_busy = true
 	if card.type == Enum.CardType.ATTACK:
 		_player_image.show_pose(UnitImage.PLAYER_ATTACK)
+	Sfx.play(PLAY_SOUNDS[card.type])
 	await combat.play_card(card, units, cells, rotations)
 	_busy = false
 	_refresh()
@@ -383,20 +399,20 @@ func _on_end_turn_pressed() -> void:
 	_select(null)
 	_refresh()
 	_busy = true
+	if not combat.hand.is_empty():
+		Sfx.play("card_discard")
 	await combat.end_turn()
 	_busy = false
 	_refresh()
 	_check_combat_end()
+	if not _over:
+		Sfx.play("turn_start")
 
 
 ## Only enemy hits count, not the player's own Poison at turn start.
 func _on_player_blocked(_coords: Vector2i) -> void:
 	if not combat.player.in_turn:
 		_player_image.show_pose(UnitImage.PLAYER_GUARD)
-
-
-func _on_deck_pressed() -> void:
-	_show_pile("Deck", RunState.deck)
 
 
 func _on_draw_pile_pressed() -> void:
@@ -503,12 +519,16 @@ func _animate(batch: Array[Dictionary]) -> void:
 		if action and action.hit_vfx:
 			var area := enemy.hit_vfx_area if enemy.hit_vfx_area.has_area() else _view_for(target).get_global_rect()
 			_show_vfx(action.hit_vfx, area)
+		if action and action.heavy_impact:
+			Sfx.play("boss_boom")
+			Sfx.play("boss_crash")
 	if action and action.ripple_vfx and batch.any(func(c: Dictionary) -> bool: return c.unit == attacker):
 		_ripple(action.ripple_vfx, _center(_sprite_for(attacker)))
 	for change in batch:
 		_view_for(change.unit).flash(change.cell, change.kind, change.effect)
 		if change.effect is MultiHeadPower or change.effect is RisePower:  # a Hydra head was cut, a Zombie rose
 			_flash_sprite(_sprite_for(change.unit))
+	_play_batch_sounds(batch)
 	for unit in damaged:
 		if unit == combat.player:
 			_shake(_player_view, "shake")
@@ -516,6 +536,28 @@ func _animate(batch: Array[Dictionary]) -> void:
 			_shake(_sprite_for(unit), "position")
 	await get_tree().create_timer(HealthGridView.FLASH_TIME).timeout
 	_hide_departed()
+
+
+## One sound per kind of change in the batch, as its flashes start.
+func _play_batch_sounds(batch: Array[Dictionary]) -> void:
+	var heard := {}
+	for change in batch:
+		var event := ""
+		match change.kind:
+			Enum.Change.DAMAGE:
+				event = "hit_player" if change.unit == combat.player else "hit"
+			Enum.Change.BLOCK:
+				event = "block"
+			Enum.Change.SHIELD:
+				event = "shield"
+			Enum.Change.HEAL:
+				event = "heal"
+			Enum.Change.EFFECT, Enum.Change.POWER:
+				var debuff: bool = change.effect is BaseTileEffect and change.effect.debuff
+				event = "debuff" if debuff else "buff"
+		if not event.is_empty() and not heard.has(event):
+			heard[event] = true
+			Sfx.play(event)
 
 
 ## Takes enemies with leaves_when_dead off the screen once they're dead (the Mimic), after their last
@@ -649,10 +691,10 @@ func _center(control: Control) -> Vector2:
 
 func _refresh() -> void:
 	_top_bar.refresh()
-	_status_label.text = "Turn %d    Energy %d/%d" % [combat.turn, combat.energy, combat.max_energy]
-	_deck_button.text = "Deck (%d)" % RunState.deck.size()
+	_end_turn_button.text = "End Turn %d" % combat.turn
+	_energy_label.text = "Energy %d/%d" % [combat.energy, combat.max_energy]
 	_draw_button.text = "Draw pile (%d)" % combat.draw_pile.size()
-	_exhaust_button.text = "Exhausted (%d)" % combat.exhaust_pile.size()
+	_exhaust_button.text = "Exhaust (%d)" % combat.exhaust_pile.size()
 	_discard_button.text = "Discard (%d)" % combat.discard_pile.size()
 	var choosing := not _choice.is_empty()
 	var discard_picking: bool = choosing and not _choice.in_hand
@@ -845,6 +887,16 @@ static var NORMALS: Array = [
 	[ScoutDrone, CleanerBot, CyberHound, PlasmaTurret, AndroidSentinel, NanoSwarm, HackerAI],
 ]
 static var ELITES: Array = [[Hydra], [Frangenstein, Lich], [MechWalker, Terminator]]
+## The first EASY_FIGHTS normal fights of each floor only use EASY_NORMALS[floor - 1]
+## (picked as the smallest monsters by tile count; edit freely).
+static var EASY_NORMALS: Array = [
+	[Slime, Vermin, Goblin],
+	[Bat, LilGhost, Skeleton],
+	[ScoutDrone, PlasmaTurret, CleanerBot],
+]
+const EASY_FIGHTS := 2
+## Each earlier fight with a monster this run multiplies its chance by this (RunState.fought).
+const REPEAT_WEIGHT := 0.25
 
 
 ## The floor whose monster lists have script, or 0.
@@ -864,10 +916,34 @@ func _enemies_for(room_type: Enum.RoomType) -> Array[CombatUnit]:
 		enemies.append(testing.new())
 		enemies.append_array(enemies[0].companions)
 		return enemies
-	var pools: Array = ELITES if room_type == Enum.RoomType.ELITE_COMBAT else NORMALS
-	enemies.append(pools[mini(RunState.dungeon_floor, pools.size()) - 1].pick_random().new())
+	var pools: Array = NORMALS
+	if room_type == Enum.RoomType.ELITE_COMBAT:
+		pools = ELITES
+	elif RunState.normal_fights_on_floor < EASY_FIGHTS:
+		pools = EASY_NORMALS
+	if room_type != Enum.RoomType.ELITE_COMBAT:
+		RunState.normal_fights_on_floor += 1
+	var script := _pick_monster(pools[mini(RunState.dungeon_floor, pools.size()) - 1])
+	RunState.fought[script] = RunState.fought.get(script, 0) + 1
+	enemies.append(script.new())
 	enemies.append_array(enemies[0].companions)
 	return enemies
+
+
+## A random monster from pool, each weighted REPEAT_WEIGHT ^ (times fought this run).
+static func _pick_monster(pool: Array) -> Script:
+	var weights: Array[float] = []
+	var total := 0.0
+	for script: Script in pool:
+		var weight := pow(REPEAT_WEIGHT, RunState.fought.get(script, 0))
+		weights.append(weight)
+		total += weight
+	var roll := randf() * total
+	for i in pool.size():
+		roll -= weights[i]
+		if roll < 0.0:
+			return pool[i]
+	return pool.back()  # float rounding
 
 
 func _check_combat_end() -> void:
@@ -875,9 +951,12 @@ func _check_combat_end() -> void:
 		return
 	if combat.is_lost():
 		_end_combat()
+		Sfx.play("lose")
+		SaveGame.delete()  # the run is over
 		_defeat_panel.show()
 	elif combat.is_won():
 		_end_combat()
+		Sfx.play("win")
 		_rewards = CombatRewards.roll(_room_type())
 		_refresh_rewards()
 		_reward_panel.show()
@@ -902,7 +981,7 @@ func _refresh_rewards() -> void:
 	_artifact_button.visible = _rewards.artifact != null and not _rewards.artifact_taken
 	if _rewards.artifact:
 		_artifact_button.text = _rewards.artifact.name
-		_artifact_button.tooltip_text = _rewards.artifact.description
+		_artifact_button.tooltip_text = _rewards.artifact.plain_description()
 		_artifact_button.icon = _rewards.artifact.image
 
 
@@ -912,6 +991,7 @@ func _on_artifact_reward_pressed() -> void:
 
 
 func _on_gold_reward_pressed() -> void:
+	Sfx.play("coins")
 	_rewards.take_gold(RunState)
 	_refresh_rewards()
 
@@ -936,6 +1016,7 @@ func _on_card_reward_pressed() -> void:
 
 func _on_reward_card_input(event: InputEvent, card: BaseCard) -> void:
 	if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
+		Sfx.play("card_select")
 		_rewards.take_card(RunState, card)
 		_card_choice_panel.hide()
 		_refresh_rewards()
@@ -961,7 +1042,7 @@ func _on_continue_pressed() -> void:
 
 func _on_new_run_pressed() -> void:
 	RunState.start_new_run()
-	get_tree().change_scene_to_file(RunState.COMBAT_SCENE)
+	get_tree().change_scene_to_file(RunState.MAP_SCENE)
 
 
 func _on_main_menu_pressed() -> void:

@@ -7,6 +7,7 @@ extends BaseEnemyAction
 
 func _init() -> void:
 	super(Enum.BaseEnemyActionEnum.ATTACK, "Crimson Rain", 1.0)
+	heavy_impact = true
 	description = "Hit 6 tiles 3 times."
 	hit_vfx = preload("res://assets/enemies/floor_2/dracula_attack_rain.png")
 	for i in 3:

@@ -3,7 +3,7 @@ extends BaseArtifact
 
 
 func _init() -> void:
-	super("Titan Plate", "At the start of combat, apply Plate to 4 random tiles.", Enum.ArtifactRarity.RARE,
+	super("Titan Plate", "At the start of combat, apply {keyword:Plate} to 4 random tiles.", Enum.ArtifactRarity.RARE,
 		preload("res://assets/artifacts/titan_plate.png"))
 
 const PLATES := 4

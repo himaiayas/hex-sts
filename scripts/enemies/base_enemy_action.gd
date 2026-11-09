@@ -16,6 +16,7 @@ var hit_vfx: Texture2D # optional, faded over the target's grid when the hit lan
 var ripple_vfx: Texture2D # optional, one ring that ripples out from the enemy, under the arena, when the move changes its grid
 var aim_vfx: Texture2D # optional, a sight drifting over the player's sprite while the move is in the intent
 var projectile_vfx: Texture2D # optional, flies left from the enemy's sprite to the player's before the hit lands
+var heavy_impact := false # a boss's big move: plays a heavy layered impact sound when it lands (Sfx boss_boom + boss_crash)
 
 
 func _init(_action_type: Enum.BaseEnemyActionEnum,_action_name: String, _probability: float) -> void:

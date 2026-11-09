@@ -12,16 +12,22 @@ const RARITY_COLORS := {
 }
 
 @onready var _grid: GridContainer = %Grid
+@onready var _scroll: ScrollContainer = $Margin/Box/Scroll
+
+var _hover_info := HoverInfo.new()  # keyword panels of the artifact under the mouse
 
 
 func _ready() -> void:
+	add_child(_hover_info)
 	var artifacts: Array[BaseArtifact] = []
 	for artifact_class in ArtifactPool.ARTIFACTS:
 		artifacts.append(artifact_class.new())
 	artifacts.sort_custom(func(a: BaseArtifact, b: BaseArtifact) -> bool:
 		return a.rarity < b.rarity if a.rarity != b.rarity else a.name < b.name)
 	for artifact in artifacts:
-		_grid.add_child(_tile(artifact))
+		var tile := _tile(artifact)
+		_grid.add_child(tile)
+		_hover_info.add(tile, artifact.keyword_entries(), false, _scroll)
 
 
 func _tile(artifact: BaseArtifact) -> Control:
@@ -60,12 +66,15 @@ func _tile(artifact: BaseArtifact) -> Control:
 	rarity.add_theme_font_size_override("font_size", 18)
 	box.add_child(rarity)
 
-	var description := Label.new()
-	description.text = artifact.description
+	var description := RichTextLabel.new()
+	description.bbcode_enabled = true
+	description.fit_content = true
+	description.scroll_active = false
+	description.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	description.text = "[center]%s[/center]" % artifact.bbcode_description()
 	description.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	description.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	description.add_theme_font_size_override("font_size", 17)
-	description.add_theme_color_override("font_color", Color(0.85, 0.85, 0.85))
+	description.add_theme_font_size_override("normal_font_size", 17)
+	description.add_theme_color_override("default_color", Color(0.85, 0.85, 0.85))
 	description.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	box.add_child(description)
 	return panel

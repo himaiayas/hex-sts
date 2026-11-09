@@ -6,7 +6,7 @@ func _init() -> void:
 	card_name = "Crack"
 	cost = 1
 	type = Enum.CardType.SKILL
-	description = "{render:0}\nApply {keyword:Fracture}."
+	description = "{render:0}."
 	image = preload("res://assets/cards/cards/crack.png")
 	grid_actions = [
 		GridAction.new(Enum.TargetType.ENEMY, [
