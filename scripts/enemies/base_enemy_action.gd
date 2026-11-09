@@ -52,23 +52,6 @@ func _init(_action_type: Enum.BaseEnemyActionEnum,_action_name: String, _probabi
     probability = _probability
 
 
-## Intent icons above the enemy's head, in this order. INTENT_ICONS has each kind's image.
-const INTENT_ORDER: Array[String] = ["damage", "charge", "debuff", "defence", "heal", "buff"]
-const INTENT_ICONS := {
-    damage = preload("res://assets/icons/enemy_damage.png"),
-    charge = preload("res://assets/icons/enemy_charge_damage.png"),  # damage that lands in delay() turns
-    debuff = preload("res://assets/icons/enemy_debuff.png"),
-    defence = preload("res://assets/icons/enemy_defence.png"),
-    heal = preload("res://assets/icons/enemy_heal.png"),
-    buff = preload("res://assets/icons/enemy_buff.png"),
-}
-const TYPE_INTENTS := {
-    Enum.BaseEnemyActionEnum.ATTACK: "damage",
-    Enum.BaseEnemyActionEnum.DEFEND: "defence",
-    Enum.BaseEnemyActionEnum.BUFF: "buff",
-    Enum.BaseEnemyActionEnum.DEBUFF: "debuff",
-}
-
 
 func add_own_effect(tile_script: Script, amount: int) -> void:
     own_effects.append([tile_script, amount])
@@ -100,39 +83,6 @@ func own_parts() -> Array:
 ## Turns until its damage lands (lands_in; overridden where it counts down, like Ramiel's Charge).
 func delay() -> int:
     return lands_in
-
-
-## What this move does, as INTENT_ORDER kinds: its action_type, plus whatever its parts do
-## (damage or a debuff on the player; a shield, heal or buff on itself). An attack that also
-## shields the enemy shows both.
-func intent_kinds() -> Array[String]:
-    # A wind-up does nothing now, so its type (BUFF) doesn't get an icon; its aimed damage shows as charge.
-    var kinds := {} if delay() > 0 else {TYPE_INTENTS[action_type]: true}
-    for part in parts + own_parts():
-        for t in part.tiles:
-            var effect: BaseEffect = (t as ApplyEffectTile).effect if t is ApplyEffectTile else null
-            var debuff := effect is BaseTileEffect and (effect as BaseTileEffect).debuff
-            if part.side == Enum.Side.PLAYER:
-                if t is DamageTile:
-                    kinds["charge" if delay() > 0 else "damage"] = true
-                elif debuff or t is ShredTile:
-                    kinds.debuff = true
-            elif t is ShieldTile or effect is PlateTileEffect:
-                kinds.defence = true
-            elif t is HealTile:
-                kinds.heal = true
-            elif (effect and not debuff) or t is CleanseTile:
-                kinds.buff = true
-    for effect: Array in own_effects:  # even with nothing to plan on yet (a heal at full health)
-        if effect[0] == ShieldTile:
-            kinds.defence = true
-        elif effect[0] == HealTile:
-            kinds.heal = true
-    var result: Array[String] = []
-    for kind in INTENT_ORDER:
-        if kinds.has(kind):
-            result.append(kind)
-    return result
 
 
 ## Its row in the intent label.
