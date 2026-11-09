@@ -111,7 +111,11 @@ func _ready() -> void:
 	_player_view.cell_clicked.connect(_on_cell_clicked)
 	combat.player.blocked.connect(_on_player_blocked)
 	combat.enemy_spawned.connect(_on_enemy_spawned)
-	_add_name_label(_player_image.get_parent(), combat.player.display_name)
+	_setup_end_turn_styles()
+	var player_name := _add_name_label(_player_image.get_parent(), combat.player.display_name)
+	# Nudged left so it sits under the head, which is left of the slot's centre.
+	player_name.offset_left = -100.0
+	player_name.offset_right = 20.0
 	for enemy in combat.enemies:
 		_add_enemy(enemy)
 	_fit_enemies()
@@ -212,7 +216,8 @@ func _set_intent_rows(box: VBoxContainer, actions: Array[BaseEnemyAction]) -> vo
 			_intent_info.add(row, [[action.intent_text(), action.description, icons]], false, null, true)
 
 
-const NAME_FONT_SIZE := 29
+const NAME_FONT_SIZE := 40
+const NAME_FONT: Font = preload("res://assets/fonts/PirataOne-Regular.ttf")
 
 ## The unit's name, centred just under its image's slot. In the slot, not the image, so it stays
 ## put while the image lunges and shakes.
@@ -221,6 +226,7 @@ func _add_name_label(slot: Control, text: String) -> Label:
 	label.text = text
 	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.add_theme_font_override("font", NAME_FONT)
 	label.add_theme_font_size_override("font_size", NAME_FONT_SIZE)
 	label.add_theme_color_override("font_color", HealthGridView.COLOR_TEXT)
 	label.add_theme_color_override("font_outline_color", Color.BLACK)
@@ -762,9 +768,30 @@ func _center(control: Control) -> Vector2:
 	return control.global_position + control.size / 2.0
 
 
+## Light green once nothing in the hand can be played, a hint to end the turn.
+const END_TURN_GREEN := {normal = Color("#9be89b"), hover = Color("#c4f5c4"), pressed = Color("#78c878"), focus = Color("#9be89b")}
+var _end_turn_yellow := {}
+var _end_turn_green := {}
+
+func _setup_end_turn_styles() -> void:
+	for state: String in END_TURN_GREEN:
+		var yellow := _end_turn_button.get_theme_stylebox(state) as StyleBoxFlat
+		var green := yellow.duplicate() as StyleBoxFlat
+		green.bg_color = END_TURN_GREEN[state]
+		_end_turn_yellow[state] = yellow
+		_end_turn_green[state] = green
+
+
+func _set_end_turn_green(green: bool) -> void:
+	var styles := _end_turn_green if green else _end_turn_yellow
+	for state: String in styles:
+		_end_turn_button.add_theme_stylebox_override(state, styles[state])
+
+
 func _refresh() -> void:
 	_top_bar.refresh()
 	_end_turn_button.text = "End Turn %d" % combat.turn
+	_set_end_turn_green(_choice.is_empty() and _relocating.is_empty() and not combat.hand.any(combat.can_play))
 	_energy_label.text = "Energy %d/%d" % [combat.energy, combat.max_energy]
 	_draw_button.text = "Draw pile (%d)" % combat.draw_pile.size()
 	_exhaust_button.text = "Exhaust (%d)" % combat.exhaust_pile.size()

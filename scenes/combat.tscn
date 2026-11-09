@@ -4,8 +4,30 @@
 [ext_resource type="Script" uid="uid://c4g55kseks0cn" path="res://scripts/combat/ui/health_grid_view.gd" id="2_grid"]
 [ext_resource type="Script" uid="uid://e17p874bkot" path="res://scripts/combat/ui/hand_view.gd" id="3_hand"]
 [ext_resource type="PackedScene" uid="uid://b76onrkqqin8t" path="res://scenes/ui/top_bar.tscn" id="9_topbar"]
+[ext_resource type="FontFile" uid="uid://no1t4pv2qrf2" path="res://assets/fonts/PirataOne-Regular.ttf" id="12_pirata"]
 [ext_resource type="Texture2D" uid="uid://b38ds7vtgirus" path="res://assets/characters/char_idle1.png" id="10_player"]
 [ext_resource type="Script" uid="uid://cdht0ce1ofkdn" path="res://scripts/combat/ui/unit_image.gd" id="11_player_image"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_endturn"]
+bg_color = Color(1, 0.82, 0.12, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_endturn_hover"]
+bg_color = Color(1, 0.9, 0.35, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_endturn_pressed"]
+bg_color = Color(0.85, 0.66, 0.08, 1)
+corner_radius_top_left = 18
+corner_radius_top_right = 18
+corner_radius_bottom_right = 18
+corner_radius_bottom_left = 18
 
 [node name="Combat" type="Control" unique_id=1963554734]
 layout_mode = 3
@@ -153,7 +175,8 @@ layout_mode = 2
 theme_override_colors/font_color = Color(1, 0.831373, 0.352941, 1)
 theme_override_colors/font_outline_color = Color(0, 0, 0, 1)
 theme_override_constants/outline_size = 8
-theme_override_font_sizes/font_size = 44
+theme_override_fonts/font = ExtResource("12_pirata")
+theme_override_font_sizes/font_size = 56
 text = "Energy 3/3"
 horizontal_alignment = 1
 
@@ -193,7 +216,16 @@ theme_override_constants/separation = 10
 unique_name_in_owner = true
 custom_minimum_size = Vector2(260, 72)
 layout_mode = 2
-theme_override_font_sizes/font_size = 30
+theme_override_colors/font_color = Color(0, 0, 0, 1)
+theme_override_colors/font_hover_color = Color(0, 0, 0, 1)
+theme_override_colors/font_pressed_color = Color(0, 0, 0, 1)
+theme_override_colors/font_focus_color = Color(0, 0, 0, 1)
+theme_override_styles/normal = SubResource("StyleBoxFlat_endturn")
+theme_override_styles/hover = SubResource("StyleBoxFlat_endturn_hover")
+theme_override_styles/pressed = SubResource("StyleBoxFlat_endturn_pressed")
+theme_override_styles/focus = SubResource("StyleBoxFlat_endturn")
+theme_override_fonts/font = ExtResource("12_pirata")
+theme_override_font_sizes/font_size = 46
 text = "End Turn"
 
 [node name="Piles" type="HBoxContainer" parent="Margin/Layout/BottomBar/RightColumn" unique_id=1214608152]
