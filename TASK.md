@@ -105,7 +105,7 @@
   - Idle loops `char_idle1` → `char_idle2` → `char_idle3` (`assets/characters/`).
   - Show `char_attack` while the player attacks. Lunge is optional.
   - Show `char_guard` when an enemy attack hits fewer player hexes than it targets (some or all blocked).
-- [x] Done ✅: `PlayerImage` (`scripts/combat/ui/player_image.gd`) on the `PlayerImage` node loops the idle frames, 0.25s each. `show_pose()` swaps in another sprite for 0.5s. Attack cards show `char_attack` once they're played. `CombatUnit.blocked` fires when a Shield absorbs a hit, and the player's guard shows on it outside the player's own turn, so their own Poison doesn't count. No lunge yet (#23). Turns resolve all at once until #22, so the pose shows after the enemy turn rather than during each hit.
+- [x] Done ✅: `PlayerImage` (`scripts/combat/ui/player_image.gd`) on the `PlayerImage` node loops the idle frames, 0.25s each. `show_pose()` swaps in another sprite for 0.5s. Attack cards show `char_attack` once they're played. `CombatUnit.blocked` fires when a Shield absorbs a hit, and the player's guard shows on it outside the player's own turn, so their own Poison doesn't count. ~~No lunge yet (#23). Turns resolve all at once until #22, so the pose shows after the enemy turn rather than during each hit.~~ Fixed by #22 and #23.
 
 ## Enemies
 
@@ -135,6 +135,7 @@
 - **Requirement/Prereq:** 8, 9, 21
 - **Brief Description:** Defend, draw cards, status cards, and multi-tile / row patterns (`LineGridAction`-style computed shapes).
   - Implement every row with CONFIRM = TRUE in the sheet's Card tab, using the placeholder image, then tick its Implemented column. The scope grows as Mai confirms more rows. Tracked in issue #20. Card upgrades are out of scope.
+- [x] Done ✅: By Mai, in issues #20 and #24.
 
 ### 14. Card descriptions
 
@@ -161,7 +162,7 @@
 
 - **Requirement/Prereq:** -
 - **Brief Description:** Main menu ui, click start to change the game state to map
-- [x] Done ✅: Main menu with art, logo and Pirata One font. Play starts a new run on the map, Quit exits, Credits has no screen yet.
+- [x] Done ✅: Main menu with art, logo and Pirata One font, on Mai's save & quit buttons: Continue (only with a saved run), New Run (goes to the map, and asks first if it would replace a saved run), Options, Credits and Quit. Credits is a panel on the same background.
 
 ## Out-Of-Combat
 
@@ -172,6 +173,7 @@
 - **PCG:** In general, we want to punish player going full straight and not make connect room. What we have talked is that, we give more weight to dead-end room if player do that, so player have to waste step to head back
 - **?:** Havent decide whether we will do vertical hex or horizontal hex. It will affects the matrix that representing axial coordinate.
 - **Brief Description:** Out-of-combat map with rooms (fight, elite, rest, shop, boss) that reads and writes `RunState`. Develop PCG for choices of room. Click room to enter scene of that room. This task is so fucking huge. I might divide it.
+- [x] Done ✅: By Mai. `MapState` starts each floor with 50 steps (`START_STEPS`), and running out sends the player to the boss. Entering an unexplored room offers 2-3 room choices with their type and doors. Room types are weighted (`ROOM_WEIGHTS`), and doors get rarer further out, so far rooms tend to be dead ends.
 
 ### 19. Game Logic for other Rooms
 
@@ -182,6 +184,7 @@
 
 - **Requirement/Prereq:** everything
 - **Brief Description:** Serialize run state.
+- [x] Done ✅: By Mai. Save & Quit in the top bar's menu writes the run with `SaveGame` (`user://run.save`), using the state from entering the current room if the player is in one. Continue on the main menu loads it. The save is deleted when the run ends or a new one starts.
 
 ## Spotted Problems by Claude
 
@@ -190,5 +193,5 @@
 - ~~**Target type ignored (see #4):**~~ Partly fixed: `BaseCard.target` (default ENEMY) decides which grid a card is played on; `ShieldEnemy` became `ShieldPlayer` and shields your own grid. `BaseAction.target` is only used by `RandomTileAction`.
 - ~~**Mixed indentation:**~~ Fixed in `be87566`: all `.gd` files now use tabs (Godot's default, applied on save), and `.editorconfig` enforces it.
 - ~~**Stale comments:**~~ Fixed: `HealthTile.hp` no longer says `-1 = empty`, and `make_hex_health`'s comment matches what it does.
-- **Main scene is a dead end:** `mainmenu.tscn` is the main scene, but its button has no script. Combat has to be run directly (F6 on `combat.tscn`).
-- **Content placeholders:** `StatusStrike` costs 3 (all your energy), card descriptions are `"fdksmfdf."`, and `scripts/main.gd` is the empty template.
+- ~~**Main scene is a dead end:**~~ Fixed in #17: New Run goes to the map.
+- ~~**Content placeholders:**~~ Fixed: `StatusStrike` is gone, no placeholder card descriptions are left, and `scripts/main.gd` is the main menu.
