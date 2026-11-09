@@ -12,6 +12,7 @@ func _init() -> void:
 		for q in 4:
 			maul.append(DamageTile.new(Vector2i(q - floori(r / 2.0), r)))  # rows line up, not slant
 	super("Howl & Maul", "Gain 1 Strength, then hit 12 tiles in a 3x4 block.", maul)
+	extra_types = [Enum.BaseEnemyActionEnum.BUFF]
 
 
 func execute(combat: CombatState, owner: CombatUnit) -> void:

@@ -8,6 +8,7 @@ extends BaseEnemyAction
 func _init() -> void:
 	super(Enum.BaseEnemyActionEnum.BUFF, "Summon Lil Ghost", 1.0)
 	description = "Summon a Lil Ghost."
+	intent_icon = preload("res://assets/icons/intent_summon.png")
 
 
 func execute(combat: CombatState, owner: CombatUnit) -> void:

@@ -7,6 +7,7 @@ extends BaseEnemyAction
 func _init() -> void:
 	super(Enum.BaseEnemyActionEnum.DEBUFF, "Stunned", 1.0)
 	description = "No attack. Its Charge was interrupted."
+	intent_icon = preload("res://assets/icons/intent_stunned.png")
 
 
 func execute(_combat: CombatState, _owner: CombatUnit) -> void:

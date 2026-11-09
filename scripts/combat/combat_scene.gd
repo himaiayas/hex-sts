@@ -27,6 +27,7 @@ const SHAKE_TIME := 0.15
 const PROJECTILE_WIDTH := 200.0  # px; its height keeps the texture's aspect
 const PROJECTILE_SPEED := 2400.0  # px per second, steady
 const SPRITE_FLASH := Color(2.5, 2.5, 2.5)  # a sprite's brightest, fading back over the hex flash
+const INTENT_ICON_SIZE := 36.0  # px, the type icons in front of each intent row
 
 var combat: CombatState
 var selected: BaseCard = null
@@ -43,7 +44,7 @@ var _relocating := {}  # the enemy part Taunt lets the player move (see CombatSt
 
 var _enemy_views: Array[HealthGridView] = []
 var _enemy_images: Array[UnitImage] = []  # one per enemy, same order as _enemy_views
-var _intent_labels: Array[Label] = []
+var _intent_boxes: Array[VBoxContainer] = []  # one row per planned move: type icons, name and hits
 var _aim: TextureRect  # an enemy's sight on the player's sprite, while a move with aim_vfx is in its intent
 
 @onready var _top_bar: TopBar = %TopBar
@@ -132,15 +133,12 @@ func _add_enemy(enemy: BaseEnemy) -> void:
 	view.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	# The intent hangs under the grid, as wide as it, and grows down only,
 	# so a longer or shorter intent never moves the enemy.
-	var intent_label := Label.new()
-	intent_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	intent_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	intent_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	view.add_child(intent_label)
-	intent_label.anchor_top = 1.0
-	intent_label.anchor_bottom = 1.0
-	intent_label.anchor_right = 1.0
-	intent_label.grow_vertical = Control.GROW_DIRECTION_END
+	var intent_box := VBoxContainer.new()
+	intent_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	view.add_child(intent_box)
+	intent_box.anchor_top = 1.0
+	intent_box.anchor_bottom = 1.0
+	intent_box.grow_vertical = Control.GROW_DIRECTION_END  # placed sideways by _place_intents
 	# Enemy image on the left, its health grid on the right.
 	var side := HBoxContainer.new()
 	side.add_theme_constant_override("separation", 24)
@@ -165,7 +163,48 @@ func _add_enemy(enemy: BaseEnemy) -> void:
 	_enemies_box.move_child(side, i)
 	_enemy_views.insert(i, view)
 	_enemy_images.insert(i, image)
-	_intent_labels.insert(i, intent_label)
+	_intent_boxes.insert(i, intent_box)
+
+
+func _process(_delta: float) -> void:
+	_place_intents()
+
+
+## Every frame, since grids move as enemies spawn and shrink: each intent list is centred under
+## its grid, as wide as the grid or its widest row, but stays NAME_SCREEN_MARGIN inside the screen
+## (a Mini Slime's grid is narrower than "Tiny Splat 2").
+func _place_intents() -> void:
+	var margin := HealthGridView.NAME_SCREEN_MARGIN
+	var screen := get_viewport_rect().size.x
+	for box in _intent_boxes:
+		var view := box.get_parent() as Control
+		var width := maxf(box.get_combined_minimum_size().x, view.size.x)
+		var x := (view.size.x - width) / 2.0
+		box.position.x = clampf(x, margin - view.global_position.x, screen - margin - view.global_position.x - width)
+		box.size.x = width
+
+
+## One row per move under an enemy's grid: its type icons, name and hits ("Gnaw 3x2"),
+## each with its own hover panel.
+func _set_intent_rows(box: VBoxContainer, actions: Array[BaseEnemyAction]) -> void:
+	for row in box.get_children():
+		_intent_info.add(row, [])  # forget it before it's freed
+		box.remove_child(row)
+		row.queue_free()
+	for action in actions:
+		var row := HBoxContainer.new()
+		row.alignment = BoxContainer.ALIGNMENT_CENTER
+		row.add_theme_constant_override("separation", 6)
+		var icons := action.intent_icons()
+		if not icons.is_empty():
+			row.add_child(HoverInfo.icon_row(icons, INTENT_ICON_SIZE))
+		var label := Label.new()
+		label.text = (action.intent_text() + " " + action.hit_text()).strip_edges()
+		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(label)
+		box.add_child(row)
+		if not action.description.is_empty():
+			_intent_info.add(row, [[action.intent_text(), action.description, icons]], false, null, true)
 
 
 ## Forever: every 2-5 s the lights flicker 1-3 times, each a quick flash of the flicker image.
@@ -768,15 +807,13 @@ func _refresh() -> void:
 		if enemy:
 			actions = enemy.intent_actions
 		var self_intents: Array = []
-		_intent_labels[i].text = "\n".join(PackedStringArray(actions.map(func(a: BaseEnemyAction) -> String: return a.intent_text())))
-		_intent_info.add(_intent_labels[i], actions.filter(func(a: BaseEnemyAction) -> bool: return not a.description.is_empty()) \
-			.map(func(a: BaseEnemyAction) -> Array: return [a.intent_text(), a.description]), false, null, true)
+		_set_intent_rows(_intent_boxes[i], actions)
 		for action in actions:
 			if action.aim_vfx:
 				aim = action.aim_vfx
 			for part in action.parts:
 				var intent := {cell = part.cell, tiles = part.tiles, faded = _hovered_enemy != -1 and _hovered_enemy != i}
-				if action.action_type == Enum.BaseEnemyActionEnum.BUFF:
+				if action.action_type == Enum.BaseEnemyActionEnum.WIND_UP:
 					intent.faded = true  # a wind-up or Charge: it lands on a later turn, not this one
 				if part.side == Enum.Side.PLAYER:
 					if relocating and part == _relocating.part:

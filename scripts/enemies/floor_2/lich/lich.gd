@@ -42,6 +42,7 @@ func _init() -> void:
 	var fracture: Array[BaseActionTile] = [ApplyEffectTile.new(Vector2i.ZERO, FractureTileEffect.new())]
 	_soul_drain = EnemyHit.new("Soul Drain", "Fracture 4 random tiles.", fracture, 4)
 	_soul_drain.action_type = Enum.BaseEnemyActionEnum.DEBUFF
+	_soul_drain.intent_icon = preload("res://assets/grid_effects/fracture.png")
 	# Two rows of 4.
 	var bones: Array[BaseActionTile] = []
 	for r in 2:

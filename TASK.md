@@ -127,6 +127,7 @@
 - **Requirement/Prereq:** 10 / UI design
 - **Brief Description:** Choose the next action ahead of time and show it on screen
 - [x] Done ✅: `plan()` locks every move's cells at the start of the player's turn; the player's grid blinks them and the label under the enemy names each move. An intent can change mid-turn (Hydra losing a head, Slime about to Split, Ramiel's interrupt). Each move has a short `description` for a future tooltip.
+- [x] Done ✅: Each intent row starts with its type icons (`action_type` plus a combo move's `extra_types`; Attack first, then Debuff, Defend, Buff; `intent_icon` overrides Summon, Stunned and Soul Drain) and ends with its hits for attacks ("Gnaw 3x2", "Laser Ping 10+6"). Hovering a row shows that move's panel with the same icons. New `WIND_UP` type for moves that aim a later hit (wind-ups, Ramiel's Charge); their tiles draw faded. Icons in `assets/icons/intent_*.png`.
 
 ## Cards and content
 

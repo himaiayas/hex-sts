@@ -62,12 +62,30 @@ static func keyword_entries(card: BaseCard) -> Array:
 	return entries
 
 
+## textures in a row, each icon_size square.
+static func icon_row(textures: Array, icon_size: float) -> HBoxContainer:
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 2)
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	for texture: Texture2D in textures:
+		var rect := TextureRect.new()
+		rect.texture = texture
+		rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		rect.custom_minimum_size = Vector2(icon_size, icon_size)
+		rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(rect)
+	return row
+
+
 ## The panel for one keyword_entries() entry.
 static func make_panel(entry: Array) -> PanelContainer:
 	var icon: Control = null
 	if entry.size() > 2 and entry[2] is BaseActionTile:
 		var tiles: Array[BaseActionTile] = [entry[2].copy_at(Vector2i.ZERO)]
 		icon = PatternView.new(GridAction.new(Enum.TargetType.ENEMY, tiles), ICON_SIZE, ICON_SIZE)
+	elif entry.size() > 2 and entry[2] is Array:  # textures side by side (an enemy intent's type icons)
+		icon = icon_row(entry[2], ICON_SIZE)
 	return InfoPanel.make(entry[0], entry[1], InfoPanel.COLOR_TITLE, icon)
 
 
