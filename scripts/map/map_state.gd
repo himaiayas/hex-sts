@@ -132,21 +132,22 @@ func draft_options(cell: Vector2i, door: int) -> Array[MapRoom]:
 	var keep := door_chance(cell)
 	var allowed := _allowed_doors(cell)
 	var options: Array[MapRoom] = []
-	var used_types := {}
-	var seen := {}
-	var attempts := 0
-	while options.size() < OPTION_COUNT and attempts < 50:
-		attempts += 1
-		var type := random_room_type(used_types if attempts < 30 else {})
-		var door_range: Vector2i = DOOR_RANGE.get(type, Vector2i(2, 4))
-		var doors := _random_doors(rng.randi_range(door_range.x, door_range.y), door, allowed)
-		if type not in KEEPS_DOORS:
-			doors = doors.filter(func(d: int) -> bool: return d == door or rng.randf() < keep)
-		var key := str([type, doors])
-		if seen.has(key):
-			continue
-		seen[key] = true
-		used_types[type] = true
+	var seen := {}  # [type, doors] already offered
+	for i in OPTION_COUNT:
+		# The same type can come up twice, but not the same room: an identical option gets new doors
+		# first (DOOR_REROLLS tries), and only then a new type (a Campfire's doors can't differ).
+		var type := random_room_type()
+		var doors := _roll_doors(type, door, allowed, keep)
+		for attempt in TYPE_REROLLS:
+			for reroll in DOOR_REROLLS:
+				if not seen.has(str([type, doors])):
+					break
+				doors = _roll_doors(type, door, allowed, keep)
+			if not seen.has(str([type, doors])):
+				break
+			type = random_room_type()
+			doors = _roll_doors(type, door, allowed, keep)
+		seen[str([type, doors])] = true  # after every try, a repeat is kept rather than a missing option
 		options.append(MapRoom.new(cell, type, doors))
 	# Guaranteed exit: if every option would leave nowhere to build, one of them (the one with the
 	# most doors already) gets another. Only one, so a dead end there still ends the floor early.
@@ -157,6 +158,19 @@ func draft_options(cell: Vector2i, door: int) -> Array[MapRoom]:
 				widest = option
 		_ensure_exit(cell, widest.doors, allowed)
 	return options
+
+
+const DOOR_REROLLS := 10  # new doors tried for an option identical to one already offered
+const TYPE_REROLLS := 10  # then new types tried
+
+
+## A room's doors as draft_options rolls them: its type's count, then crowding (keep) on the extras.
+func _roll_doors(type: Enum.RoomType, door: int, allowed: Array[int], keep: float) -> Array[int]:
+	var door_range: Vector2i = DOOR_RANGE.get(type, Vector2i(2, 4))
+	var doors := _random_doors(rng.randi_range(door_range.x, door_range.y), door, allowed)
+	if type not in KEEPS_DOORS:
+		doors = doors.filter(func(d: int) -> bool: return d == door or rng.randf() < keep)
+	return doors
 
 
 ## Weighted random room type, skipping types in `exclude` (unless nothing else is left).

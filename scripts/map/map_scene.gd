@@ -27,7 +27,13 @@ func _ready() -> void:
 	_check_out_of_steps()  # coming back from a room may have used the last steps
 
 
+## The draft's "View map" button and the map's "Back to rooms" button (_build_map_peek).
+var _view_map_button: Button
+var _back_to_rooms_button: Button
+
+
 func _start() -> void:
+	_build_map_peek()
 	map = RunState.map
 	_map_view.setup(map)
 	_draft_panel.hide()
@@ -85,11 +91,50 @@ func _open_draft(cell: Vector2i, door: int) -> void:
 		option.setup(room, door)
 		option.chosen.connect(_on_room_chosen)
 		_draft_options.add_child(option)
+	_map_view.drafting_cell = cell
+	_back_to_rooms_button.hide()
+	_draft_panel.show()
+
+
+## A way to look at the whole map while choosing a room: View map hides the draft (the spot being
+## built is outlined; map clicks stay off, as _busy is set), Back to rooms brings it back.
+func _build_map_peek() -> void:
+	if _view_map_button:
+		return
+	_view_map_button = Button.new()
+	_view_map_button.text = "View map"
+	_view_map_button.custom_minimum_size = Vector2(240, 56)
+	_view_map_button.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_view_map_button.add_theme_font_size_override("font_size", 26)
+	_view_map_button.pressed.connect(_peek_map)
+	_draft_options.get_parent().add_child(_view_map_button)
+	_back_to_rooms_button = Button.new()
+	_back_to_rooms_button.text = "Back to rooms"
+	_back_to_rooms_button.custom_minimum_size = Vector2(280, 64)
+	_back_to_rooms_button.add_theme_font_size_override("font_size", 28)
+	_back_to_rooms_button.pressed.connect(_unpeek_map)
+	add_child(_back_to_rooms_button)
+	_back_to_rooms_button.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	_back_to_rooms_button.offset_left = -140.0
+	_back_to_rooms_button.offset_right = 140.0
+	_back_to_rooms_button.offset_top = -110.0
+	_back_to_rooms_button.offset_bottom = -46.0
+	_back_to_rooms_button.hide()
+
+
+func _peek_map() -> void:
+	_draft_panel.hide()
+	_back_to_rooms_button.show()
+
+
+func _unpeek_map() -> void:
+	_back_to_rooms_button.hide()
 	_draft_panel.show()
 
 
 func _on_room_chosen(room: MapRoom) -> void:
 	_draft_panel.hide()
+	_map_view.drafting_cell = MapView.NO_CELL
 	Sfx.play("build")
 	map.place(room)
 	_refresh()

@@ -30,6 +30,7 @@ const FOOTSTEP_SIZE := 26.0
 
 var map: MapState
 var token_pos := Vector2.ZERO  # player position in map pixels
+var drafting_cell := NO_CELL  # the spot a room is being chosen for: outlined while the draft is hidden
 
 var _hover := NO_CELL
 var _camera := Vector2.ZERO
@@ -84,6 +85,10 @@ func _draw() -> void:
 		points.append(points[0])
 		draw_polyline(points, COLOR_FRONTIER, 2.0)
 		draw_string(font, center + Vector2(-20, 12), "?", HORIZONTAL_ALIGNMENT_CENTER, 40, 32, COLOR_FRONTIER_TEXT)
+	if drafting_cell != NO_CELL:
+		var outline := RoomDraw.corners(origin + RoomDraw.axial_to_pixel(drafting_cell, HEX), HEX * RoomDraw.INSET)
+		outline.append(outline[0])
+		draw_polyline(outline, COLOR_PATH, 4.0)
 
 	for cell in map.rooms:
 		var center := origin + RoomDraw.axial_to_pixel(cell, HEX)
