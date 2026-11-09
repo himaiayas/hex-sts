@@ -9,7 +9,7 @@ const GAP := 13.0  # between the panels and what they describe
 const COLOR_BG := Color(0.08, 0.08, 0.1, 0.92)
 const COLOR_BORDER := Color(0.85098, 0.764706, 0.54902)
 const COLOR_TITLE := Color(1, 0.831373, 0.352941)
-const BODY_FONT_SIZE := 22
+const BODY_FONT_SIZE := 24
 
 
 ## icon: drawn left of the title (a tile's hex, for pattern tiles on cards).

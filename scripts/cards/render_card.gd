@@ -14,11 +14,11 @@ const STAR_MARGIN := Vector2(6, 1)  # from the card's top-right corner
 const AUGMENT_SIZE := 44.0  # augment icons, centred at the top of the card
 const AUGMENT_SPACING := 4
 const AUGMENT_OFFSET := 18.0  # how far the icons stick out above the card frame
-const NAME_FONT_SIZE := 22
+const NAME_FONT_SIZE := 24
 const COST_FONT_SIZE := 30
 const INLINE_PATTERN_HEIGHT := PatternView.MAX_HEIGHT  # tallest a {render:N} sharing its line with text gets
 const INLINE_SPACING := 4  # between text and an inline pattern
-const FONT_SIZE :=16  # description
+const FONT_SIZE := 18  # description
 const COLOR_DESCRIPTION := Color(0.117647, 0.117647, 0.137255)  # dark, like the name
 const COLOR_RAISED_COST := Color("#ff4a4a")  # a cost raised by a debuff
 

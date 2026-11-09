@@ -144,14 +144,14 @@ func _build_menu() -> void:
 	box.add_child(title)
 	_seed_label = Label.new()
 	_seed_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_seed_label.add_theme_font_size_override("font_size", 22)
+	_seed_label.add_theme_font_size_override("font_size", 24)
 	_seed_label.add_theme_color_override("font_color", Color("#8d93a5"))
 	box.add_child(_seed_label)
 	for entry in [["Resume", _close_menu], ["Options", _show_options], ["Save & Quit", RunState.save_and_quit]]:
 		var button := Button.new()
 		button.text = entry[0]
 		button.custom_minimum_size = Vector2(320, 64)
-		button.add_theme_font_size_override("font_size", 30)
+		button.add_theme_font_size_override("font_size", 32)
 		button.pressed.connect(entry[1])
 		box.add_child(button)
 
@@ -250,8 +250,8 @@ func _on_artifacts_pressed() -> void:
 		text.bbcode_enabled = true
 		text.fit_content = true 
 		text.text = "[b]%s[/b]\n[color=#8d93a5]%s[/color]" % [artifact.name, artifact.bbcode_description()]
-		text.add_theme_font_size_override("normal_font_size", 26)
-		text.add_theme_font_size_override("bold_font_size", 26)
+		text.add_theme_font_size_override("normal_font_size", 28)
+		text.add_theme_font_size_override("bold_font_size", 28)
 		text.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		text.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 		text.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
