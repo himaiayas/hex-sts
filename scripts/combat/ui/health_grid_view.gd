@@ -36,6 +36,10 @@ const POWER_SIZE := 36.0  # power badges, in a row under the grid
 const POWER_GAP := 8.0
 const FLASH_TIME := 0.18  # seconds per animated change
 const FLASH_POP := 0.15  # the flash grows this much bigger than its hex, then shrinks back
+const HOVER_WIDTH := 3.0  # inner stroke on the player's hovered hex, at full size
+const READOUT_ICON_SIZE := 36.0  # px, like the intent rows under enemies
+const READOUT_WIDTH := 320.0  # a line with a description wraps at this
+const READOUT_BG := Color(0, 0, 0, 0.8)
 
 const COLOR_ALIVE := Color("#ffffff")
 const COLOR_DAMAGED := Color("#454545")
@@ -51,7 +55,7 @@ const COLOR_NEW := Color("#ffe9a8")
 var unit: CombatUnit
 var clickable := false
 var preview: Dictionary[Vector2i, BaseActionTile] = {} # next grid action of the selected card, rotated: offset from cursor -> tile
-var intents: Array = [] # enemy attacks aimed at this grid: [{cell: Vector2i, tiles: Array[BaseActionTile], faded: bool}]
+var intents: Array = [] # enemy attacks aimed at this grid: [{cell: Vector2i, tiles: Array[BaseActionTile], faded: bool, later: bool}]
 var placed: Array = [] # selected card's grid actions already clicked on this grid: [{cell: Vector2i, tiles: Dictionary[Vector2i, BaseActionTile]}]
 var random_target: BaseActionTile = null # selected card's next grid action hits random tiles of a grid: this whole grid flickers
 var candidates: Array[Vector2i] = [] # empty cells drawn as outlines and clickable (level-up tile placement)
@@ -70,6 +74,8 @@ var _info_power := -1  # index in unit.statuses of the power badge under the mou
 var _info_timer := 0.0
 var _powers_y := 0.0  # top of the power badge row
 var _info_box := InfoPanel.make_box()
+var _readout := PanelContainer.new()  # player's grid: the enemy moves planned on the hovered tile, right of it
+var _readout_rows := VBoxContainer.new()
 var _particles: Dictionary[String, CPUParticles2D] = {}  # "cell|effect script" -> emitter
 var _flashes: Array[Dictionary] = []  # {cell, color, power (script or null), start} playing now
 
@@ -78,6 +84,18 @@ func _ready() -> void:
 	_info_box.top_level = true  # positioned in screen space, outside the grid
 	_info_box.z_index = 10  # above the hand's cards
 	add_child(_info_box)
+	var style := StyleBoxFlat.new()
+	style.bg_color = READOUT_BG
+	style.set_corner_radius_all(8)
+	style.set_content_margin_all(8)
+	_readout.add_theme_stylebox_override("panel", style)
+	_readout.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_readout.top_level = true
+	_readout.z_index = 10
+	_readout.hide()
+	_readout_rows.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_readout.add_child(_readout_rows)
+	add_child(_readout)
 	set_notify_transform(true)  # the name's screen clamp depends on where the grid is
 
 
@@ -96,6 +114,7 @@ func setup(_unit: CombatUnit, _clickable: bool) -> void:
 		_info_cell = NO_CELL
 		_info_power = -1
 		_info_box.hide()
+		_readout.hide()
 		queue_redraw())
 	refresh()
 
@@ -126,6 +145,8 @@ func refresh() -> void:
 	# Enemies always keep the row, so their first power doesn't move the grid.
 	if not unit.is_player or not unit.statuses.is_empty():
 		custom_minimum_size.y += POWER_SIZE + POWER_GAP
+	if unit.is_player and _info_cell != NO_CELL:
+		_show_readout(_info_cell)  # the plans changed under the mouse
 	queue_redraw()
 
 
@@ -136,6 +157,8 @@ func _process(delta: float) -> void:
 		var now := Time.get_ticks_msec() / 1000.0
 		_flashes.assign(_flashes.filter(func(f: Dictionary) -> bool: return now - f.start < FLASH_TIME))
 		queue_redraw()
+	if _readout.visible:
+		_place_readout()
 	if (_info_cell != NO_CELL or _info_power != -1) and not _info_box.visible:
 		_info_timer -= delta
 		if _info_timer <= 0.0:
@@ -298,6 +321,12 @@ func _draw() -> void:
 		if unit.health.has(cell):
 			_draw_action(preview[offset], cell, PREVIEW_ALPHA)
 
+	if unit.is_player and unit.health.has(_info_cell):
+		var width := HOVER_WIDTH * _hex / HEX_SIZE
+		var corners := hex_corners(cell_position(_info_cell), _hex - _gap() - EDGE_WIDTH * _hex / HEX_SIZE - width / 2.0)
+		corners.append(corners[0])
+		draw_polyline(corners, COLOR_CANDIDATE, width)
+
 	var font := ThemeDB.fallback_font
 	var title := "%s  %d/%d" % [unit.display_name, alive, coords.size()]
 	# Centred over the grid; a small grid's name spills past its sides instead of being cut,
@@ -384,14 +413,61 @@ func _show_info(cell: Vector2i) -> void:
 	if _info_box.get_child_count() == 0:
 		return
 	_info_box.reset_size()
-	var tile_center := get_global_transform() * (_origin + cell_position(cell))
+	var tile_center := get_global_transform() * cell_position(cell)
 	var pos := tile_center + Vector2(_hex + InfoPanel.GAP, -_hex)
+	if _readout.visible:
+		pos.y = _readout.position.y + _readout.size.y + InfoPanel.GAP
 	var screen := get_viewport_rect().size
 	if pos.x + _info_box.size.x > screen.x:
 		pos.x = tile_center.x - _hex - InfoPanel.GAP - _info_box.size.x
 	pos.y = clampf(pos.y, 0.0, maxf(0.0, screen.y - _info_box.size.y))
 	_info_box.position = pos
 	_info_box.show()
+
+
+## One line per kind of enemy tile planned on cell, right of it: "Damage x3", "Poison: <what it does>".
+## Nothing for a tile no move targets.
+func _show_readout(cell: Vector2i) -> void:
+	InfoPanel.clear(_readout_rows)
+	_readout.hide()
+	var kinds := {}  # kind (and whether it lands later) -> {tile, count, later}
+	for intent in intents:
+		for t: BaseActionTile in intent.tiles:
+			if intent.cell + t.coords != cell:
+				continue
+			var later: bool = intent.get("later", false)
+			var entry: Dictionary = kinds.get_or_add(t.kind() + ("|later" if later else ""), {tile = t, count = 0, later = later})
+			entry.count += 1
+	if kinds.is_empty():
+		return
+	for entry: Dictionary in kinds.values():
+		var t: BaseActionTile = entry.tile
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 6)
+		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		if t.get_icon():
+			row.add_child(HoverInfo.icon_row([t.get_icon()], READOUT_ICON_SIZE))
+		var label := Label.new()
+		label.text = t.display_name()
+		if entry.count > 1:
+			label.text += " x%d" % entry.count
+		if not (t is DamageTile and not t.pierce):  # plain Damage needs no explaining
+			label.text += ": " + t.describe()
+			label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			label.custom_minimum_size.x = READOUT_WIDTH
+		if entry.later:
+			label.text += " (next turn)"
+		row.add_child(label)
+		_readout_rows.add_child(row)
+	_readout.reset_size()
+	_readout.show()
+	_place_readout()
+
+
+## Right of the hovered hex, centred on it. Every frame: the grid can still move under the mouse.
+func _place_readout() -> void:
+	var tile_center := get_global_transform() * cell_position(_info_cell)
+	_readout.position = tile_center + Vector2(_hex + InfoPanel.GAP, -_readout.size.y / 2.0)
 
 
 ## Name with stacks, and description, beside the badge.
@@ -442,6 +518,9 @@ func _gui_input(event: InputEvent) -> void:
 			_info_power = power
 			_info_timer = InfoPanel.DELAY
 			_info_box.hide()
+			if unit.is_player:
+				_show_readout(hovered)
+				queue_redraw()
 	if not clickable:
 		return
 	if event is InputEventMouseMotion:

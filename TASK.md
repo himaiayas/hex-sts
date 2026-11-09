@@ -156,6 +156,7 @@
 
 - **Requirement/Prereq:** UI design
 - **Brief Description:** Hover on health grid while selecting card show flashing/pulsing effect idk.
+- [x] Done ✅: Hovering a tile on the player's grid draws a gold inner stroke on it. If enemies plan moves on that tile, a dark readout right of it lists them by kind ("Damage x3", "Poison: <what it does>", "(next turn)" for wind-ups). The tile's own info panel now shows under the readout, and no longer adds the grid's padding twice.
 
 ## Main menu and Setting
 
@@ -180,6 +181,7 @@
 
 - **Requirement/Prereq:** 18
 - **Brief Description:** Other room e.g. Shop / Chest / ? idk
+- [x] Done ✅: By Mai. Campfire (Rest heals every damaged tile, or Purge removes cards), Merchant (cards and artifacts for coins), Blacksmith (augments for coins, applied to a card) and Treasure (coins, EXP and an artifact). Event rooms were dropped: their map weight is 0.
 
 ### 20. Save / load
 
