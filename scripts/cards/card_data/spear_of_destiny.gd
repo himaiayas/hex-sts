@@ -47,5 +47,5 @@ func execute(combat: CombatState, units: Array[CombatUnit], cells: Array[Vector2
 				landed += 1
 	var hits: Array = await super(combat, units, cells, rotations)
 	if landed >= 10:
-		DrawAction.new(Enum.TargetType.PLAYER, 1).execute(combat, combat.player, Vector2i.ZERO)
+		GainEnergyAction.new(Enum.TargetType.PLAYER, 1).execute(combat, combat.player, Vector2i.ZERO)
 	return hits

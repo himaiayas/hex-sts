@@ -46,7 +46,7 @@ const FLOOR_BOSS_BACKGROUNDS: Array[Texture2D] = [
 
 ## EXP needed for each level-up: LEVEL_XP[0] takes level 0 to 1, ... LEVEL_XP[8] takes 8 to 9 (max).
 ## xp is the progress toward the next level; it resets (keeping the leftover) on level-up.
-const LEVEL_XP: Array[int] = [10, 20, 30, 45, 60, 80, 100, 125, 150]
+const LEVEL_XP: Array[int] = [30, 30, 30, 30, 30, 30, 30, 30, 30]
 const LEVEL_UP_TILES := 3
 
 ## Level-ups not yet claimed in the level-up modal.
@@ -83,7 +83,7 @@ func start_new_run(seed_value := -1) -> void:
 		for r in range(maxi(-2, -q - 2), mini(2, -q + 2) + 1):
 			coords.append(Vector2i(q, r))
 	health = CombatUnit.make_hex_health(coords)
-	gold = 0
+	gold = 200 #TODO: reset to 0
 	deck = []
 	artifacts = []
 	level = 0
@@ -95,7 +95,7 @@ func start_new_run(seed_value := -1) -> void:
 	fought = {}
 	normal_fights_on_floor = 0
 
-	deck.append(Slash.new())
+	deck.append(Glock.new())
 	deck.append(Guard.new())
 	#deck.append(LuckyShield.new())
 	#deck.append(XSlash.new())

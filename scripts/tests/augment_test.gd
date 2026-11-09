@@ -19,7 +19,7 @@ func _ready() -> void:
 		var button := Button.new()
 		button.text = augment.name.trim_suffix(" Augment")
 		button.icon = augment.icon
-		button.tooltip_text = augment.description
+		button.tooltip_text = augment.plain_description()
 		button.custom_minimum_size = Vector2(0, 56)
 		button.add_theme_font_size_override("font_size", 24)
 		button.add_theme_constant_override("icon_max_width", 40)

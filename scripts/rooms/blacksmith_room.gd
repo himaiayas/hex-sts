@@ -15,6 +15,7 @@ const ICON_SIZE := 112.0
 
 var _stock: Array[BaseAugment] = []
 var _sold: Array[BaseAugment] = []
+var _hover_info := HoverInfo.new()  # keyword panels of the augment under the mouse
 var _buying: BaseAugment = null  # bought, waiting for the modal; refunded if it couldn't be used
 
 
@@ -22,6 +23,8 @@ func _ready() -> void:
 	if RunState.deck.is_empty():
 		RunState.start_new_run()
 	_modal.finished.connect(_on_augment_applied)
+	_hover_info.is_blocked = func() -> bool: return _top_bar.is_modal_open() or _modal.visible
+	add_child(_hover_info)
 	var room := RunState.current_room
 	if room and room.stock.has("augments"):  # been here before
 		_stock.assign(room.stock.augments)
@@ -41,11 +44,14 @@ func _store_stock() -> void:
 
 
 func _refresh() -> void:
+	_hover_info.clear()
 	for child in _offers.get_children():
 		_offers.remove_child(child)
 		child.queue_free()
 	for augment in _stock:
-		_offers.add_child(_make_offer(augment))
+		var offer := _make_offer(augment)
+		_offers.add_child(offer)
+		_hover_info.add(offer, augment.keyword_entries(), true)
 	_top_bar.refresh()
 
 
