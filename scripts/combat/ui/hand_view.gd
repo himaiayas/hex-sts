@@ -20,6 +20,7 @@ const FAN_RADIUS := 2333.0  # radius of the arc the cards sit on
 const HOVER_SCALE := 1.4
 const HOVER_RAISE := 166.0
 const HOVER_PUSH := 83.0
+const SELECTED_LIFT := 30.0  # the selected card, when not hovered, sits this much above the fan
 const BOB_HEIGHT := 7
 const BOB_PERIOD := 1.2  # seconds per bob
 const SPEED := 14.0  # how fast cards ease toward their target
@@ -159,14 +160,15 @@ func _target_for(i: int) -> Transform2D:
 	if _cards[i] == _selected:
 		bob = BOB_HEIGHT * sin(TAU * Time.get_ticks_msec() / 1000.0 / BOB_PERIOD)
 
-	# The selected card keeps its hovered look after the mouse leaves it.
-	if i == _hovered or _cards[i] == _selected:
+	if i == _hovered:
 		angle = 0.0
 		card_scale = HOVER_SCALE
 		pos.y = size.y - HOVER_RAISE + bob
+	elif _cards[i] == _selected:
+		# Back in the fan (with its border), just lifted: enlarged and raised it would cover the
+		# grid while the player picks tiles.
+		pos.y -= SELECTED_LIFT - bob
 	var focus := _hovered
-	if focus == -1 and _selected:
-		focus = _cards.find(_selected)
 	if focus != -1 and i != focus:
 		pos.x += HOVER_PUSH * signf(i - focus)
 	return Transform2D(angle, Vector2.ONE * card_scale, 0.0, pos)
