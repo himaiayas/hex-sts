@@ -845,11 +845,11 @@ func _refresh() -> void:
 		for action in actions:
 			if action.aim_vfx:
 				aim = action.aim_vfx
-			for part in action.parts + action.own_parts():  # own_parts: its planned shields/heals
-				var intent := {cell = part.cell, tiles = part.tiles, faded = _hovered_enemy != -1 and _hovered_enemy != i,
-					delayed = action.action_type == Enum.BaseEnemyActionEnum.WIND_UP, turns = maxi(action.delay(), 1)}
+			for part in action.parts:
+				var intent := {cell = part.cell, tiles = part.tiles, faded = _hovered_enemy != -1 and _hovered_enemy != i, later = false}
 				if action.action_type == Enum.BaseEnemyActionEnum.WIND_UP:
 					intent.faded = true  # a wind-up or Charge: it lands on a later turn, not this one
+					intent.later = true
 				if part.side == Enum.Side.PLAYER:
 					if relocating and part == _relocating.part:
 						intent.faded = true  # where it is now, while the preview shows where it would go
