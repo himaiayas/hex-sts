@@ -45,6 +45,7 @@ func _on_continue_pressed() -> void:
 
 
 func _on_new_run_pressed() -> void:
+	SaveGame.delete()
 	RunState.start_new_run()
 	get_tree().change_scene_to_file(RunState.MAP_SCENE)
 

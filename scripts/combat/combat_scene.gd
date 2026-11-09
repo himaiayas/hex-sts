@@ -43,7 +43,8 @@ var _relocating := {}  # the enemy part Taunt lets the player move (see CombatSt
 
 var _enemy_views: Array[HealthGridView] = []
 var _enemy_images: Array[UnitImage] = []  # one per enemy, same order as _enemy_views
-var _intent_labels: Array[Label] = []
+var _intent_rows: Array[VBoxContainer] = []  # each enemy's intent names and icons, over its head
+var _name_labels: Array[Label] = []  # each enemy's name, under its image; same order as combat.enemies
 var _aim: TextureRect  # an enemy's sight on the player's sprite, while a move with aim_vfx is in its intent
 
 @onready var _top_bar: TopBar = %TopBar
@@ -109,6 +110,7 @@ func _ready() -> void:
 	_player_view.cell_clicked.connect(_on_cell_clicked)
 	combat.player.blocked.connect(_on_player_blocked)
 	combat.enemy_spawned.connect(_on_enemy_spawned)
+	_add_name_label(_player_image.get_parent(), combat.player.display_name)
 	for enemy in combat.enemies:
 		_add_enemy(enemy)
 	_fit_enemies()
@@ -130,17 +132,6 @@ func _add_enemy(enemy: BaseEnemy) -> void:
 	view.setup(enemy, true)
 	view.cell_clicked.connect(_on_cell_clicked)
 	view.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	# The intent hangs under the grid, as wide as it, and grows down only,
-	# so a longer or shorter intent never moves the enemy.
-	var intent_label := Label.new()
-	intent_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	intent_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	intent_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	view.add_child(intent_label)
-	intent_label.anchor_top = 1.0
-	intent_label.anchor_bottom = 1.0
-	intent_label.anchor_right = 1.0
-	intent_label.grow_vertical = Control.GROW_DIRECTION_END
 	# Enemy image on the left, its health grid on the right.
 	var side := HBoxContainer.new()
 	side.add_theme_constant_override("separation", 24)
@@ -158,6 +149,8 @@ func _add_enemy(enemy: BaseEnemy) -> void:
 	image.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	image.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	slot.add_child(image)
+	var name_label := _add_name_label(slot, enemy.display_name)
+	var intent_row := _add_intent_row(slot)
 	side.add_child(slot)
 	side.add_child(view)
 	var i := combat.enemies.find(enemy)
@@ -165,7 +158,125 @@ func _add_enemy(enemy: BaseEnemy) -> void:
 	_enemies_box.move_child(side, i)
 	_enemy_views.insert(i, view)
 	_enemy_images.insert(i, image)
-	_intent_labels.insert(i, intent_label)
+	_intent_rows.insert(i, intent_row)
+	_name_labels.insert(i, name_label)
+
+
+const NAME_FONT_SIZE := 27
+const INTENT_ICON_SIZE := 56.0
+const INTENT_GAP := 8.0  # between the icons and the top of the image's slot
+
+
+const INTENT_NAME_FONT_SIZE := 24
+
+
+## The intent over the slot: the moves' names, then a row of their icons. Centred, growing up so it
+## never moves the enemy. In the slot, not the image, so it stays put while the image lunges and shakes.
+func _add_intent_row(slot: Control) -> VBoxContainer:
+	var box := VBoxContainer.new()
+	box.alignment = BoxContainer.ALIGNMENT_END
+	box.add_theme_constant_override("separation", 2)
+	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	slot.add_child(box)
+	box.anchor_left = 0.0
+	box.anchor_right = 1.0
+	box.anchor_top = 0.0
+	box.anchor_bottom = 0.0
+	box.offset_left = -80.0  # long names can be wider than the image
+	box.offset_right = 80.0
+	box.offset_top = -INTENT_GAP - INTENT_ICON_SIZE
+	box.offset_bottom = -INTENT_GAP
+	box.grow_vertical = Control.GROW_DIRECTION_BEGIN
+	var name_label := Label.new()
+	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	name_label.add_theme_font_size_override("font_size", INTENT_NAME_FONT_SIZE)
+	name_label.add_theme_color_override("font_color", HealthGridView.COLOR_TEXT)
+	name_label.add_theme_color_override("font_outline_color", Color.BLACK)
+	name_label.add_theme_constant_override("outline_size", 6)
+	box.add_child(name_label)
+	var icons := HBoxContainer.new()
+	icons.alignment = BoxContainer.ALIGNMENT_CENTER
+	icons.add_theme_constant_override("separation", 6)
+	icons.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	box.add_child(icons)
+	return box
+
+
+## "Bite x3, Charge": each move's intent_text once, with how many times it repeats.
+static func _intent_names(actions: Array[BaseEnemyAction]) -> String:
+	var counts := {}
+	for action in actions:
+		var text := action.intent_text()
+		counts[text] = counts.get(text, 0) + 1
+	var parts: PackedStringArray = []
+	for text: String in counts:
+		parts.append(text if counts[text] == 1 else "%s x%d" % [text, counts[text]])
+	return ", ".join(parts)
+
+
+## The moves' names, and one icon per kind they do, in BaseEnemyAction.INTENT_ORDER.
+func _show_intent_icons(box: VBoxContainer, actions: Array[BaseEnemyAction]) -> void:
+	var name_label := box.get_child(0) as Label
+	name_label.text = _intent_names(actions)
+	name_label.visible = not name_label.text.is_empty()
+	var row := box.get_child(1) as HBoxContainer
+	for child in row.get_children():
+		row.remove_child(child)
+		child.queue_free()
+	var kinds := {}
+	var charge_turns := 0  # the soonest delayed attack, shown on the charge icon
+	for action in actions:
+		for kind in action.intent_kinds():
+			kinds[kind] = true
+			if kind == "charge":
+				charge_turns = action.delay() if charge_turns == 0 else mini(charge_turns, action.delay())
+	for kind in BaseEnemyAction.INTENT_ORDER:
+		if not kinds.has(kind):
+			continue
+		var icon := TextureRect.new()
+		icon.texture = BaseEnemyAction.INTENT_ICONS[kind]
+		icon.custom_minimum_size = Vector2.ONE * INTENT_ICON_SIZE
+		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(icon)
+		if kind == "charge":
+			icon.add_child(_turns_badge(charge_turns))
+
+
+## The number on a charge icon: turns until the attack lands, in its top-left corner.
+func _turns_badge(turns: int) -> Label:
+	var badge := Label.new()
+	badge.text = str(turns)
+	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	badge.add_theme_font_size_override("font_size", 24)
+	badge.add_theme_color_override("font_outline_color", Color.BLACK)
+	badge.add_theme_constant_override("outline_size", 6)
+	badge.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)  # the icon's empty corner (its hourglass is bottom-right)
+	return badge
+
+## The unit's name, centred just under its image's slot. In the slot, not the image, so it stays
+## put while the image lunges and shakes.
+func _add_name_label(slot: Control, text: String) -> Label:
+	var label := Label.new()
+	label.text = text
+	label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	label.add_theme_font_size_override("font_size", NAME_FONT_SIZE)
+	label.add_theme_color_override("font_color", HealthGridView.COLOR_TEXT)
+	label.add_theme_color_override("font_outline_color", Color.BLACK)
+	label.add_theme_constant_override("outline_size", 6)
+	slot.add_child(label)
+	label.anchor_left = 0.0
+	label.anchor_right = 1.0
+	label.anchor_top = 1.0
+	label.anchor_bottom = 1.0
+	label.offset_left = -60.0  # a long name can be wider than the image
+	label.offset_right = 60.0
+	label.grow_vertical = Control.GROW_DIRECTION_END
+	return label
 
 
 ## Forever: every 2-5 s the lights flicker 1-3 times, each a quick flash of the flicker image.
@@ -444,6 +555,9 @@ func _on_pile_viewer_input(event: InputEvent) -> void:
 
 func _on_win_combat_pressed()->void:
 	_end_combat()
+	if not return_scene.is_empty():
+		_return_to_test("win")
+		return
 	_rewards = CombatRewards.roll(_room_type())
 	_refresh_rewards()
 	_reward_panel.show()
@@ -768,14 +882,16 @@ func _refresh() -> void:
 		if enemy:
 			actions = enemy.intent_actions
 		var self_intents: Array = []
-		_intent_labels[i].text = "\n".join(PackedStringArray(actions.map(func(a: BaseEnemyAction) -> String: return a.intent_text())))
-		_intent_info.add(_intent_labels[i], actions.filter(func(a: BaseEnemyAction) -> bool: return not a.description.is_empty()) \
-			.map(func(a: BaseEnemyAction) -> Array: return [a.intent_text(), a.description]), false, null, true)
+		_name_labels[i].text = combat.enemies[i].display_name  # some change form (the Werewolf)
+		_show_intent_icons(_intent_rows[i], actions)
+		_intent_info.add(_intent_rows[i], actions.filter(func(a: BaseEnemyAction) -> bool: return not a.description.is_empty()) \
+			.map(func(a: BaseEnemyAction) -> Array: return [a.intent_text(), a.description]), true)  # above the icons
 		for action in actions:
 			if action.aim_vfx:
 				aim = action.aim_vfx
-			for part in action.parts:
-				var intent := {cell = part.cell, tiles = part.tiles, faded = _hovered_enemy != -1 and _hovered_enemy != i}
+			for part in action.parts + action.own_parts():
+				var intent := {cell = part.cell, tiles = part.tiles, faded = _hovered_enemy != -1 and _hovered_enemy != i,
+					delayed = action.delay() > 0, turns = action.delay()}
 				if part.side == Enum.Side.PLAYER:
 					if relocating and part == _relocating.part:
 						intent.faded = true  # where it is now, while the preview shows where it would go
@@ -879,6 +995,9 @@ func _room_type() -> Enum.RoomType:
 ## The enemy being built, fought in every normal and elite room (and on F6) until it's done.
 ## null = the usual line-ups.
 static var testing: Script = null
+## Set by the monster test scene: when the fight ends, won or lost, it goes back there
+## (no rewards, no defeat screen, the saved run untouched).
+static var return_scene := ""
 
 ## Each floor's monsters: NORMALS[0] / ELITES[0] are floor 1. Floors past the end reuse the last one.
 static var NORMALS: Array = [
@@ -949,6 +1068,10 @@ static func _pick_monster(pool: Array) -> Script:
 func _check_combat_end() -> void:
 	if _over:
 		return
+	if not return_scene.is_empty() and (combat.is_lost() or combat.is_won()):
+		_end_combat()
+		_return_to_test("lose" if combat.is_lost() else "win")
+		return
 	if combat.is_lost():
 		_end_combat()
 		Sfx.play("lose")
@@ -960,6 +1083,17 @@ func _check_combat_end() -> void:
 		_rewards = CombatRewards.roll(_room_type())
 		_refresh_rewards()
 		_reward_panel.show()
+
+
+const TEST_RETURN_DELAY := 1.2  # seconds to see how the fight ended before going back
+
+
+## Monster test: no rewards, defeat screen or save changes; back to the picker after a moment.
+func _return_to_test(sound: String) -> void:
+	Sfx.play(sound)
+	_hint_label.text = "Won! Back to the monster list..." if sound == "win" else "Lost! Back to the monster list..."
+	await get_tree().create_timer(TEST_RETURN_DELAY).timeout
+	get_tree().change_scene_to_file(return_scene)
 
 
 func _end_combat() -> void:
@@ -1037,10 +1171,14 @@ func _on_continue_pressed() -> void:
 	_rewards.take_gold(RunState)
 	_rewards.take_exp(RunState)
 	_rewards.take_artifact(RunState)
+	if not return_scene.is_empty():
+		get_tree().change_scene_to_file(return_scene)
+		return
 	RunState.leave_room()
 
 
 func _on_new_run_pressed() -> void:
+	SaveGame.delete()
 	RunState.start_new_run()
 	get_tree().change_scene_to_file(RunState.MAP_SCENE)
 

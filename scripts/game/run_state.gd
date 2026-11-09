@@ -67,8 +67,9 @@ var combat: CombatState = null
 var _entry_snapshot: Dictionary = {}
 
 
+## Doesn't touch the saved run: test scenes and rooms opened with F6 call this too.
+## The New Run buttons delete the save themselves.
 func start_new_run() -> void:
-	SaveGame.delete()
 	_entry_snapshot = {}
 	# Radius-2 hexagon: 19 tiles, the sheet's starting health.
 	var coords: Array[Vector2i] = []

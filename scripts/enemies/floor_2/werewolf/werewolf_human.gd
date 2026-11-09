@@ -15,6 +15,7 @@ func _init() -> void:
 		DamageTile.new(Vector2i(0, 1)),
 	]
 	super("Guard", "Shield 10 random tiles of its own, then hit 5 tiles.", claw)
+	add_own_effect(ShieldTile, SHIELDS)
 
 
 func execute(combat: CombatState, owner: CombatUnit) -> void:
