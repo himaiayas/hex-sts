@@ -28,6 +28,8 @@ func _init() -> void:
 	idle_frames = [
 		preload("res://assets/enemies/floor_1/dragon_idle1.png"),
 		preload("res://assets/enemies/floor_1/dragon_idle2.png"),
+		preload("res://assets/enemies/floor_1/dragon_idle3.png"),
+		preload("res://assets/enemies/floor_1/dragon_idle2.png"),
 	]
 	# Smaller than the most that fits, so its enlarged grid gets the width.
 	image_size = Vector2(600, 600)

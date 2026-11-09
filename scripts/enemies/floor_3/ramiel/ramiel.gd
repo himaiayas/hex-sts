@@ -57,6 +57,7 @@ func _init() -> void:
 		preload("res://assets/enemies/floor_3/ramiel_idle1.png"),
 		preload("res://assets/enemies/floor_3/ramiel_idle2.png"),
 		preload("res://assets/enemies/floor_3/ramiel_idle3.png"),
+		preload("res://assets/enemies/floor_3/ramiel_idle2.png"),
 	]
 	image_size = Vector2(450, 450)  # 1.5x the default
 	grid_scale = 1.3  # big shapes: a larger box keeps the hexes readable; more pushes 3 intents onto End Turn

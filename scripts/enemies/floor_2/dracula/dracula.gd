@@ -28,6 +28,7 @@ func _init() -> void:
 		preload("res://assets/enemies/floor_2/dracula_idle1.png"),
 		preload("res://assets/enemies/floor_2/dracula_idle2.png"),
 		preload("res://assets/enemies/floor_2/dracula_idle3.png"),
+		preload("res://assets/enemies/floor_2/dracula_idle2.png"),
 	]
 	grid_scale = 1.4  # big shapes: a larger box keeps the hexes readable
 	hit_vfx_area = Rect2(373, 244, 735, 582)  # x 373-1108, y 244-826: from your sprite to Dracula's
