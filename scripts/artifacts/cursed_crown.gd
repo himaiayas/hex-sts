@@ -3,7 +3,7 @@ extends BaseArtifact
 
 
 func _init() -> void:
-	super("Cursed Crown", "At the start of your turn, gain 1 Energy. Start each combat with 3 {keyword:Fracture}d tiles.", Enum.ArtifactRarity.LEGENDARY,
+	super("Cursed Crown", "At the start of your turn, gain 1 Energy. Start each combat with 3 {keyword:Fracture|Fractured} tiles.", Enum.ArtifactRarity.LEGENDARY,
 		preload("res://assets/artifacts/cursed_crown.png"))
 
 const FRACTURES := 3

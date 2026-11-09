@@ -3,7 +3,7 @@ extends BaseArtifact
 
 
 func _init() -> void:
-	super("Cinder Urn", "Whenever a card is {keyword:Exhaust}ed, deal damage to 1 random enemy tile.", Enum.ArtifactRarity.UNCOMMON,
+	super("Cinder Urn", "Whenever a card is {keyword:Exhaust|Exhausted}, deal damage to 1 random enemy tile.", Enum.ArtifactRarity.UNCOMMON,
 		preload("res://assets/artifacts/cinder_urn.png"))
 
 func on_card_exhausted(combat: CombatState, _card: BaseCard) -> void:

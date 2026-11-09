@@ -50,7 +50,8 @@ var _aim: TextureRect  # an enemy's sight on the player's sprite, while a move w
 @onready var _floor_background: TextureRect = %FloorBackground
 var _hover_info := HoverInfo.new()  # keywords of cards in the pile viewer and card rewards
 var _intent_info := HoverInfo.new()  # each intent row's description; not _hover_info, which the pile viewer clears
-@onready var _status_label: Label = %StatusLabel
+@onready var _end_turn_button: Button = %EndTurnButton
+@onready var _energy_label: Label = %EnergyLabel
 @onready var _hint_label: Label = %HintLabel
 @onready var _player_view: HealthGridView = %PlayerGrid
 @onready var _player_image: UnitImage = %PlayerImage
@@ -58,7 +59,6 @@ var _intent_info := HoverInfo.new()  # each intent row's description; not _hover
 @onready var _arena: HBoxContainer = $Margin/Layout/Arena
 @onready var _player_side: HBoxContainer = $Margin/Layout/Arena/Player
 @onready var _hand: HandView = %Hand
-@onready var _deck_button: Button = %DeckButton
 @onready var _draw_button: Button = %DrawPileButton
 @onready var _exhaust_button: Button = %ExhaustButton
 @onready var _discard_button: Button = %DiscardButton
@@ -415,10 +415,6 @@ func _on_player_blocked(_coords: Vector2i) -> void:
 		_player_image.show_pose(UnitImage.PLAYER_GUARD)
 
 
-func _on_deck_pressed() -> void:
-	_show_pile("Deck", RunState.deck)
-
-
 func _on_draw_pile_pressed() -> void:
 	_show_pile("Draw pile", combat.draw_pile, true)
 
@@ -695,10 +691,10 @@ func _center(control: Control) -> Vector2:
 
 func _refresh() -> void:
 	_top_bar.refresh()
-	_status_label.text = "Turn %d    Energy %d/%d" % [combat.turn, combat.energy, combat.max_energy]
-	_deck_button.text = "Deck (%d)" % RunState.deck.size()
+	_end_turn_button.text = "End Turn %d" % combat.turn
+	_energy_label.text = "Energy %d/%d" % [combat.energy, combat.max_energy]
 	_draw_button.text = "Draw pile (%d)" % combat.draw_pile.size()
-	_exhaust_button.text = "Exhausted (%d)" % combat.exhaust_pile.size()
+	_exhaust_button.text = "Exhaust (%d)" % combat.exhaust_pile.size()
 	_discard_button.text = "Discard (%d)" % combat.discard_pile.size()
 	var choosing := not _choice.is_empty()
 	var discard_picking: bool = choosing and not _choice.in_hand

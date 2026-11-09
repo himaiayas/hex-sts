@@ -49,10 +49,8 @@ const NAME_FRAME := preload("res://assets/cards/card_name_frame.png")
 const STAR := preload("res://assets/cards/rarity_star.png")
 
 const CARD_SCENE := preload("res://scenes/Card.tscn")
-const COLOR_KEYWORD := Color(1, 0.831373, 0.352941)
+const COLOR_KEYWORD := Color("#9a4f00")  # keywords in descriptions, shown bold; dark amber so it reads on every card colour
 
-## {keyword:Poison} in a description.
-static var _keyword_regex := RegEx.create_from_string("\\{keyword:([^}]+)\\}")
 ## A line that is just {render:N}.
 static var _render_regex := RegEx.create_from_string("^\\{render:(\\d+)\\}$")
 ## {render:N} anywhere in a line.
@@ -165,11 +163,7 @@ static func _crop(texture: Texture2D) -> AtlasTexture:
 
 ## Keywords used in a description, in order, without repeats.
 static func keywords_in(description: String) -> PackedStringArray:
-	var found := PackedStringArray()
-	for m in _keyword_regex.search_all(description):
-		if m.get_string(1) not in found:
-			found.append(m.get_string(1))
-	return found
+	return Keywords.names_in(description)
 
 
 ## One row per line: a line that is just {render:N} draws grid_actions[N] full width;
@@ -228,5 +222,5 @@ static func _text_label(text: String, wrap: bool) -> RichTextLabel:
 	label.add_theme_font_size_override("normal_font_size", FONT_SIZE)
 	label.add_theme_font_size_override("bold_font_size", FONT_SIZE)
 	label.add_theme_color_override("default_color", COLOR_DESCRIPTION)
-	label.text = _keyword_regex.sub(text, "[color=#%s]$1[/color]" % COLOR_KEYWORD.to_html(false), true)
+	label.text = Keywords.markup(text, "[color=#%s]" % COLOR_KEYWORD.to_html(false), "[/color]")
 	return label
