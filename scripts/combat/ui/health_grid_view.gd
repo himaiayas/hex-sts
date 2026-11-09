@@ -235,12 +235,28 @@ func _draw() -> void:
 
 	var wave := 0.5 + 0.5 * sin(TAU * Time.get_ticks_msec() / 1000.0 / INTENT_PERIOD)
 	var pulse := lerpf(ICON_ALPHA_MIN, ICON_ALPHA_MAX, wave)
+	var stacked := {}  # "cell|tile script" -> {tile, cell, alpha, count}: overlapping hits draw once, with a count
 	for intent in intents:
 		var alpha := pulse * (INTENT_FADE if intent.get("faded", false) else 1.0)
 		for t: BaseActionTile in intent.tiles:
 			var cell: Vector2i = intent.cell + t.coords
-			if unit.health.has(cell):
-				_draw_action(t, cell, alpha)
+			if not unit.health.has(cell):
+				continue
+			var key := "%s|%s" % [cell, t.get_script().resource_path]
+			if stacked.has(key):
+				stacked[key].count += 1
+				stacked[key].alpha = maxf(stacked[key].alpha, alpha)
+			else:
+				stacked[key] = {tile = t, cell = cell, alpha = alpha, count = 1}
+	var count_font := ThemeDB.fallback_font
+	var count_size := int(20 * _hex / HEX_SIZE)
+	for s in stacked.values():
+		_draw_action(s.tile, s.cell, s.alpha)
+		if s.count > 1:
+			var label := "x%d" % s.count
+			var at := cell_position(s.cell) + Vector2(-_hex * 0.6, _hex * 0.55)
+			draw_string_outline(count_font, at, label, HORIZONTAL_ALIGNMENT_RIGHT, _hex * 1.2, count_size, 4, Color.BLACK)
+			draw_string(count_font, at, label, HORIZONTAL_ALIGNMENT_RIGHT, _hex * 1.2, count_size, COLOR_TEXT)
 
 	var flash := 0.5 + 0.5 * sin(TAU * Time.get_ticks_msec() / 1000.0 / PLACED_PERIOD)
 	for p in placed:
