@@ -1,6 +1,29 @@
 [gd_scene format=3 uid="uid://btyojp6k3f0lu"]
 
 [ext_resource type="Script" uid="uid://qbvexqmrx3mo" path="res://scripts/main.gd" id="1_main"]
+[ext_resource type="Texture2D" uid="uid://br13kdtv1fxxa" path="res://assets/main_menu/background.jpg" id="2_bg"]
+[ext_resource type="Texture2D" uid="uid://bmtlethvmkhsl" path="res://assets/main_menu/logo.png" id="3_logo"]
+[ext_resource type="FontFile" uid="uid://no1t4pv2qrf2" path="res://assets/fonts/PirataOne-Regular.ttf" id="4_font"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_logo"]
+atlas = ExtResource("3_logo")
+region = Rect2(330, 280, 880, 690)
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_menu"]
+
+[sub_resource type="Theme" id="Theme_menu"]
+Button/colors/font_color = Color(0, 0, 0, 1)
+Button/colors/font_focus_color = Color(0, 0, 0, 1)
+Button/colors/font_hover_color = Color(0.6, 0.43, 0.1, 1)
+Button/colors/font_hover_pressed_color = Color(0.45, 0.32, 0.07, 1)
+Button/colors/font_pressed_color = Color(0.45, 0.32, 0.07, 1)
+Button/font_sizes/font_size = 96
+Button/fonts/font = ExtResource("4_font")
+Button/styles/focus = SubResource("StyleBoxEmpty_menu")
+Button/styles/hover = SubResource("StyleBoxEmpty_menu")
+Button/styles/normal = SubResource("StyleBoxEmpty_menu")
+Button/styles/pressed = SubResource("StyleBoxEmpty_menu")
+VBoxContainer/constants/separation = -20
 
 [node name="Control" type="Control" unique_id=693228342]
 layout_mode = 3
@@ -11,20 +34,57 @@ grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_main")
 
-[node name="MarginContainer" type="MarginContainer" parent="." unique_id=1702423745]
-layout_mode = 0
-offset_left = 562.0
-offset_top = 258.0
-offset_right = 1363.0
-offset_bottom = 733.0
+[node name="Background" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_bg")
+expand_mode = 1
+stretch_mode = 6
 
-[node name="VBoxContainer" type="VBoxContainer" parent="MarginContainer" unique_id=925548513]
+[node name="Logo" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -570.0
+offset_top = 70.0
+offset_right = -42.0
+offset_bottom = 484.0
+grow_horizontal = 0
+texture = SubResource("AtlasTexture_logo")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Menu" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -650.0
+offset_top = 560.0
+offset_right = -75.0
+offset_bottom = 960.0
+grow_horizontal = 0
+theme = SubResource("Theme_menu")
+
+[node name="PlayButton" type="Button" parent="Menu"]
 layout_mode = 2
-size_flags_horizontal = 4
-size_flags_vertical = 4
+text = "Play"
+alignment = 2
 
-[node name="Button" type="Button" parent="MarginContainer/VBoxContainer" unique_id=591269104]
+[node name="CreditsButton" type="Button" parent="Menu"]
 layout_mode = 2
-text = "Start"
+text = "Credits"
+alignment = 2
 
-[connection signal="pressed" from="MarginContainer/VBoxContainer/Button" to="." method="_on_start_pressed"]
+[node name="QuitButton" type="Button" parent="Menu"]
+layout_mode = 2
+text = "Quit game"
+alignment = 2
+
+[connection signal="pressed" from="Menu/PlayButton" to="." method="_on_start_pressed"]
+[connection signal="pressed" from="Menu/QuitButton" to="." method="_on_quit_pressed"]
