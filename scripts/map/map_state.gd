@@ -40,7 +40,7 @@ const ROOM_WEIGHTS := {
 	Enum.RoomType.MERCHANT: 10,
 	Enum.RoomType.BLACKSMITH: 10,
 	Enum.RoomType.TREASURE: 10,
-	Enum.RoomType.EVENT: 0,
+	Enum.RoomType.EVENT: 0, # dropped
 	Enum.RoomType.INTERSECTION: 10,
 }
 

@@ -26,6 +26,24 @@ var _own_parts := {}  # tile script -> the SELF part of its planned tiles
 ## shows where a later attack will hit; its damage tiles then show the charge icon, not damage.
 var lands_in := 0
 var heavy_impact := false # a boss's big move: plays a heavy layered impact sound when it lands (Sfx boss_boom + boss_crash)
+var extra_types: Array[Enum.BaseEnemyActionEnum] = [] # a combo move's other types, each one more icon in its intent row
+var intent_icon: Texture2D # optional, replaces action_type's icon (Summon, Stunned)
+
+## Icons in an intent row go in this order: what hits the player first, then what the enemy does to itself.
+const TYPE_ORDER: Array[Enum.BaseEnemyActionEnum] = [
+    Enum.BaseEnemyActionEnum.ATTACK,
+    Enum.BaseEnemyActionEnum.DEBUFF,
+    Enum.BaseEnemyActionEnum.DEFEND,
+    Enum.BaseEnemyActionEnum.BUFF,
+    Enum.BaseEnemyActionEnum.WIND_UP,
+]
+const TYPE_ICONS := {
+    Enum.BaseEnemyActionEnum.ATTACK: preload("res://assets/grid_effects/damage.png"),
+    Enum.BaseEnemyActionEnum.DEBUFF: preload("res://assets/icons/intent_debuff.png"),
+    Enum.BaseEnemyActionEnum.DEFEND: preload("res://assets/icons/intent_defend.png"),
+    Enum.BaseEnemyActionEnum.BUFF: preload("res://assets/icons/intent_buff.png"),
+    Enum.BaseEnemyActionEnum.WIND_UP: preload("res://assets/icons/intent_wind_up.png"),
+}
 
 
 func _init(_action_type: Enum.BaseEnemyActionEnum,_action_name: String, _probability: float) -> void:
@@ -120,6 +138,32 @@ func intent_kinds() -> Array[String]:
 ## Its row in the intent label.
 func intent_text() -> String:
     return action_name
+
+
+## One icon per type (action_type and extra_types), in TYPE_ORDER; intent_icon replaces action_type's.
+func intent_icons() -> Array[Texture2D]:
+    var icons: Array[Texture2D] = []
+    for type in TYPE_ORDER:
+        if type == action_type and intent_icon:
+            icons.append(intent_icon)
+        elif type == action_type or type in extra_types:
+            icons.append(TYPE_ICONS[type])
+    return icons
+
+
+## Attacks only: the Damage tiles of each part aimed at the player, "3x2" when the parts match, else "10+6".
+func hit_text() -> String:
+    if action_type != Enum.BaseEnemyActionEnum.ATTACK:
+        return ""
+    var counts: Array[int] = []
+    for part in parts:
+        if part.side == Enum.Side.PLAYER:
+            counts.append(part.tiles.filter(func(t: BaseActionTile) -> bool: return t is DamageTile).size())
+    if counts.is_empty():
+        return ""
+    if counts.size() > 1 and counts.count(counts[0]) == counts.size():
+        return "%dx%d" % [counts[0], counts.size()]
+    return "+".join(PackedStringArray(counts.map(func(n: int) -> String: return str(n))))
 
 
 ## Called at the start of the player's turn: choose a cell for every part.

@@ -8,6 +8,7 @@ extends BaseEnemyAction
 func _init() -> void:
 	super(Enum.BaseEnemyActionEnum.BUFF, "Split", 1.0)
 	description = "Splits into 2 Mini Slimes."
+	intent_icon = preload("res://assets/icons/intent_summon.png")
 
 
 func execute(combat: CombatState, owner: CombatUnit) -> void:

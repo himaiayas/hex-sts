@@ -9,6 +9,7 @@ const RETALIATE := 3
 
 func _init() -> void:
 	super("Rattle", 7, "Shield 7 random tiles of its own and gain Retaliate 3.")
+	extra_types = [Enum.BaseEnemyActionEnum.BUFF]  # Retaliate
 
 
 func execute(combat: CombatState, owner: CombatUnit) -> void:

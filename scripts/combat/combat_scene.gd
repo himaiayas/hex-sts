@@ -27,6 +27,7 @@ const SHAKE_TIME := 0.15
 const PROJECTILE_WIDTH := 200.0  # px; its height keeps the texture's aspect
 const PROJECTILE_SPEED := 2400.0  # px per second, steady
 const SPRITE_FLASH := Color(2.5, 2.5, 2.5)  # a sprite's brightest, fading back over the hex flash
+const INTENT_ICON_SIZE := 36.0  # px, the type icons in front of each intent row
 
 var combat: CombatState
 var selected: BaseCard = null
@@ -43,7 +44,7 @@ var _relocating := {}  # the enemy part Taunt lets the player move (see CombatSt
 
 var _enemy_views: Array[HealthGridView] = []
 var _enemy_images: Array[UnitImage] = []  # one per enemy, same order as _enemy_views
-var _intent_rows: Array[VBoxContainer] = []  # each enemy's intent names and icons, over its head
+var _intent_boxes: Array[VBoxContainer] = []  # one row per planned move: type icons, name and hits
 var _name_labels: Array[Label] = []  # each enemy's name, under its image; same order as combat.enemies
 var _aim: TextureRect  # an enemy's sight on the player's sprite, while a move with aim_vfx is in its intent
 
@@ -132,6 +133,14 @@ func _add_enemy(enemy: BaseEnemy) -> void:
 	view.setup(enemy, true)
 	view.cell_clicked.connect(_on_cell_clicked)
 	view.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	# The intent hangs under the grid, as wide as it, and grows down only,
+	# so a longer or shorter intent never moves the enemy.
+	var intent_box := VBoxContainer.new()
+	intent_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	view.add_child(intent_box)
+	intent_box.anchor_top = 1.0
+	intent_box.anchor_bottom = 1.0
+	intent_box.grow_vertical = Control.GROW_DIRECTION_END  # placed sideways by _place_intents
 	# Enemy image on the left, its health grid on the right.
 	var side := HBoxContainer.new()
 	side.add_theme_constant_override("separation", 24)
@@ -150,7 +159,6 @@ func _add_enemy(enemy: BaseEnemy) -> void:
 	image.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	slot.add_child(image)
 	var name_label := _add_name_label(slot, enemy.display_name)
-	var intent_row := _add_intent_row(slot)
 	side.add_child(slot)
 	side.add_child(view)
 	var i := combat.enemies.find(enemy)
@@ -158,104 +166,52 @@ func _add_enemy(enemy: BaseEnemy) -> void:
 	_enemies_box.move_child(side, i)
 	_enemy_views.insert(i, view)
 	_enemy_images.insert(i, image)
-	_intent_rows.insert(i, intent_row)
+	_intent_boxes.insert(i, intent_box)
 	_name_labels.insert(i, name_label)
 
 
+func _process(_delta: float) -> void:
+	_place_intents()
+
+
+## Every frame, since grids move as enemies spawn and shrink: each intent list is centred under
+## its grid, as wide as the grid or its widest row, but stays NAME_SCREEN_MARGIN inside the screen
+## (a Mini Slime's grid is narrower than "Tiny Splat 2").
+func _place_intents() -> void:
+	var margin := HealthGridView.NAME_SCREEN_MARGIN
+	var screen := get_viewport_rect().size.x
+	for box in _intent_boxes:
+		var view := box.get_parent() as Control
+		var width := maxf(box.get_combined_minimum_size().x, view.size.x)
+		var x := (view.size.x - width) / 2.0
+		box.position.x = clampf(x, margin - view.global_position.x, screen - margin - view.global_position.x - width)
+		box.size.x = width
+
+
+## One row per move under an enemy's grid: its type icons, name and hits ("Gnaw 3x2"),
+## each with its own hover panel.
+func _set_intent_rows(box: VBoxContainer, actions: Array[BaseEnemyAction]) -> void:
+	for row in box.get_children():
+		_intent_info.add(row, [])  # forget it before it's freed
+		box.remove_child(row)
+		row.queue_free()
+	for action in actions:
+		var row := HBoxContainer.new()
+		row.alignment = BoxContainer.ALIGNMENT_CENTER
+		row.add_theme_constant_override("separation", 6)
+		var icons := action.intent_icons()
+		if not icons.is_empty():
+			row.add_child(HoverInfo.icon_row(icons, INTENT_ICON_SIZE))
+		var label := Label.new()
+		label.text = (action.intent_text() + " " + action.hit_text()).strip_edges()
+		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(label)
+		box.add_child(row)
+		if not action.description.is_empty():
+			_intent_info.add(row, [[action.intent_text(), action.description, icons]], false, null, true)
+
+
 const NAME_FONT_SIZE := 27
-const INTENT_ICON_SIZE := 56.0
-const INTENT_GAP := 8.0  # between the icons and the top of the image's slot
-
-
-const INTENT_NAME_FONT_SIZE := 24
-
-
-## The intent over the slot: the moves' names, then a row of their icons. Centred, growing up so it
-## never moves the enemy. In the slot, not the image, so it stays put while the image lunges and shakes.
-func _add_intent_row(slot: Control) -> VBoxContainer:
-	var box := VBoxContainer.new()
-	box.alignment = BoxContainer.ALIGNMENT_END
-	box.add_theme_constant_override("separation", 2)
-	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	slot.add_child(box)
-	box.anchor_left = 0.0
-	box.anchor_right = 1.0
-	box.anchor_top = 0.0
-	box.anchor_bottom = 0.0
-	box.offset_left = -80.0  # long names can be wider than the image
-	box.offset_right = 80.0
-	box.offset_top = -INTENT_GAP - INTENT_ICON_SIZE
-	box.offset_bottom = -INTENT_GAP
-	box.grow_vertical = Control.GROW_DIRECTION_BEGIN
-	var name_label := Label.new()
-	name_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	name_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	name_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	name_label.add_theme_font_size_override("font_size", INTENT_NAME_FONT_SIZE)
-	name_label.add_theme_color_override("font_color", HealthGridView.COLOR_TEXT)
-	name_label.add_theme_color_override("font_outline_color", Color.BLACK)
-	name_label.add_theme_constant_override("outline_size", 6)
-	box.add_child(name_label)
-	var icons := HBoxContainer.new()
-	icons.alignment = BoxContainer.ALIGNMENT_CENTER
-	icons.add_theme_constant_override("separation", 6)
-	icons.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	box.add_child(icons)
-	return box
-
-
-## "Bite x3, Charge": each move's intent_text once, with how many times it repeats.
-static func _intent_names(actions: Array[BaseEnemyAction]) -> String:
-	var counts := {}
-	for action in actions:
-		var text := action.intent_text()
-		counts[text] = counts.get(text, 0) + 1
-	var parts: PackedStringArray = []
-	for text: String in counts:
-		parts.append(text if counts[text] == 1 else "%s x%d" % [text, counts[text]])
-	return ", ".join(parts)
-
-
-## The moves' names, and one icon per kind they do, in BaseEnemyAction.INTENT_ORDER.
-func _show_intent_icons(box: VBoxContainer, actions: Array[BaseEnemyAction]) -> void:
-	var name_label := box.get_child(0) as Label
-	name_label.text = _intent_names(actions)
-	name_label.visible = not name_label.text.is_empty()
-	var row := box.get_child(1) as HBoxContainer
-	for child in row.get_children():
-		row.remove_child(child)
-		child.queue_free()
-	var kinds := {}
-	var charge_turns := 0  # the soonest delayed attack, shown on the charge icon
-	for action in actions:
-		for kind in action.intent_kinds():
-			kinds[kind] = true
-			if kind == "charge":
-				charge_turns = action.delay() if charge_turns == 0 else mini(charge_turns, action.delay())
-	for kind in BaseEnemyAction.INTENT_ORDER:
-		if not kinds.has(kind):
-			continue
-		var icon := TextureRect.new()
-		icon.texture = BaseEnemyAction.INTENT_ICONS[kind]
-		icon.custom_minimum_size = Vector2.ONE * INTENT_ICON_SIZE
-		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		row.add_child(icon)
-		if kind == "charge":
-			icon.add_child(_turns_badge(charge_turns))
-
-
-## The number on a charge icon: turns until the attack lands, in its top-left corner.
-func _turns_badge(turns: int) -> Label:
-	var badge := Label.new()
-	badge.text = str(turns)
-	badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	badge.add_theme_font_size_override("font_size", 24)
-	badge.add_theme_color_override("font_outline_color", Color.BLACK)
-	badge.add_theme_constant_override("outline_size", 6)
-	badge.set_anchors_and_offsets_preset(Control.PRESET_TOP_LEFT)  # the icon's empty corner (its hourglass is bottom-right)
-	return badge
 
 ## The unit's name, centred just under its image's slot. In the slot, not the image, so it stays
 ## put while the image lunges and shakes.
@@ -277,6 +233,8 @@ func _add_name_label(slot: Control, text: String) -> Label:
 	label.offset_right = 60.0
 	label.grow_vertical = Control.GROW_DIRECTION_END
 	return label
+
+
 
 
 ## Forever: every 2-5 s the lights flicker 1-3 times, each a quick flash of the flicker image.
@@ -883,15 +841,15 @@ func _refresh() -> void:
 			actions = enemy.intent_actions
 		var self_intents: Array = []
 		_name_labels[i].text = combat.enemies[i].display_name  # some change form (the Werewolf)
-		_show_intent_icons(_intent_rows[i], actions)
-		_intent_info.add(_intent_rows[i], actions.filter(func(a: BaseEnemyAction) -> bool: return not a.description.is_empty()) \
-			.map(func(a: BaseEnemyAction) -> Array: return [a.intent_text(), a.description]), true)  # above the icons
+		_set_intent_rows(_intent_boxes[i], actions)
 		for action in actions:
 			if action.aim_vfx:
 				aim = action.aim_vfx
-			for part in action.parts + action.own_parts():
+			for part in action.parts + action.own_parts():  # own_parts: its planned shields/heals
 				var intent := {cell = part.cell, tiles = part.tiles, faded = _hovered_enemy != -1 and _hovered_enemy != i,
-					delayed = action.delay() > 0, turns = action.delay()}
+					delayed = action.action_type == Enum.BaseEnemyActionEnum.WIND_UP, turns = maxi(action.delay(), 1)}
+				if action.action_type == Enum.BaseEnemyActionEnum.WIND_UP:
+					intent.faded = true  # a wind-up or Charge: it lands on a later turn, not this one
 				if part.side == Enum.Side.PLAYER:
 					if relocating and part == _relocating.part:
 						intent.faded = true  # where it is now, while the preview shows where it would go

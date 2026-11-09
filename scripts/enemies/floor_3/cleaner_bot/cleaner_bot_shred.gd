@@ -12,6 +12,7 @@ func _init() -> void:
 	super(Enum.BaseEnemyActionEnum.DEBUFF, "Shred", 1.0)
 	add_own_effect(ShieldTile, SHIELDS)
 	description = "Remove Plate from %d of your tiles, then Shield %d of its own." % [SHRED, SHIELDS]
+	extra_types = [Enum.BaseEnemyActionEnum.DEFEND]
 	parts = [EnemyActionPart.new(Enum.Side.PLAYER, [])]
 
 
