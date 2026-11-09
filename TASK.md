@@ -161,6 +161,7 @@
 
 - **Requirement/Prereq:** -
 - **Brief Description:** Main menu ui, click start to change the game state to map
+- [x] Done ✅: Main menu with art, logo and Pirata One font. Play starts a new run on the map, Quit exits, Credits has no screen yet.
 
 ## Out-Of-Combat
 
