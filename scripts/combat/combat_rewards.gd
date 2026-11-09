@@ -9,15 +9,15 @@ const CARD_CHOICES := 3
 
 ## Coins, as [min, max] (inclusive).
 const GOLD := {
-	Enum.RoomType.NORMAL_COMBAT: Vector2i(10, 20),
-	Enum.RoomType.ELITE_COMBAT: Vector2i(25, 35),
-	Enum.RoomType.BOSS_COMBAT: Vector2i(60, 80),
+	Enum.RoomType.NORMAL_COMBAT: Vector2i(20, 30),
+	Enum.RoomType.ELITE_COMBAT: Vector2i(45, 60),
+	Enum.RoomType.BOSS_COMBAT: Vector2i(100, 130),
 }
 
 const EXP := {
 	Enum.RoomType.NORMAL_COMBAT: 10,
-	Enum.RoomType.ELITE_COMBAT: 25,
-	Enum.RoomType.BOSS_COMBAT: 60,
+	Enum.RoomType.ELITE_COMBAT: 20,
+	Enum.RoomType.BOSS_COMBAT: 30,
 }
 
 var gold := 0

@@ -1118,10 +1118,45 @@ func _end_combat() -> void:
 	RunState.end_combat()
 
 
+const COIN_ICON := preload("res://assets/icons/coin.png")
+const EXP_ICON := preload("res://assets/icons/exp.png")
+const REWARD_ICON_SIZE := 44
+
+
+## A reward button showing its icon (like the top bar's) and amount side by side, centred.
+## The icon and number are a child row, made once; the button's own text stays empty.
+func _reward_amount(button: Button, icon: Texture2D, amount: int, what: String) -> void:
+	button.text = ""
+	button.tooltip_text = what
+	var label: Label = button.get_meta("amount_label", null)
+	if label == null:
+		var center := CenterContainer.new()
+		center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		center.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		button.add_child(center)
+		var row := HBoxContainer.new()
+		row.add_theme_constant_override("separation", 12)
+		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		center.add_child(row)
+		var image := TextureRect.new()
+		image.texture = icon
+		image.custom_minimum_size = Vector2.ONE * REWARD_ICON_SIZE
+		image.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		image.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		image.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(image)
+		label = Label.new()
+		label.add_theme_font_size_override("font_size", button.get_theme_font_size("font_size"))
+		label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		row.add_child(label)
+		button.set_meta("amount_label", label)
+	label.text = str(amount)
+
+
 func _refresh_rewards() -> void:
 	_top_bar.refresh()
-	_gold_button.text = "%d Coins" % _rewards.gold
-	_exp_button.text = "%d EXP" % _rewards.exp_points
+	_reward_amount(_gold_button, COIN_ICON, _rewards.gold, "Coins")
+	_reward_amount(_exp_button, EXP_ICON, _rewards.exp_points, "EXP")
 	_gold_button.visible = not _rewards.gold_taken
 	_exp_button.visible = not _rewards.exp_taken
 	_card_button.visible = not _rewards.card_taken
