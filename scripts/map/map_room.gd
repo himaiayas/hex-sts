@@ -25,11 +25,15 @@ const NAMES := {
 	Enum.RoomType.BLACKSMITH: "Blacksmith",
 	Enum.RoomType.TREASURE: "Treasure",
 	Enum.RoomType.EVENT: "Event",
+	Enum.RoomType.INTERSECTION: "Intersection",
 }
 
 var coord: Vector2i
 var type: Enum.RoomType
 var doors: Array[int] = []
+## A Merchant's or Blacksmith's offers and which were sold, so coming back shows the same items.
+## Filled by the room's scene on the first visit; saved with the run.
+var stock: Dictionary = {}
 var number := 0  # rooms built on this floor before it, plus 1: shown as "Room N" (0 = entrance)
 
 
@@ -50,6 +54,11 @@ func display_name() -> String:
 ## Empty for rooms without a scene (the entrance).
 func scene_path() -> String:
 	return SCENES.get(type, "")
+
+
+## Shops can be walked back into, with the same stock (stock).
+func can_reenter() -> bool:
+	return type in [Enum.RoomType.MERCHANT, Enum.RoomType.BLACKSMITH]
 
 
 func is_combat() -> bool:

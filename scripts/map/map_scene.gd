@@ -52,6 +52,10 @@ func _refresh() -> void:
 func _on_map_view_cell_clicked(cell: Vector2i) -> void:
 	if _busy:
 		return
+	if cell == map.current and map.rooms[cell].can_reenter():  # standing on a shop: go back in
+		_busy = true
+		RunState.enter_room(map.rooms[cell])
+		return
 	var plan := map.plan_to(cell)
 	if plan.is_empty():
 		return
@@ -66,6 +70,8 @@ func _on_map_view_cell_clicked(cell: Vector2i) -> void:
 	await _map_view.animate_path(path)
 	if plan.build:
 		_open_draft(plan.target, plan.door)
+	elif map.rooms[plan.target].can_reenter():  # walked back to a shop: it opens with the same stock
+		RunState.enter_room(map.rooms[plan.target])
 	else:
 		_busy = false
 		_check_out_of_steps()
@@ -88,6 +94,10 @@ func _on_room_chosen(room: MapRoom) -> void:
 	map.place(room)
 	_refresh()
 	await _map_view.animate_path([room.coord] as Array[Vector2i])
+	if room.scene_path().is_empty():  # nothing inside (an Intersection): stay on the map
+		_busy = false
+		_check_out_of_steps()
+		return
 	RunState.enter_room(room)  # switches to the room's scene; leaving it comes back here
 
 

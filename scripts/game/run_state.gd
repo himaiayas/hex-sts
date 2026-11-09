@@ -248,6 +248,22 @@ func add_artifact(artifact: BaseArtifact) -> void:
 	artifact.on_pickup()
 
 
+## Unsold artifacts on Merchant shelves on this floor's map: they're still on offer, since the
+## player can walk back in (MapRoom.stock), so nothing else drops them.
+func shelved_artifacts() -> Array[BaseArtifact]:
+	var result: Array[BaseArtifact] = []
+	if map == null:
+		return result
+	for room: MapRoom in map.rooms.values():
+		var stock := room.stock
+		if not stock.has("artifacts"):
+			continue
+		for i in stock.artifacts.size():
+			if i not in stock.sold_artifacts:
+				result.append(stock.artifacts[i])
+	return result
+
+
 func has_artifact(script: Script) -> bool:
 	return artifacts.any(func(a: BaseArtifact) -> bool: return a.get_script() == script)
 

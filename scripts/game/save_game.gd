@@ -54,7 +54,7 @@ static func pack(value: Variant) -> Variant:
 		if value is BaseCard:
 			return _pack_card(value)
 		if value is MapRoom:
-			return {"$room": [value.coord, value.type, value.doors, value.number]}
+			return {"$room": [value.coord, value.type, value.doors, value.number], "stock": pack(value.stock)}
 		var script: Script = value.get_script()
 		if script == null:  # an engine resource: a texture, a sound
 			return {"$res": value.resource_path} if value is Resource and not value.resource_path.is_empty() else null
@@ -86,6 +86,7 @@ static func unpack(value: Variant) -> Variant:
 		doors.assign(r[2])
 		var room := MapRoom.new(r[0], r[1], doors)
 		room.number = r[3]
+		room.stock = unpack(value.get("stock", {}))
 		return room
 	if value.has("$obj"):
 		var object: Object = load(value["$obj"]).new()

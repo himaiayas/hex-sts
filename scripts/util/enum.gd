@@ -37,6 +37,7 @@ enum RoomType {
 	BLACKSMITH, # sells augments
 	TREASURE,
 	EVENT,
+	INTERSECTION, # empty, doors on every side: for connecting the map (last, so saved runs keep their numbers)
 }
 
 
