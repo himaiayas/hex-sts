@@ -32,6 +32,13 @@ func _init() -> void:
 
 	box.add_child(_volume_row("Music", Music.volume, func(level: float) -> void: Music.volume = level))
 	box.add_child(_volume_row("Sound Effects", Sfx.volume, func(level: float) -> void: Sfx.volume = level))
+	var fullscreen := CheckButton.new()
+	fullscreen.text = "Fullscreen (F11)"
+	fullscreen.button_pressed = Display.fullscreen
+	fullscreen.add_theme_font_size_override("font_size", 28)
+	fullscreen.toggled.connect(func(on: bool) -> void: Display.fullscreen = on)
+	Display.fullscreen_changed.connect(fullscreen.set_pressed_no_signal)  # F11 too; disconnects when freed
+	box.add_child(fullscreen)
 
 	var back := Button.new()
 	back.text = "Back"

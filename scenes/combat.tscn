@@ -93,6 +93,7 @@ offset_top = -20.0
 offset_right = 150.0
 offset_bottom = 20.0
 grow_vertical = 2
+tooltip_text = "This btn is intended"
 text = "WinCombat :)"
 
 [node name="HintLabel" type="Label" parent="Margin/Layout/StatusBar" unique_id=2117940320]

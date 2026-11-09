@@ -49,6 +49,9 @@ const FLOOR_BOSS_BACKGROUNDS: Array[Texture2D] = [
 ## xp is the progress toward the next level; it resets (keeping the leftover) on level-up.
 const LEVEL_XP: Array[int] = [30, 30, 30, 30, 30, 30, 30, 30, 30]
 const LEVEL_UP_TILES := 3
+## How far from the centre (in rings) new health tiles can go, by floor: level-ups and tile slots
+## (Spare Hex) only offer cells within it. Floors past the last use the last.
+const HEALTH_RADIUS: Array[int] = [4, 5, 6]
 
 ## Level-ups not yet claimed in the level-up modal.
 var pending_level_ups := 0
@@ -88,7 +91,7 @@ func start_new_run(seed_value := -1) -> void:
 		for r in range(maxi(-2, -q - 2), mini(2, -q + 2) + 1):
 			coords.append(Vector2i(q, r))
 	health = CombatUnit.make_hex_health(coords)
-	gold = 200 #TODO: reset to 0
+	gold = 67
 	deck = []
 	artifacts = []
 	level = 0
@@ -102,7 +105,16 @@ func start_new_run(seed_value := -1) -> void:
 	fought = {}
 	normal_fights_on_floor = 0
 
-	deck.append(Glock.new())
+	deck.append(Slash.new())
+	deck.append(Slash.new())
+	deck.append(Smash.new())
+	deck.append(Smash.new())
+	deck.append(Thrust.new())
+
+	deck.append(Guard.new())
+	deck.append(Guard.new())
+	deck.append(Guard.new())
+	deck.append(Guard.new())
 	deck.append(Guard.new())
 	#deck.append(LuckyShield.new())
 	#deck.append(XSlash.new())
@@ -224,6 +236,11 @@ func continue_run() -> bool:
 	else:
 		enter_room(map.rooms[room.coord] if data.room_in_map else room)
 	return true
+
+
+## The furthest ring from the centre new health tiles can go on this floor (HEALTH_RADIUS).
+func health_radius() -> int:
+	return HEALTH_RADIUS[clampi(dungeon_floor, 1, HEALTH_RADIUS.size()) - 1]
 
 
 ## Whether this is the last floor: its boss (Ramiel) ends the run.
