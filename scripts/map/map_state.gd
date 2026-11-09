@@ -58,7 +58,14 @@ static func opposite(dir: int) -> int:
 	return (dir + 3) % 6
 
 
-func start() -> void:
+## The map's own random numbers, seeded per floor from the run seed (RunState.floor_seed): the same
+## seed gives the same drafts for the same choices, whatever happens in fights. Saved with the run.
+var rng := RandomNumberGenerator.new()
+
+
+## map_seed: the floor's seed (RunState.floor_seed); random if not given (tests).
+func start(map_seed: int = randi()) -> void:
+	rng.seed = map_seed
 	rooms.clear()
 	steps = START_STEPS
 	current = Vector2i.ZERO
@@ -132,9 +139,9 @@ func draft_options(cell: Vector2i, door: int) -> Array[MapRoom]:
 		attempts += 1
 		var type := random_room_type(used_types if attempts < 30 else {})
 		var door_range: Vector2i = DOOR_RANGE.get(type, Vector2i(2, 4))
-		var doors := _random_doors(randi_range(door_range.x, door_range.y), door, allowed)
+		var doors := _random_doors(rng.randi_range(door_range.x, door_range.y), door, allowed)
 		if type not in KEEPS_DOORS:
-			doors = doors.filter(func(d: int) -> bool: return d == door or randf() < keep)
+			doors = doors.filter(func(d: int) -> bool: return d == door or rng.randf() < keep)
 		var key := str([type, doors])
 		if seen.has(key):
 			continue
@@ -153,14 +160,14 @@ func draft_options(cell: Vector2i, door: int) -> Array[MapRoom]:
 
 
 ## Weighted random room type, skipping types in `exclude` (unless nothing else is left).
-static func random_room_type(exclude := {}) -> Enum.RoomType:
+func random_room_type(exclude := {}) -> Enum.RoomType:
 	var total := 0
 	for type in ROOM_WEIGHTS:
 		if not exclude.has(type):
 			total += ROOM_WEIGHTS[type]
 	if total <= 0:
 		return random_room_type() if not exclude.is_empty() else Enum.RoomType.NORMAL_COMBAT
-	var roll := randi_range(1, total)
+	var roll := rng.randi_range(1, total)
 	for type in ROOM_WEIGHTS:
 		if exclude.has(type):
 			continue
@@ -190,7 +197,7 @@ func _ensure_exit(cell: Vector2i, doors: Array[int], allowed: Array[int]) -> voi
 	var open := allowed.filter(func(d: int) -> bool: return d not in doors and not rooms.has(cell + DIRS[d]))
 	if open.is_empty():
 		return
-	doors.append(open.pick_random())
+	doors.append(open[rng.randi_range(0, open.size() - 1)])
 	doors.sort()
 
 
@@ -233,7 +240,7 @@ func place(room: MapRoom) -> void:
 ## count doors (fewer if allowed runs out), always including required.
 func _random_doors(count: int, required := -1, allowed: Array[int] = [0, 1, 2, 3, 4, 5]) -> Array[int]:
 	var pool := allowed.duplicate()
-	pool.shuffle()
+	_shuffle(pool)
 	var result: Array[int] = []
 	if required >= 0:
 		result.append(required)
@@ -269,3 +276,12 @@ func _path(prev: Dictionary, target: Vector2i) -> Array[Vector2i]:
 		path.push_front(cell)
 		cell = prev[cell]
 	return path
+
+
+## Array.shuffle(), but with this map's rng so it follows the seed.
+func _shuffle(array: Array) -> void:
+	for i in range(array.size() - 1, 0, -1):
+		var j := rng.randi_range(0, i)
+		var tmp: Variant = array[i]
+		array[i] = array[j]
+		array[j] = tmp

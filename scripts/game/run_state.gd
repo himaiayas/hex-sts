@@ -59,6 +59,9 @@ var offered_artifacts: Array[BaseArtifact] = []
 var map: MapState = null
 var current_room: MapRoom = null
 
+## Picked in start_new_run; the whole run's randomness starts from it (see floor_seed). Shown in the menu.
+var run_seed := 0
+
 ## Non-null only during a fight.
 var combat: CombatState = null
 
@@ -69,7 +72,10 @@ var _entry_snapshot: Dictionary = {}
 
 ## Doesn't touch the saved run: test scenes and rooms opened with F6 call this too.
 ## The New Run buttons delete the save themselves.
-func start_new_run() -> void:
+## seed_value: replay a run's seed; -1 (default) picks a new random one.
+func start_new_run(seed_value := -1) -> void:
+	run_seed = seed_value if seed_value >= 0 else randi()
+	seed(run_seed)  # everything else (combat, rewards) starts from the seed too
 	_entry_snapshot = {}
 	# Radius-2 hexagon: 19 tiles, the sheet's starting health.
 	var coords: Array[Vector2i] = []
@@ -114,7 +120,7 @@ func start_new_run() -> void:
 	# deck.append(Crack.new())
 	# deck.append(Flurry.new())
 	map = MapState.new()
-	map.start()
+	map.start(floor_seed())
 	current_room = null
 	combat = null
 
@@ -158,6 +164,7 @@ func snapshot() -> Dictionary:
 		pending_level_ups = pending_level_ups,
 		pending_tile_slots = pending_tile_slots,
 		dungeon_floor = dungeon_floor,
+		run_seed = run_seed,
 		fought = SaveGame.pack(fought),
 		normal_fights_on_floor = normal_fights_on_floor,
 		map = SaveGame.pack(map),
@@ -192,6 +199,7 @@ func continue_run() -> bool:
 	pending_level_ups = data.pending_level_ups
 	pending_tile_slots = data.pending_tile_slots
 	dungeon_floor = data.dungeon_floor
+	run_seed = data.get("run_seed", 0)
 	fought = SaveGame.unpack(data.fought)
 	normal_fights_on_floor = data.normal_fights_on_floor
 	map = SaveGame.unpack(data.map)
@@ -225,7 +233,13 @@ func _next_floor() -> void:
 	dungeon_floor += 1
 	normal_fights_on_floor = 0
 	map = MapState.new()
-	map.start()
+	map.start(floor_seed())
+
+
+## The seed of this floor's map: from the run seed and the floor, so each floor differs but a run's
+## floors are all fixed by its seed.
+func floor_seed() -> int:
+	return hash([run_seed, dungeon_floor])
 
 
 func add_xp(amount: int) -> void:

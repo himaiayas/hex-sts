@@ -48,6 +48,7 @@ var _slots_only := false  # opened for RunState.pending_tile_slots, not a level
 const MENU_LAYER := 60  # above the hand, the scenes' panels and HoverInfo
 var _menu: Control  # Resume / Options / Save & Quit, over everything (_build_menu)
 var _menu_buttons: Control
+var _seed_label: Label
 var _options: OptionsPanel
 
 
@@ -141,6 +142,11 @@ func _build_menu() -> void:
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	title.add_theme_font_size_override("font_size", 44)
 	box.add_child(title)
+	_seed_label = Label.new()
+	_seed_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_seed_label.add_theme_font_size_override("font_size", 22)
+	_seed_label.add_theme_color_override("font_color", Color("#8d93a5"))
+	box.add_child(_seed_label)
 	for entry in [["Resume", _close_menu], ["Options", _show_options], ["Save & Quit", RunState.save_and_quit]]:
 		var button := Button.new()
 		button.text = entry[0]
@@ -157,6 +163,7 @@ func _build_menu() -> void:
 
 func _open_menu() -> void:
 	_close_modals()
+	_seed_label.text = "Seed %d" % RunState.run_seed
 	_show_menu_buttons()
 	_menu.show()
 
