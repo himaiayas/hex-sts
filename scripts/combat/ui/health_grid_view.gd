@@ -23,6 +23,8 @@ const ICON_SIZE := 40.0  # action icons on targeted tiles (a hex is ~62 wide)
 const ICON_ALPHA_MIN := 0.35  # icons blink between these; brighter than the old colour fill
 const ICON_ALPHA_MAX := 1.0
 const PREVIEW_ALPHA := 0.85  # icons under the cursor (selected card)
+const STACK_SCALE := 0.7  # different enemy hits on one tile: icons shrink to this
+const STACK_SPREAD := 0.45  # and sit this far from the tile centre, in hex radii
 const SHIELD_SCALE := 0.55  # shield = a smaller hex inside the tile
 const SHIELD_ALPHA := 0.8
 const PARTICLE_AMOUNT := 3  # per effect, per tile
@@ -235,28 +237,36 @@ func _draw() -> void:
 
 	var wave := 0.5 + 0.5 * sin(TAU * Time.get_ticks_msec() / 1000.0 / INTENT_PERIOD)
 	var pulse := lerpf(ICON_ALPHA_MIN, ICON_ALPHA_MAX, wave)
-	var stacked := {}  # "cell|tile script" -> {tile, cell, alpha, count}: overlapping hits draw once, with a count
+	# Overlapping hits: one icon per kind with a count, and different kinds on a tile spread around its centre.
+	var stacked := {}  # cell -> {tile kind -> {tile, alpha, count}}
 	for intent in intents:
 		var alpha := pulse * (INTENT_FADE if intent.get("faded", false) else 1.0)
 		for t: BaseActionTile in intent.tiles:
 			var cell: Vector2i = intent.cell + t.coords
 			if not unit.health.has(cell):
 				continue
-			var key := "%s|%s" % [cell, t.get_script().resource_path]
-			if stacked.has(key):
-				stacked[key].count += 1
-				stacked[key].alpha = maxf(stacked[key].alpha, alpha)
+			var kinds: Dictionary = stacked.get_or_add(cell, {})
+			if kinds.has(t.kind()):
+				kinds[t.kind()].count += 1
+				kinds[t.kind()].alpha = maxf(kinds[t.kind()].alpha, alpha)
 			else:
-				stacked[key] = {tile = t, cell = cell, alpha = alpha, count = 1}
+				kinds[t.kind()] = {tile = t, alpha = alpha, count = 1}
 	var count_font := ThemeDB.fallback_font
-	var count_size := int(20 * _hex / HEX_SIZE)
-	for s in stacked.values():
-		_draw_action(s.tile, s.cell, s.alpha)
-		if s.count > 1:
-			var label := "x%d" % s.count
-			var at := cell_position(s.cell) + Vector2(-_hex * 0.6, _hex * 0.55)
-			draw_string_outline(count_font, at, label, HORIZONTAL_ALIGNMENT_RIGHT, _hex * 1.2, count_size, 4, Color.BLACK)
-			draw_string(count_font, at, label, HORIZONTAL_ALIGNMENT_RIGHT, _hex * 1.2, count_size, COLOR_TEXT)
+	for cell: Vector2i in stacked:
+		var kinds: Array = stacked[cell].values()
+		var size_scale := 1.0 if kinds.size() == 1 else STACK_SCALE
+		for i in kinds.size():
+			var s: Dictionary = kinds[i]
+			var offset := Vector2.ZERO
+			if kinds.size() > 1:  # starts on the left: two sit side by side
+				offset = Vector2.from_angle(PI + TAU * i / kinds.size()) * _hex * STACK_SPREAD
+			_draw_action(s.tile, cell, s.alpha, offset, size_scale)
+			if s.count > 1:
+				var label := "x%d" % s.count
+				var count_size := int(20 * size_scale * _hex / HEX_SIZE)
+				var at := cell_position(cell) + offset + Vector2(-_hex * 0.6, _hex * 0.75) * size_scale
+				draw_string_outline(count_font, at, label, HORIZONTAL_ALIGNMENT_RIGHT, _hex * 1.2 * size_scale, count_size, 4, Color.WHITE)
+				draw_string(count_font, at, label, HORIZONTAL_ALIGNMENT_RIGHT, _hex * 1.2 * size_scale, count_size, COLOR_EDGE)
 
 	var flash := 0.5 + 0.5 * sin(TAU * Time.get_ticks_msec() / 1000.0 / PLACED_PERIOD)
 	for p in placed:
@@ -398,14 +408,14 @@ func _show_power_info(i: int) -> void:
 
 
 ## What an action will do to a tile: its icon, a small shield hex, or (no icon) its colour.
-func _draw_action(t: BaseActionTile, cell: Vector2i, alpha: float) -> void:
-	var center := cell_position(cell)
+func _draw_action(t: BaseActionTile, cell: Vector2i, alpha: float, offset := Vector2.ZERO, size_scale := 1.0) -> void:
+	var center := cell_position(cell) + offset
 	if t is ShieldTile:
 		_draw_shield(center, alpha * SHIELD_ALPHA)
 		return
 	var icon := t.get_icon()
 	if icon:
-		var half := Vector2.ONE * ICON_SIZE * _hex / HEX_SIZE / 2.0
+		var half := Vector2.ONE * ICON_SIZE * size_scale * _hex / HEX_SIZE / 2.0
 		draw_texture_rect(icon, Rect2(center - half, half * 2.0), false, Color(1, 1, 1, alpha))
 	else:
 		draw_colored_polygon(hex_corners(center, _hex - _gap()), Color(t.get_color(), alpha * 0.5))
