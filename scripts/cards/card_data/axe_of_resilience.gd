@@ -7,7 +7,7 @@ func _init() -> void:
 	cost = 2
 	type = Enum.CardType.ATTACK
 	rarity = Enum.CardRarity.UNCOMMON
-	description = "{render:0}\nDeal damage to 1 random enemy tile per Plated tile you have."
+	description = "{render:0}\nDeal damage to 1 random enemy tile per {keyword:Plate|Plated} tile you have."
 	image = preload("res://assets/cards/cards/axe_of_resillience.png")
 
 	grid_actions = [

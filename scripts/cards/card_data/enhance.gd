@@ -6,6 +6,7 @@ func _init() -> void:
 	card_name = "Enhance"
 	cost = 1
 	type = Enum.CardType.POWER
+	rarity = Enum.CardRarity.UNCOMMON
 	target = Enum.TargetType.PLAYER
 	description = "Gain 1 {keyword:Strength}."
 	image = preload("res://assets/cards/cards/enhance.png")

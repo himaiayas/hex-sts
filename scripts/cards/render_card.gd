@@ -98,10 +98,11 @@ static func create_card(data: BaseCard) -> Node2D:
 	_fill_description(description, data)
 	description.minimum_size_changed.connect(_fit_description.bind(description))
 
-	# One star per rarity step: Common 1, Uncommon 2, ...
+	# One star per rarity step: Common 1, Uncommon 2, ...; Starter cards have none.
+	var star_count := 0 if data.rarity == Enum.CardRarity.STARTER else data.rarity + 1
 	var stars: HBoxContainer = card.get_node("%Stars")
 	stars.add_theme_constant_override("separation", STAR_SPACING)
-	for i in data.rarity + 1:
+	for i in star_count:
 		var star := TextureRect.new()
 		star.texture = STAR
 		star.custom_minimum_size = Vector2(STAR_SIZE, STAR_SIZE)
@@ -109,7 +110,7 @@ static func create_card(data: BaseCard) -> Node2D:
 		star.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		star.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		stars.add_child(star)
-	var stars_width := (data.rarity + 1) * STAR_SIZE + data.rarity * STAR_SPACING
+	var stars_width := star_count * STAR_SIZE + maxi(star_count - 1, 0) * STAR_SPACING
 	_place(stars, Rect2(CARD_SIZE.x - STAR_MARGIN.x - stars_width, STAR_MARGIN.y, stars_width, STAR_SIZE))
 
 	# Augment icons, centred at the top and poking out above the frame.

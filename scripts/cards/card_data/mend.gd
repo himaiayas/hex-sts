@@ -6,6 +6,7 @@ func _init() -> void:
 	card_name = "Mend"
 	cost = 1
 	type = Enum.CardType.SKILL
+	rarity = Enum.CardRarity.UNCOMMON
 	target = Enum.TargetType.PLAYER
 	exhaust = true
 	description = "{render:0}\n{keyword:Exhaust}."

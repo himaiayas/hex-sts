@@ -12,6 +12,7 @@ const NOT_EFFECTS: Dictionary[String, String] = {
 	"Repeat": "Its effect happens twice.",
 	"Sacrifice": "Destroy your own tiles as a cost.",
 	"Heal": "Restore damaged tiles.",
+	"Cleanse": "Removes every debuff (like Fracture and Poison) from a tile.",
 	"Pierce": "Damage this tile, ignore Shield.",
 }
 

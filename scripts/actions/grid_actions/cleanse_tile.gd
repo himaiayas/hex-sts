@@ -28,7 +28,7 @@ func get_icon() -> Texture2D:
 	return preload("res://assets/grid_effects/cleanse.png")
 
 func describe() -> String:
-	return "Removes every debuffs from this tile."
+	return "Removes every debuff (like Fracture and Poison) from this tile."
 
 func display_name() -> String:
 	return "Cleanse"

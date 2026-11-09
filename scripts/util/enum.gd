@@ -4,7 +4,7 @@ extends RefCounted
 # Every enum in the game
 
 enum CardType { ATTACK, DEFENSE, SKILL, POWER }
-enum CardRarity { COMMON, UNCOMMON, RARE, LEGENDARY }
+enum CardRarity { COMMON, UNCOMMON, RARE, LEGENDARY, STARTER } # STARTER: the opening deck only, never offered; last so saved values keep their meaning
 enum ArtifactRarity { COMMON, UNCOMMON, RARE, LEGENDARY }
 
 

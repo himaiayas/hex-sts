@@ -6,6 +6,7 @@ func _init() -> void:
 	card_name = "Tower Strike"
 	cost = 2
 	type = Enum.CardType.ATTACK
+	rarity = Enum.CardRarity.UNCOMMON
 	description = "{render:0}\n[Self] {render:1}\n."
 	image = preload("res://assets/cards/cards/tower_strike.png")
 	grid_actions = [
