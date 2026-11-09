@@ -776,6 +776,8 @@ func _refresh() -> void:
 				aim = action.aim_vfx
 			for part in action.parts:
 				var intent := {cell = part.cell, tiles = part.tiles, faded = _hovered_enemy != -1 and _hovered_enemy != i}
+				if action.action_type == Enum.BaseEnemyActionEnum.BUFF:
+					intent.faded = true  # a wind-up or Charge: it lands on a later turn, not this one
 				if part.side == Enum.Side.PLAYER:
 					if relocating and part == _relocating.part:
 						intent.faded = true  # where it is now, while the preview shows where it would go
