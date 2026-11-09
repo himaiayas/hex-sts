@@ -24,10 +24,9 @@ func _init() -> void:
 		DamageTile.new(Vector2i(0, 0)),
 		DamageTile.new(Vector2i(1, 0)),
 		DamageTile.new(Vector2i(2, 0)),
-		DamageTile.new(Vector2i(3, -1)),
 	]
 	actions = [
-		EnemyHit.new("Bone Throw", "Hit 5 tiles 2 times.", bone, 2),
+		EnemyHit.new("Bone Throw", "Hit 4 tiles 2 times.", bone, 2),
 		SkeletonRattle.new(),
 	]
 	p1_cycle = [0, 1]

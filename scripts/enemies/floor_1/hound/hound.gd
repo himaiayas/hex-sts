@@ -22,10 +22,10 @@ func _init() -> void:
 		DamageTile.new(Vector2i(0, 1)),
 	]
 	var lunge: Array[BaseActionTile] = [DamageTile.new(Vector2i.ZERO)]
-	for dir: Vector2i in [Vector2i(1, 0), Vector2i(1, -1), Vector2i(0, -1), Vector2i(-1, 0), Vector2i(-1, 1), Vector2i(0, 1)]:
+	for dir: Vector2i in [Vector2i(1, 0), Vector2i(0, -1), Vector2i(-1, 0), Vector2i(0, 1)]:
 		lunge.append(DamageTile.new(dir))
 	actions = [
 		EnemyHit.new("Bite", "Hit 3 tiles 2 times.", bite, 2),
-		EnemyHit.new("Lunge", "Hit 7 tiles in a hexagon.", lunge),
+		EnemyHit.new("Lunge", "Hit 5 tiles in a cluster.", lunge),
 	]
 	p1_cycle = [0, 0, 1]

@@ -1,15 +1,15 @@
 class_name OgreSmash
 extends BaseEnemyAction
 
-## Hit 12 in a 3 x 4 block, on the target its Wind-up locked. Removes Plate from every tile it
+## Hit 8 in a 2 x 4 block, on the target its Wind-up locked. Removes Plate from every tile it
 ## covers first, so a Shield there still blocks once but won't come back.
 
 
 func _init() -> void:
 	super(Enum.BaseEnemyActionEnum.ATTACK, "Smash", 1.0)
-	description = "Hit 12 tiles in a 3x4 block and remove their Plate."
+	description = "Hit 8 tiles in a 2x4 block and remove their Plate."
 	var block: Array[BaseActionTile] = []
-	for r in 3:
+	for r in 2:
 		for q in 4:
 			block.append(DamageTile.new(Vector2i(q - floori(r / 2.0), r)))  # rows line up, not slant
 	parts = [EnemyActionPart.new(Enum.Side.PLAYER, block)]

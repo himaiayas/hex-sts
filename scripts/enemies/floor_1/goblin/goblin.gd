@@ -15,7 +15,7 @@ func _init() -> void:
 	super("Goblin", CombatUnit.make_hex_health(coords))
 	sprite = preload("res://assets/enemies/floor_1/goblin.png")
 	var line: Array[BaseActionTile] = []
-	for q in 5:
+	for q in 4:
 		line.append(DamageTile.new(Vector2i(q, 0)))
 	var backstab: Array[BaseActionTile] = [
 		DamageTile.new(Vector2i(0, 0), true),
@@ -23,7 +23,7 @@ func _init() -> void:
 		DamageTile.new(Vector2i(0, 1), true),
 	]
 	actions = [
-		EnemyHit.new("Stab", "Hit 5 tiles in a line.", line),
+		EnemyHit.new("Stab", "Hit 4 tiles in a line.", line),
 		EnemyHit.new("Backstab", "Hit 3 tiles with Pierce.", backstab),
 	]
 	p1_cycle = [0, 1]

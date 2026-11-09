@@ -19,8 +19,8 @@ func _init() -> void:
 	super("Cleaner Bot", CombatUnit.make_hex_health(coords))
 	sprite = preload("res://assets/enemies/floor_3/cleaner_bot.png")
 	# A ring with a tile further out on each side.
-	var sweep: Array[BaseActionTile] = [DamageTile.new(Vector2i(-2, 0)), DamageTile.new(Vector2i(2, 0))]
+	var sweep: Array[BaseActionTile] = []
 	for dir in StrengthPower.DIRS:
 		sweep.append(DamageTile.new(dir))
-	actions = [EnemyHit.new("Sweep", "Hit 8 tiles in a ring.", sweep), CleanerBotShred.new()]
+	actions = [EnemyHit.new("Sweep", "Hit 6 tiles in a ring.", sweep), CleanerBotShred.new()]
 	p1_cycle = [0, 1]

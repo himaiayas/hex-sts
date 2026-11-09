@@ -23,9 +23,9 @@ func _init() -> void:
 	super("Android Sentinel", CombatUnit.make_hex_health(coords))
 	sprite = preload("res://assets/enemies/floor_3/android_sentinel.png")
 	var line: Array[BaseActionTile] = []
-	for q in 10:
-		line.append(DamageTile.new(Vector2i(q, 0), true))
-	var snipe := EnemyHit.new("Snipe", "Hit 10 tiles in a line with Pierce.", line)
+	for q in 7:
+		line.append(DamageTile.new(Vector2i(q, 0), q < 4))  # only the first 4 pierce
+	var snipe := EnemyHit.new("Snipe", "Hit 7 tiles in a line; the first 4 have Pierce.", line)
 	snipe.aimed = true
 	actions = [EnemyWindUp.new("Aim", "No attack. Aims the next Snipe.", snipe), snipe]
 	p1_cycle = [0, 1]

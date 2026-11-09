@@ -1,17 +1,17 @@
 class_name WerewolfWolf
 extends EnemyHit
 
-## Wolf form: Howl (gain 1 Strength), then Hit 12 in a 3 x 4 block.
+## Wolf form: Howl (gain 1 Strength), then Hit 8 in a 2 x 4 block.
 
 const HOWL := 1
 
 
 func _init() -> void:
 	var maul: Array[BaseActionTile] = []
-	for r in 3:
+	for r in 2:
 		for q in 4:
 			maul.append(DamageTile.new(Vector2i(q - floori(r / 2.0), r)))  # rows line up, not slant
-	super("Howl & Maul", "Gain 1 Strength, then hit 12 tiles in a 3x4 block.", maul)
+	super("Howl & Maul", "Gain 1 Strength, then hit 8 tiles in a 2x4 block.", maul)
 	extra_types = [Enum.BaseEnemyActionEnum.BUFF]
 
 

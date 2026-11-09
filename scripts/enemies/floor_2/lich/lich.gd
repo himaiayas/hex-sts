@@ -46,12 +46,12 @@ func _init() -> void:
 	# Two rows of 4.
 	var bones: Array[BaseActionTile] = []
 	for r in 2:
-		for q in 4:
+		for q in 3:
 			bones.append(DamageTile.new(Vector2i(q - r, r)))
 	actions = [
 		LichSummon.new(),
 		_soul_drain,
-		EnemyHit.new("Bone Storm", "Hit 8 tiles 3 times.", bones, 3),
+		EnemyHit.new("Bone Storm", "Hit 6 tiles 3 times.", bones, 3),
 	]
 	p1_cycle = [0, 1, 2]
 	statuses.append(RegenPower.new(REGEN))

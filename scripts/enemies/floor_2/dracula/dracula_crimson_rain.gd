@@ -1,19 +1,19 @@
 class_name DraculaCrimsonRain
 extends BaseEnemyAction
 
-## Hit 6 x3 (P2): three waves on random spots of the player's grid. Each wave is two
+## Hit 4 x3 (P2): three waves on random spots of the player's grid. Each wave is two
 ## slanted 3-hex lines, like falling rain.
 
 
 func _init() -> void:
 	super(Enum.BaseEnemyActionEnum.ATTACK, "Crimson Rain", 1.0)
 	heavy_impact = true
-	description = "Hit 6 tiles 3 times."
+	description = "Hit 4 tiles 3 times."
 	hit_vfx = preload("res://assets/enemies/floor_2/dracula_attack_rain.png")
 	for i in 3:
 		var drops: Array[BaseActionTile] = []
 		for x in [0, 2]:
-			for k in 3:
+			for k in 2:
 				drops.append(DamageTile.new(Vector2i(x - k, k)))
 		parts.append(EnemyActionPart.new(Enum.Side.PLAYER, drops))
 

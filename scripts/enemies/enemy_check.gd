@@ -115,7 +115,7 @@ func _check_goblin(combat: CombatState) -> void:
 	combat.enemies = [goblin]
 	var player := combat.player
 
-	# Stab -> Backstab, looped. Stab hits 5 open tiles; Backstab pierces Shield.
+	# Stab -> Backstab, looped. Stab hits 4 open tiles; Backstab pierces Shield.
 	var names: Array[String] = []
 	for i in 4:
 		_heal(player)
@@ -126,8 +126,8 @@ func _check_goblin(combat: CombatState) -> void:
 		names.append(action.action_name)
 		var hit := _covered(player, action.parts[0])
 		await goblin.take_turn(combat)
-		_check(hit.size() == (5 if i % 2 == 0 else 3) and _cells_with(player, Enum.HealthTileEnum.DAMAGED) == hit.size(),
-			"goblin %s should damage %d tiles, damaged %d" % [action.action_name, 5 if i % 2 == 0 else 3, _cells_with(player, Enum.HealthTileEnum.DAMAGED)])
+		_check(hit.size() == (4 if i % 2 == 0 else 3) and _cells_with(player, Enum.HealthTileEnum.DAMAGED) == hit.size(),
+			"goblin %s should damage %d tiles, damaged %d" % [action.action_name, 4 if i % 2 == 0 else 3, _cells_with(player, Enum.HealthTileEnum.DAMAGED)])
 	_check(names == ["Stab", "Backstab", "Stab", "Backstab"], "goblin order: %s" % [names])
 
 	# Pierce goes through Shield, so Backstab scores a shielded tile like an open one.
@@ -222,8 +222,8 @@ func _check_ogre(combat: CombatState) -> void:
 		if action is EnemyWindUp:
 			_check(stripped.is_empty() and _cells_with(player, Enum.HealthTileEnum.SHIELDED) == player.health.size(), "wind-up touched the player")
 		else:
-			_check(aimed.size() == 12 and stripped == aimed, "smash should strip Plate from the 12 aimed tiles, stripped %d" % stripped.size())
-			_check(_cells_with(player, Enum.HealthTileEnum.UNDAMAGED) == 12, "smash should break the 12 shields")
+			_check(aimed.size() == 8 and stripped == aimed, "smash should strip Plate from the 8 aimed tiles, stripped %d" % stripped.size())
+			_check(_cells_with(player, Enum.HealthTileEnum.UNDAMAGED) == 8, "smash should break the 8 shields")
 	_check(names == ["Wind-up", "Smash", "Wind-up", "Smash"], "ogre order: %s" % [names])
 
 
@@ -252,7 +252,7 @@ func _check_golem(combat: CombatState) -> void:
 		else:
 			_check(_cells_with(golem, Enum.HealthTileEnum.SHIELDED) == MagicGolem.RUNE_EVERY_TURN + 8, "charge should shield 8 more")
 	_check(names == ["Arcane Bolt", "Charge", "Overload", "Arcane Bolt", "Charge", "Overload"], "golem order: %s" % [names])
-	_check(golem.actions[0].parts[0].tiles.size() == 6 and golem.actions[2].parts[0].tiles.size() == 14, "golem patterns should be 6 and 14 tiles")
+	_check(golem.actions[0].parts[0].tiles.size() == 4 and golem.actions[2].parts[0].tiles.size() == 10, "golem patterns should be 4 and 10 tiles")
 
 
 
@@ -317,7 +317,7 @@ func _check_griffin(combat: CombatState) -> void:
 		else:
 			_check(_cells_with(griffin, Enum.HealthTileEnum.SHIELDED) == 6, "wing gust should shield 6")
 	_check(names == ["Talon", "Wing Gust", "Dive", "Talon", "Wing Gust", "Dive"], "griffin order: %s" % [names])
-	_check(griffin.actions[0].parts[0].tiles.size() == 5 and griffin.actions[2].parts[0].tiles.size() == 9, "griffin patterns should be 5 and 9 tiles")
+	_check(griffin.actions[0].parts[0].tiles.size() == 4 and griffin.actions[2].parts[0].tiles.size() == 7, "griffin patterns should be 4 and 7 tiles")
 
 	# Aerial: the first 3 hits each player turn miss, even on a Shield or with Pierce; the 4th lands.
 	# Hits during its own turn always land, and its turn end gets the 3 misses back.
@@ -559,7 +559,7 @@ func _check_frangenstein(combat: CombatState) -> void:
 			_check(not hit.is_empty() and hit.all(func(c: Vector2i) -> bool: return player.health[c].hp == Enum.HealthTileEnum.DAMAGED)
 				and _cells_with(player, Enum.HealthTileEnum.DAMAGED) == hit.size(), "%s didn't damage what its intent showed" % action.action_name)
 	_check(names == ["Thunder Fist", "Static", "Overcharge"], "frangenstein order: %s" % [names])
-	_check(frank.actions[0].parts[0].tiles.size() == 15, "thunder fist should be 15 tiles")
+	_check(frank.actions[0].parts[0].tiles.size() == 10, "thunder fist should be 10 tiles")
 	await frank.actions[2].execute(combat, frank)
 	_check(frank.power_amount(StrengthPower) == 2 * Frangenstein.OVERCHARGE, "overcharge should stack")
 
@@ -590,7 +590,7 @@ func _check_jack(combat: CombatState) -> void:
 	jack.plan(combat)
 	names.append(jack.intent_actions[0].action_name)
 	_check(names == ["Flame Spit", "Grin", "Pumpkin Smash"], "jack order: %s" % [names])
-	_check(jack.actions[0].parts[0].tiles.size() == 9 and jack.actions[2].parts[0].tiles.size() == 11, "jack patterns should be 7 + 2 and 11 tiles")
+	_check(jack.actions[0].parts[0].tiles.size() == 7 and jack.actions[2].parts[0].tiles.size() == 8, "jack patterns should be 5 + 2 and 8 tiles")
 
 	# Burning Head: the 6th tile one Attack card destroys burns 3 player tiles, once per card.
 	# Non-Attack cards and hits outside a card don't count.
@@ -708,7 +708,7 @@ func _check_mummy(combat: CombatState) -> void:
 		var hit: Array = _covered(player, action.parts[0]) if not action.parts.is_empty() else []
 		await mummy.take_turn(combat)
 		if action is EnemyHit:
-			_check(not hit.is_empty() and _cells_with(player, Enum.HealthTileEnum.DAMAGED) == hit.size(), "pierce didn't go through Shield where its intent showed")
+			_check(not hit.is_empty() and _pierced_as_marked(player, action.parts[0]), "pierce should go through Shield on its first row only")
 		else:
 			_check(player.power_amount(CurseWrapPower) == Mummy.CURSE_WRAP, "curse wrap should put Curse Wrap 3 on the player")
 	_check(names == ["Curse Wrap", "Pierce"], "mummy order: %s" % [names])
@@ -886,7 +886,7 @@ func _check_dragon(combat: CombatState) -> void:
 	var claw := dragon.actions[0]
 	claw.plan(combat, dragon)
 	var open := claw.parts[0].tiles.filter(func(t: BaseActionTile) -> bool: return player.health[t.coords].hp == Enum.HealthTileEnum.UNDAMAGED).size()
-	_check(claw.parts[0].tiles.size() == 8 and open == 7, "claw should take all 7 open tiles first, took %d of %d" % [open, claw.parts[0].tiles.size()])
+	_check(claw.parts[0].tiles.size() == DragonClaw.HITS and open == DragonClaw.HITS, "claw should take open tiles first (7 open), took %d of %d" % [open, claw.parts[0].tiles.size()])
 
 	# Tail Sweep: on open tiles the second row goes elsewhere; on shielded ones it follows the first.
 	var sweep := dragon.actions[1]
@@ -901,14 +901,14 @@ func _check_dragon(combat: CombatState) -> void:
 	await sweep.execute(combat, dragon)
 	_check(first.all(func(c: Vector2i) -> bool: return player.health[c].hp == Enum.HealthTileEnum.DAMAGED), "tail sweep x2 didn't damage the shielded row")
 
-	# Inferno pierces Shield.
+	# Inferno's tip (3 tiles) pierces Shield; the rest of the cone is blocked.
 	for tile in player.health.values():
 		tile.hp = Enum.HealthTileEnum.SHIELDED
 	var inferno := dragon.actions[3]
 	inferno.plan(combat, dragon)
 	await inferno.execute(combat, dragon)
 	var burnt := _covered(player, inferno.parts[0])
-	_check(not burnt.is_empty() and burnt.all(func(c: Vector2i) -> bool: return player.health[c].hp == Enum.HealthTileEnum.DAMAGED), "inferno didn't pierce Shield")
+	_check(not burnt.is_empty() and _pierced_as_marked(player, inferno.parts[0]), "inferno should pierce Shield at its tip only")
 
 	# P2 starts below half the tiles: 45 of 90 undamaged is still P1, 44 is P2.
 	var tiles := dragon.health.values()
@@ -1025,7 +1025,7 @@ func _check_ramiel(combat: CombatState) -> void:
 			_check(beam.parts[0].cell == locked, "beam didn't fire where the charges aimed")
 			await ramiel.take_turn(combat)
 			var burnt := _covered(player, beam.parts[0])
-			_check(not burnt.is_empty() and burnt.all(func(c: Vector2i) -> bool: return player.health[c].hp == Enum.HealthTileEnum.DAMAGED), "beam didn't pierce Shield")
+			_check(not burnt.is_empty() and _pierced_as_marked(player, beam.parts[0]), "beam should pierce Shield")
 		else:
 			await ramiel.take_turn(combat)
 	_check(turns == ["Scan", "Charge: 2 turns (0/20)\nParticle Shards", "Charge: 1 turn (0/20)\nParticle Shards",
@@ -1104,14 +1104,14 @@ func _check_scout_drone(combat: CombatState) -> void:
 	_heal(combat.player)
 	_check(drone.power_amount(AerialPower) == ScoutDrone.HOVER, "scout drone should start with Hover %d" % ScoutDrone.HOVER)
 	drone.plan(combat)
-	_check(drone.intent_actions[0].parts[0].tiles.size() == 6, "first laser ping should hit 6")
+	_check(drone.intent_actions[0].parts[0].tiles.size() == 4, "first laser ping should hit 4")
 	drone.plan(combat)
 	var scan := drone.intent_actions[0]
 	var aimed := scan.parts[0].cell
 	drone.plan(combat)
 	var ping := drone.intent_actions[0]
-	_check(scan is EnemyWindUp and ping.parts[0] == scan.parts[0] and ping.parts[0].cell == aimed and ping.parts[0].tiles.size() == 10,
-		"scanned ping should hit 10 where the scan aimed")
+	_check(scan is EnemyWindUp and ping.parts[0] == scan.parts[0] and ping.parts[0].cell == aimed and ping.parts[0].tiles.size() == 8,
+		"scanned ping should hit 8 where the scan aimed")
 
 
 ## Plasma Turret's Charge and Android Sentinel's Aim lock the next hit's cell, and it lands there.
@@ -1134,8 +1134,9 @@ func _check_wind_ups(combat: CombatState) -> void:
 		_check(hit.parts[0].cell == aimed, "%s's hit should land where it aimed" % enemy.display_name)
 		var covered := _covered(player, hit.parts[0])
 		await enemy.take_turn(combat)
-		var pierced := covered.all(func(c: Vector2i) -> bool: return player.health[c].hp == Enum.HealthTileEnum.DAMAGED)
-		_check(pierced == (enemy is AndroidSentinel), "%s's hit should %s Shield" % [enemy.display_name, "pierce" if enemy is AndroidSentinel else "not pierce"])
+		var pierced := covered.any(func(c: Vector2i) -> bool: return player.health[c].hp == Enum.HealthTileEnum.DAMAGED)
+		_check(pierced == (enemy is AndroidSentinel) and _pierced_as_marked(player, hit.parts[0]),
+			"%s's hit should %s Shield" % [enemy.display_name, "pierce (its first 4 tiles)" if enemy is AndroidSentinel else "not pierce"])
 
 
 func _check_nano_swarm(combat: CombatState) -> void:
@@ -1264,6 +1265,19 @@ func _covered(unit: CombatUnit, part: EnemyActionPart) -> Array[Vector2i]:
 			cells.append(part.cell + t.coords)
 	cells.sort()
 	return cells
+
+
+## On an all-shielded grid, after a part fired: its Pierce tiles damaged their tiles, its other
+## Damage tiles were blocked (the Shield gone, the tile still standing).
+func _pierced_as_marked(unit: CombatUnit, part: EnemyActionPart) -> bool:
+	for t in part.tiles:
+		var cell := part.cell + t.coords
+		if not unit.health.has(cell) or not t is DamageTile:
+			continue
+		var damaged := unit.health[cell].hp == Enum.HealthTileEnum.DAMAGED
+		if damaged != (t as DamageTile).pierce:
+			return false
+	return true
 
 
 func _check(ok: bool, msg: String) -> void:
