@@ -303,6 +303,10 @@ func start_boss() -> void:
 func _next_floor() -> void:
 	dungeon_floor += 1
 	normal_fights_on_floor = 0
+	# A new floor starts at full health: every damaged tile is repaired.
+	for tile: HealthTile in health.values():
+		if tile.hp == 0:
+			tile.hp = 1
 	map = MapState.new()
 	map.start(floor_seed())
 
@@ -377,3 +381,4 @@ func end_combat() -> void:
 	if combat:
 		combat.finish(self)
 	combat = null
+

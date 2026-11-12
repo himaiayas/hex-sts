@@ -123,4 +123,23 @@ theme_override_font_sizes/font_size = 50
 text = "Back"
 alignment = 2
 
+[node name="Version" type="Label" parent="."]
+modulate = Color(1, 1, 1, 0.6)
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -216.0
+offset_top = -60.0
+offset_right = -16.0
+offset_bottom = -16.0
+grow_horizontal = 0
+grow_vertical = 0
+theme_override_font_sizes/font_size = 20
+text = "v.0.1.1"
+horizontal_alignment = 2
+vertical_alignment = 2
+
 [connection signal="pressed" from="Credits/BackButton" to="." method="_on_credits_toggled"]

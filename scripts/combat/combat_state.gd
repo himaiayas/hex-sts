@@ -312,5 +312,7 @@ func finish(run: Node) -> void:
 		for artifact in player.artifacts:
 			artifact.on_combat_end(self)
 	for tile in player.health.values():
-		tile.status_effects.clear()  # tile effects only last for the fight
+		tile.status_effects.clear()  # tile effects and shields only last for the fight
+		if tile.hp == Enum.HealthTileEnum.SHIELDED:
+			tile.hp = Enum.HealthTileEnum.UNDAMAGED
 	run.health = player.health
